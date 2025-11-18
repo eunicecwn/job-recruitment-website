@@ -1,0 +1,107 @@
+wwwroot\css\AccDenied.css
+wwwroot\css\admin.css
+wwwroot\css\app.css
+wwwroot\css\AssignToJobTableView.css
+wwwroot\css\changepasswd.css
+wwwroot\css\ForgotPasswd.css
+wwwroot\css\ForgotPasswdCom.css
+wwwroot\css\jobForm.css
+wwwroot\css\jobseeker.search.css
+wwwroot\css\layout.css
+wwwroot\css\login.css
+wwwroot\css\MessageBoxes.css
+wwwroot\css\otp.css
+wwwroot\css\pager.css
+wwwroot\css\profile.css
+wwwroot\css\questionForm.css
+wwwroot\css\Register.css
+wwwroot\css\ResetPasswd.css
+wwwroot\images\avatar-placeholder.png
+wwwroot\images\favicon.png
+wwwroot\images\loader.gif
+wwwroot\images\login-illustration3.png
+wwwroot\images\logo.png
+wwwroot\js\admindash.js
+wwwroot\js\app.js
+wwwroot\js\JobPostFormValidation.js
+wwwroot\js\jquery.min.js
+wwwroot\js\jquery.unobtrusive-ajax.min.js
+wwwroot\js\jquery.validate.min.js
+wwwroot\js\jquery.validate.unobtrusive.min.js
+wwwroot\js\map.js
+wwwroot\js\questionFormValidation.js
+wwwroot\js\Register.js
+wwwroot\js\reports-ajax.js
+wwwroot\js\resetPasswd.js
+wwwroot\resumes\HOJUNYONResume.pdf
+wwwroot\uploads\companyphotos\52072a05-931e-4dff-bec5-a9e1a75a4f2b.jpg
+wwwroot\uploads\companyphotos\568bf3e9-244a-4fe0-9f0c-bf3da839a756.jpg
+wwwroot\uploads\companyphotos\a9ae42a2-290d-4708-9abd-42fbb8699cbc.jpg
+wwwroot\uploads\companyphotos\ce207010-e571-4e92-9e27-85e5d8c06641.jpg
+wwwroot\uploads\profilepics\SEEK000001_20250922060426_profile_photo.png
+wwwroot\uploads\profilepics\SEEK000001_20250919185252.png
+wwwroot\uploads\profilepics\SEEK000001_20250919185238.png
+wwwroot\uploads\profilepics\SEEK000001_20250919185225.png
+wwwroot\uploads\profilepics\16bbed33b9_45ab80d7-7b53-40fd-b289-0cdfcfb15ded.png
+wwwroot\uploads\profilepics\874bc7d5-5b21-4cca-9b26-1796f7728c58_Screenshot 2025-02-15 223845.png
+wwwroot\uploads\profilepics\8b4a83cb2b_83c08afe-5698-4fc6-afe0-49baff077109.png
+wwwroot\uploads\profilepics\8f829079-f689-4956-b868-3a84e11d035a_Screenshot 2025-02-15 223845.png
+wwwroot\uploads\profilepics\a78612fd-92a4-4e81-8581-f87f7a2ab158_H.png
+wwwroot\uploads\profilepics\b3782a78-d574-4a14-abf7-4605c08563ae_Screenshot 2025-02-15 223845.png
+wwwroot\uploads\profilepics\EMP0000001_44ee4dd8-8d80-46e3-a60c-1158b6dee7bb.jpg
+wwwroot\uploads\profilepics\HOJY_20250916073113_1e50f491.png
+wwwroot\uploads\profilepics\theelok_20250919024304_c796b897.jpeg
+wwwroot\uploads\resumes\SEEK000001_20250920031626_JIA TONG LAI - CW3 COVER PAGE 012025 CCV.pdf
+wwwroot\uploads\resumes\SEEK000001_20250920035343_(3)12jan24.pdf
+wwwroot\uploads\resumes\SEEK000001_20250920035358_Organising fee.pdf
+wwwroot\uploads\resumes\SEEK000001_20250920040625_Additional Questions (202505).pdf
+wwwroot\uploads\resumes\SEEK000001_20250920040643_Virtual_reality_in_telepsychia.pdf
+wwwroot\uploads\resumes\SEEK000001_20250920051829_JIA TONG LAI - CW3 COVER PAGE 012025 CCV.pdf
+wwwroot\uploads\resumes\SEEK000001_20250921184949_HOJUNYONResume.pdf
+wwwroot\uploads\resumes\1db2e8e526fa4b108222cb3586709ec4.pdf
+wwwroot\uploads\profilepics\jiatong_20250921183801_7b696907.png
+wwwroot\uploads\profilepics\qqqqq_20250921192039_8850ac73.png
+wwwroot\uploads\resumes\be713d9e12df4d01aed5e500d61e4e28.pdf
+wwwroot\uploads\resumes\HOJUNYONResume.pdf
+wwwroot\uploads\question-files\428486208e01441ebb0056bb0a288537.pdf
+wwwroot\uploads\resumes\17a78ee3af4644a7bafd1602c27db1dd.pdf
+wwwroot\js\jobseekerdash.js
+wwwroot\uploads\profilepics\llll_20250923092509_07713c92.png
+wwwroot\uploads\resumes\SEEK000001_20250923174246_Virtual_reality_in_telepsychia.pdf
+wwwroot\uploads\profilepics\SEEK000020_20250927131839_profile_photo.png
+wwwroot\uploads\resumes\SEEK000020_20250927110650_HOJUNYONResume (3).pdf
+wwwroot\uploads\question-files\998519c132da449fa08fb00b7ff09a61.pdf
+wwwroot\uploads\resumes\3a68940819dd46c8b49cd973b26fae3e.pdf
+wwwroot\uploads\resumes\SEEK000020_20250927131858_Hot glue.pdf
+wwwroot\uploads\profilepics\hello_20250927052420_c22b2ee5.jpg
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\jquery.validate.unobtrusive.min.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\jquery.validate.min.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\jquery.min.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\questionFormValidation.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\ForgotPasswdCom.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\pager.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\map.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\AssignToJobTableView.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\jobseeker.search.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\jquery.unobtrusive-ajax.min.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\AccDenied.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\JobPostFormValidation.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\questionForm.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\reports-ajax.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\changepasswd.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\Register.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\app.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\admindash.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\login.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\ResetPasswd.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\Register.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\otp.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\MessageBoxes.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\jobForm.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\ForgotPasswd.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\app.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\admin.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\layout.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\css\profile.css
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\resetPasswd.js
+C:\TARUMT SEM 4\AMIT2014  WEB AND MOBILE SYSTEMS\Assignment\Web Final Checkup (2)\Web Final Checkup\Assignment\Demo\wwwroot\js\jobseekerdash.js
