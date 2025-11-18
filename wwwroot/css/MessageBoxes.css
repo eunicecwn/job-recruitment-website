@@ -1,0 +1,68 @@
+﻿/* === Success toast (centered, no overlay) === */
+.success-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    animation: fadeOut 4s forwards; /* Auto hide after 4s */
+    pointer-events: none; /* Don't block clicks */
+}
+
+/* Success card (same size/shape as error-card) */
+.success-card {
+    background: #bbf7d0; /* light green */
+    color: #065f46; /* dark green text */
+    border-radius: 12px;
+    padding: 25px 30px;
+    text-align: center;
+    width: 320px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    animation: popIn 0.3s ease-out;
+}
+
+    /* Icon */
+    .success-card .icon {
+        font-size: 50px;
+        margin-bottom: 15px;
+    }
+
+    /* Title */
+    .success-card h2 {
+        margin: 0 0 10px;
+        font-size: 1.5rem;
+    }
+
+    /* Message */
+    .success-card p {
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+/* Pop-in animation */
+@keyframes popIn {
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Fade-out animation */
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+
+    70% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}

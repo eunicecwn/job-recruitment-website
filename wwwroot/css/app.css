@@ -1,0 +1,378 @@
+﻿:root {
+    --primary: #4F46E5;
+    --primary-light: #6366F1;
+    --primary-dark: #4338CA;
+    --dark: #111827;
+    --light: #F9FAFB;
+    --gray: #6B7280;
+    --light-gray: #E5E7EB;
+    --bg-light: #F3F4F6;
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+}
+
+/* Enhanced Search Bar */
+.search-container {
+    width: 400px;
+}
+
+.search-input {
+    border-radius: 8px 0 0 8px !important;
+    border-right: none;
+    padding: 0.5rem 1rem;
+    min-width:700px;
+}
+
+.search-btn {
+    border-radius: 0 8px 8px 0 !important;
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    padding: 0.5rem 1rem;
+}
+
+    .search-btn:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+
+/* Premium Button Styles */
+.auth-btn {
+    font-weight: 500;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 2px solid;
+}
+
+.btn-login {
+    background-color: white;
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+    .btn-login:hover {
+        background-color: rgba(79, 70, 229, 0.05);
+        color: var(--primary-dark);
+        border-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+.btn-signup {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+    .btn-signup:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+/* Button container */
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: var(--sidebar-width);
+    min-height: 100vh;
+    transition: all 0.3s ease;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: white;
+    border-right: 1px solid var(--light-gray);
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+    .sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+/* Collapsed State */
+.sidebar-collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+    .sidebar-collapsed .nav-link-text,
+    .sidebar-collapsed .logo-text,
+    .sidebar-collapsed .user-info,
+    .sidebar-collapsed .nav-section-header {
+        display: none !important;
+    }
+
+    .sidebar-collapsed .nav-link {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+        margin: 0.25rem 0;
+    }
+
+    .sidebar-collapsed .logo {
+        justify-content: center;
+    }
+
+    .sidebar-collapsed .avatar {
+        margin: 0 auto;
+    }
+
+/* Main Content Adjustment */
+.main-content {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-collapsed ~ .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* General Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--dark);
+    overflow-x: hidden;
+}
+
+.nav-link {
+    color: var(--gray);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+    .nav-link:hover,
+    .nav-link.active {
+        color: var(--primary);
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 0.75rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 64px;
+}
+
+.topbar-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+.right-side-elements {
+    gap: 1rem;
+}
+
+.search-container {
+    max-width: 600px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-collapsed ~ .main-content .search-container {
+    max-width: 100%;
+}
+
+.search-input {
+    border-radius: 8px 0 0 8px !important;
+    border: 1px solid var(--light-gray);
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+}
+
+    .search-input:focus {
+        border-color: var(--primary-light);
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+
+.search-btn {
+    border-radius: 0 8px 8px 0 !important;
+    background-color: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+    padding: 0.5rem 1.25rem;
+    transition: all 0.2s;
+}
+
+    .search-btn:hover {
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+.auth-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: 0;
+}
+
+.auth-btn {
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none !important;
+}
+
+.btn-login {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+    .btn-login:hover {
+        background-color: rgba(79, 70, 229, 0.05);
+    }
+
+.btn-signup {
+    background-color: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+}
+
+    .btn-signup:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+.avatar {
+    width: 40px !important; /* Fixed size */
+    height: 40px !important;
+    min-width: 40px !important; /* Prevents squishing */
+    border-radius: 50% !important; /* Ensures circle shape */
+    flex-shrink: 0 !important; /* Prevents resizing */
+    transition: none !important; /* Disables animations */
+    display: flex !important; /* Ensures consistency */
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Avatar Dropdown Styles */
+.avatar-lg {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--bg-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown-menu {
+    border: 1px solid var(--light-gray);
+    border-radius: 10px;
+}
+
+.dropdown-toggle::after {
+    display: none !important;
+}
+
+/* Hover effect */
+.dropdown-toggle:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+    border-radius: 8px;
+}
+
+/* Navigation section headers */
+.nav-section-header {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1rem;
+    transition: all 0.3s ease;
+}
+
+/* Tooltip styles */
+.nav-item {
+    position: relative;
+}
+
+.nav-link .tooltip {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--dark);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1001;
+    margin-left: 10px;
+}
+
+.sidebar-collapsed .nav-item:hover .tooltip {
+    display: block;
+}
+
+.form-control.is-valid, .form-select.is-valid {
+    background-image: none !important;
+    padding-right: 0.75rem !important;
+    border-color: #d1d5db !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1040;
+    }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .sidebar-collapse-btn {
+        display: none !important;
+    }
+}

@@ -1,0 +1,448 @@
+﻿/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.reset-password-container {
+    min-height: 100vh;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.reset-password-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 100%;
+    max-width: 500px;
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-header {
+    background: #667eea;
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+}
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.logo-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: -0.5px;
+}
+.password-match-indicator {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.match-text.success {
+    color: #28a745;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.match-text.error {
+    color: #dc3545;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.match-text {
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: -0.5px;
+}
+
+.card-header p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+    font-weight: 400;
+    color: white;
+}
+
+.card-body {
+    padding: 40px 30px;
+}
+
+.email-display {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin: 20px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.password-requirements {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+    .password-requirements h5 {
+        color: #667eea;
+        margin: 0 0 15px 0;
+        font-weight: 600;
+        font-size: 16px;
+        letter-spacing: -0.25px;
+    }
+
+    .password-requirements ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #555;
+    }
+
+    .password-requirements li {
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4;
+    }
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+    .form-group label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+        letter-spacing: -0.1px;
+    }
+
+.form-control {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px 45px 12px 15px;
+    font-size: 16px;
+    font-weight: 400;
+    width: 100%;
+    transition: all 0.3s ease;
+    background-color: white;
+    letter-spacing: -0.1px;
+}
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        background-color: white;
+        outline: none;
+    }
+
+.password-input-group {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #6c757d;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+    .password-toggle:hover {
+        color: #667eea;
+    }
+
+.password-strength {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #e9ecef;
+}
+
+.strength-meter {
+    height: 6px;
+    border-radius: 3px;
+    background: #e9ecef;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.strength-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    width: 0%;
+}
+
+    .strength-fill.strength-weak {
+        background: #dc3545;
+        width: 25%;
+    }
+
+    .strength-fill.strength-fair {
+        background: #fd7e14;
+        width: 50%;
+    }
+
+    .strength-fill.strength-good {
+        background: #ffc107;
+        width: 75%;
+    }
+
+    .strength-fill.strength-strong {
+        background: #28a745;
+        width: 100%;
+    }
+
+.strength-text {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.1px;
+}
+
+    .strength-text.weak {
+        color: #dc3545;
+    }
+
+    .strength-text.fair {
+        color: #fd7e14;
+    }
+
+    .strength-text.good {
+        color: #ffc107;
+    }
+
+    .strength-text.strong {
+        color: #28a745;
+    }
+
+.btn-reset {
+    background: #667eea;
+    border: 1px solid #667eea;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    letter-spacing: -0.25px;
+}
+
+    .btn-reset:hover:not(:disabled) {
+        background: #5a6fd8;
+        border-color: #5a6fd8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-reset:disabled {
+        background: #6c757d;
+        border-color: #6c757d;
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+.text-validation-error {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 5px;
+    display: block;
+    font-weight: 400;
+}
+
+.security-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+    .security-note p {
+        margin: 0;
+        color: #856404;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    .security-note .icon {
+        margin-right: 8px;
+    }
+
+.back-to-login {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid #e1e5e9;
+}
+
+    .back-to-login a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+        .back-to-login a:hover {
+            color: #5a6fd8;
+            text-decoration: underline;
+        }
+
+/* Alert styles */
+.alert {
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert ul {
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.alert li {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+/* Loading spinner styles */
+.spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: text-bottom;
+    border: 0.125em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+.spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 0.125em;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Utility classes */
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.me-2 {
+    margin-right: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 576px) {
+    .reset-password-container {
+        padding: 10px;
+    }
+
+    .card-header {
+        padding: 30px 20px;
+    }
+
+    .card-body {
+        padding: 30px 20px;
+    }
+
+    .reset-icon {
+        font-size: 48px;
+    }
+
+    .card-header h2 {
+        font-size: 24px;
+    }
+
+    .form-control {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 12px 45px 12px 15px;
+    }
+
+    .password-requirements {
+        padding: 15px;
+    }
+
+        .password-requirements li {
+            font-size: 13px;
+        }
+}

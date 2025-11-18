@@ -1,0 +1,912 @@
+﻿/* ===== GENERAL & UTILITY STYLES ===== */
+.required:after {
+    content: " *";
+    color: red;
+}
+
+.center-message-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.center-alert {
+    padding: 20px 30px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    text-align: center;
+    min-width: 300px;
+    max-width: 80%;
+    animation: centerFadeInOut 3s ease-in-out forwards;
+    pointer-events: auto;
+    margin: 0;
+    border: none;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+@keyframes centerFadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    85% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+        visibility: hidden;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.loading-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ===== FORM STYLING ===== */
+/* Form group container */
+.form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    margin-bottom: 1rem !important;
+    gap: 0.5rem !important;
+}
+
+/* Form control styling */
+.form-control,
+.form-select {
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.375rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #4F46E5 !important;
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25) !important;
+        outline: 0 !important;
+    }
+
+/* Form select specific styling */
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%234F46E5' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 16px 12px !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+/* Label styling */
+label {
+    font-weight: 500 !important;
+    color: #374151 !important;
+    margin-bottom: 0.25rem !important;
+}
+
+/* Increase space for date fields */
+.form-group input[type="date"] {
+    padding: 0.75rem !important;
+    height: calc(2.5rem + 2px) !important;
+    margin-bottom: 0.5rem;
+}
+
+/* ===== VALIDATION STYLING ===== */
+/* Invalid field styling */
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid {
+    border: 1px solid #EF4444 !important;
+    box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Specific styling for invalid select dropdowns */
+select.is-invalid {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23EF4444' stroke='%23EF4444' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+/* Input group styling */
+.input-group.is-invalid .form-control,
+.input-group.is-invalid .form-select {
+    border-color: #EF4444 !important;
+}
+
+.input-group.is-invalid .input-group-text {
+    border-color: #EF4444 !important;
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #EF4444 !important;
+}
+
+/* Error message styling */
+.invalid-feedback,
+.field-validation-error {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #EF4444;
+}
+
+/* Show error messages when field is invalid */
+.is-invalid ~ .invalid-feedback,
+.is-invalid ~ .field-validation-error,
+.is-invalid + .invalid-feedback,
+.is-invalid + .field-validation-error {
+    display: block !important;
+}
+
+/* ===== AUTOCOMPLETE SUGGESTIONS ===== */
+#suggestions {
+    position: inherit;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+    #suggestions div {
+        padding: 5px;
+        cursor: pointer;
+    }
+
+        #suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+
+/* ===== MAP STYLING ===== */
+#map {
+    height: 400px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* ===== JOB CARD STYLING ===== */
+.job-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    border-left: 4px solid #4F46E5;
+}
+
+    .job-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+.job-title {
+    color: #4F46E5;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.company-name {
+    color: #111827;
+    font-weight: 500;
+}
+
+.job-meta {
+    display: flex;
+    gap: 1rem;
+    margin: 0.75rem 0;
+    flex-wrap: wrap;
+}
+
+.job-tag {
+    background-color: rgba(79, 70, 229, 0.1);
+    color: #4F46E5;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.salary {
+    color: #10B981;
+    font-weight: 600;
+}
+
+.location {
+    color: #6B7280;
+}
+
+.posted-date {
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+/* ===== SEARCH & FILTER STYLING ===== */
+.search-container {
+    margin-bottom: 2rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+/* Make the search input in filters span full width */
+#search-form .col-md-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+
+/* Make search field longer in filter section */
+#searchTerm {
+    width: 100% !important;
+}
+
+.results-count {
+    color: #6B7280;
+    margin-bottom: 1rem;
+}
+
+.loader {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+/* ===== BUTTON STYLING ===== */
+.job-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Override Bootstrap primary button */
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark) !important;
+        border-color: var(--primary-dark) !important;
+    }
+
+.btn-reset {
+    background-color: transparent;
+    border-color: var(--dark) !important;
+    max-width: 100px;
+}
+
+    .btn-reset:hover {
+        background-color: var(--light-gray) !important;
+        border-color: var(--grey) !important;
+    }
+
+.button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 25px;
+}
+
+/* ===== JOB LISTINGS PAGE STYLING ===== */
+/* Container styling */
+.container-fluid {
+    padding: 0 0rem;
+}
+
+/* Card styling */
+.card {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: white !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Button styling */
+.btn-outline-primary {
+    color: #4F46E5 !important;
+    border-color: #4F46E5 !important;
+}
+
+    .btn-outline-primary:hover, .btn-check:checked + .btn-outline-primary {
+        background-color: #4F46E5 !important;
+        border-color: #4F46E5 !important;
+        color: white !important;
+    }
+
+.btn-outline-secondary {
+    color: #6B7280 !important;
+    border-color: #D1D5DB !important;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: #F9FAFB !important;
+        color: #374151 !important;
+    }
+
+/* Badge styling */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+.bg-success {
+    background-color: #10B981 !important;
+}
+
+.bg-danger {
+    background-color: #EF4444 !important;
+}
+
+.bg-secondary {
+    background-color: #6B7280 !important;
+}
+
+/* Job card styling */
+.job-card .card-title {
+    color: #1F2937;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.job-card .card-body {
+    padding: 1.25rem;
+}
+
+.job-card .card-footer {
+    background-color: transparent;
+    border-top: 1px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+}
+
+/* Job meta information */
+.job-meta-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+    .job-meta-item i {
+        margin-right: 0.5rem;
+        width: 16px;
+        color: #4F46E5;
+    }
+
+/* Pagination styling */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-item.active .page-link {
+    background-color: #4F46E5;
+    border-color: #4F46E5;
+}
+
+.page-link {
+    color: #4F46E5;
+    border-radius: 0.375rem;
+    margin: 0 2px;
+    border: 1px solid #D1D5DB;
+}
+
+    .page-link:hover {
+        background-color: #e9ecef;
+        border-color: #D1D5DB;
+        color: #4F46E5;
+    }
+
+/* Alert styling */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-success {
+    background-color: #ECFDF5;
+    color: #065F46;
+}
+
+/* Table styling for list view */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+    .table th {
+        background-color: var(--primary);
+        color: #fff;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        border: none;
+        text-align: left;
+    }
+
+    .table td {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+        color: var(--dark);
+        border-top: 1px solid var(--primary-dark);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+.table-striped tbody tr:nth-of-type(even) {
+    background-color: var(--primary-light);
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--purple-accent);
+    color: #fff;
+    transition: background-color 0.2s ease;
+}
+
+/* View mode toggle buttons */
+.btn-group .btn {
+    padding: 0.5rem 0.75rem;
+}
+
+/* Text muted */
+.text-muted {
+    color: #6B7280 !important;
+}
+
+/* ===== TEXT OVERFLOW HANDLING ===== */
+/* Two-line ellipsis for job titles and locations */
+.two-line-ellipsis {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    max-height: 2.8em; /* 2 lines * 1.4 line-height */
+}
+
+/* For table cells specifically */
+.table .two-line-ellipsis {
+    max-width: 100%;
+}
+
+/* Update the existing classes to use two-line ellipsis */
+.overflow-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.job-title-display {
+    min-width: 0; /* critical for flex layouts */
+    flex: 1 1 auto; /* let it shrink and grow */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* max 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+
+/* For company name and location in DisplayJob page - MODIFIED */
+.text-overflow-handle {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    display: block;
+}
+
+/* Improved ellipsis for table cells */
+.table .text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+}
+
+/* Make card and list view flexible */
+#search-results .row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#search-results .col-md-6,
+#search-results .col-lg-4 {
+    display: flex;
+    flex-direction: column;
+}
+
+.job-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+    .job-card .card-body {
+        flex: 1;
+    }
+
+/* Ensure card content doesn't overflow */
+.card-body {
+    overflow: hidden;
+}
+
+/* Improved card styling */
+.job-card {
+    overflow: hidden; /* Prevent content from overflowing card */
+}
+
+    .job-card .card-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        width: calc(100% - 60px); /* Reserve space for status badge */
+    }
+
+    .job-card .location-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+/* Ensure pagination remains visible and properly spaced */
+#pagination-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Make filter form elements more consistent */
+.filter-section .form-control,
+.filter-section .form-select {
+    width: 100% !important;
+}
+
+/* Adjust spacing in filter card */
+.card-body .row.g-3 {
+    row-gap: 1rem !important;
+}
+
+/* Make view mode buttons more flexible */
+.btn-group.w-100 {
+    display: fixed;
+}
+
+    .btn-group.w-100 .btn {
+        flex: auto;
+    }
+
+/* Ensure table doesn't overflow on small screens */
+.table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+    .table th:nth-child(1) {
+        width: 15%;
+    }
+    /* Job Title */
+    .table th:nth-child(2) {
+        width: 20%;
+    }
+    /* Location */
+    .table th:nth-child(3) {
+        width: 10%;
+    }
+    /* Type */
+    .table th:nth-child(4) {
+        width: 15%;
+    }
+    /* Salary Range */
+    .table th:nth-child(5) {
+        width: 10%;
+    }
+    /* Posted Date */
+    .table th:nth-child(6) {
+        width: 10%;
+    }
+    /* Closing Date */
+    .table th:nth-child(7) {
+        width: 10%;
+    }
+    /* Status */
+    .table th:nth-child(8) {
+        width: 10%;
+    }
+    /* Actions */
+
+    /* Specifically target date columns for more space */
+    .table td:nth-child(6), /* Posted Date column */
+    .table td:nth-child(7) { /* Closing Date column */
+        min-width: 120px;
+        white-space: nowrap;
+    }
+
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 576px) {
+    .button-group {
+        flex-direction: column;
+    }
+
+        .button-group .btn {
+            width: 100%;
+        }
+
+    .job-card .card-title {
+        width: calc(100% - 50px);
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .job-title-display {
+        -webkit-line-clamp: 2;
+        white-space: normal;
+        display: -webkit-box;
+    }
+
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+
+    .table td, .table th {
+        padding: 0.6rem 0.5rem !important;
+    }
+
+        .table td:nth-child(6),
+        .table td:nth-child(7) {
+            min-width: 90px;
+        }
+
+    .badge {
+        font-size: 0.65rem;
+        padding: 0.3em 0.5em;
+    }
+
+    .container-fluid {
+        padding: 0 0rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .row.g-3 {
+        margin-bottom: -0.5rem;
+    }
+
+        .row.g-3 > [class^="col-"] {
+            margin-bottom: 0.5rem;
+        }
+
+    .d-flex.align-items-end .btn {
+        margin-top: 0.5rem;
+    }
+
+    #pagination-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .job-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .table th:nth-child(1) {
+        width: 25%;
+    }
+
+    .table th:nth-child(4) {
+        width: 20%;
+    }
+
+    .table th:nth-child(2) {
+        width: 12%;
+    }
+
+    .table th:nth-child(5) {
+        width: 12%;
+    }
+
+    .table th:nth-child(6) {
+        width: 12%;
+    }
+
+    .table td:nth-child(1),
+    .table td:nth-child(2) {
+        max-width: 150px;
+    }
+}
+
+/* Card view adjustments for better spacing */
+.job-card .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.job-card .text-muted {
+    font-size: 0.85rem;
+}
+
+.job-card .card-footer {
+    padding: 0.75rem 1.25rem;
+}
+
+/* ===== JOB LIST CARD STYLING ===== */
+/* New class specifically for job list cards */
+.job-list-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent content from overflowing */
+}
+
+    .job-list-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-color: #4F46E5;
+    }
+
+    .job-list-card .card-body {
+        padding: 1.25rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .job-list-card .card-title {
+        color: #1F2937;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.4;
+        max-height: 2.8em; /* 2 lines * 1.4 line-height */
+    }
+
+    .job-list-card .card-footer {
+        background-color: transparent;
+        border-top: 1px solid #e5e7eb;
+        padding: 1rem 1.25rem;
+    }
+
+/* Job meta information for list cards */
+.job-list-meta-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    color: #6B7280;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+    .job-list-meta-item i {
+        margin-right: 0.5rem;
+        width: 16px;
+        color: #4F46E5;
+        flex-shrink: 0;
+    }
+
+.job-list-salary {
+    color: #10B981;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+
+.job-list-date {
+    margin-top: auto;
+    padding-top: 0.75rem;
+}
+
+    .job-list-date small {
+        font-size: 0.85rem;
+        color: #6B7280;
+    }
+
+/* Status badges for job list cards */
+.job-list-card .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments for job list cards */
+@media (max-width: 768px) {
+    .job-list-card .card-body {
+        padding: 1rem;
+    }
+
+    .job-list-card .card-title {
+        font-size: 1rem;
+        max-height: 2.6em;
+    }
+
+    .job-list-meta-item {
+        font-size: 0.8rem;
+    }
+}

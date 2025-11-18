@@ -1,0 +1,268 @@
+﻿/* ====== Job search grid + cards (brand-synced) ====== */
+:root {
+    /* use your existing brand; these already match your search bar */
+    --brand: var(--primary, #5b5bd6);
+    --brand-600: var(--primary-dark, #4a4ac6);
+    --brand-dark: var(--primary-dark, #3b3bb6);
+    --card-shadow: 0 2px 10px rgba(25,35,70,.06);
+}
+
+.job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(360px,1fr));
+    gap: 18px;
+    margin-top: .75rem;
+}
+
+/* Card shell with dark-blue border */
+.job-card {
+    background: #fff;
+    border: 2px solid var(--brand-dark);
+    border-radius: 18px;
+    box-shadow: var(--card-shadow);
+    padding: 16px 16px 12px;
+    outline: none;
+    transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease, filter .28s ease;
+    display: flex; /* keep actions aligned across cards */
+    flex-direction: column;
+    min-height: 220px;
+}
+
+    .job-card:hover,
+    .job-card:focus-within {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(25,35,70,.12);
+        border-color: var(--brand);
+        filter: saturate(1.01);
+    }
+
+/* header */
+.job-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.job-card__title {
+    flex: 1;
+    color: var(--brand);
+    font-weight: 700;
+    text-decoration: none;
+    transition: color .2s ease;
+}
+
+    .job-card__title:hover {
+        color: var(--brand-600);
+    }
+
+/* bullet-ish metadata */
+.job-meta {
+    list-style: none;
+    padding: 8px 0 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #4b5563;
+}
+
+    .job-meta li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .job-meta i {
+        margin-top: 2px;
+        color: #6b72cf;
+    }
+
+/* badges */
+.badge.bg-light {
+    border: 1px solid #e6e7ef;
+    background: #f8f9ff !important;
+}
+
+.badge.bg-secondary-subtle {
+    background: rgba(var(--bs-primary-rgb),.10) !important;
+    color: rgb(var(--bs-primary-rgb)) !important;
+    border: 1px solid rgba(var(--bs-primary-rgb),.18);
+}
+
+/* “more” section and actions pinned to bottom */
+.job-card__more {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    margin-top: .25rem;
+}
+
+.job-card__actions {
+    margin-top: auto;
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+/* unify buttons with brand */
+.job-card .btn-primary {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand-600);
+    --bs-btn-hover-border-color: var(--brand-600);
+}
+
+.job-card .btn-outline-primary {
+    --bs-btn-color: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: rgba(var(--bs-primary-rgb),.08);
+    --bs-btn-hover-border-color: var(--brand-600);
+    --bs-btn-active-bg: rgba(var(--bs-primary-rgb),.12);
+}
+
+.job-card .btn-outline-danger {
+    --bs-btn-hover-bg: rgba(220,53,69,.08);
+}
+
+.job-card .btn {
+    transition: transform .22s ease, box-shadow .22s ease;
+}
+
+    .job-card .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+
+/* Save button “filled” state */
+.js-save[aria-pressed="true"] {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    color: #fff;
+}
+
+    .js-save[aria-pressed="true"]:hover {
+        --bs-btn-bg: var(--brand-600);
+        --bs-btn-border-color: var(--brand-600);
+    }
+
+/* pagination spacing under grid */
+.pagination {
+    margin-top: 14px;
+}
+
+@media (prefers-reduced-motion:reduce) {
+    .job-card, .job-card .btn {
+        transition: none !important;
+    }
+}
+/* Keep text BLUE on hover/active for outline-primary (Save/View) */
+.job-card .btn-outline-primary {
+    --bs-btn-color: var(--brand);
+    --bs-btn-hover-bg: rgba(var(--bs-primary-rgb), .08); /* you already had this */
+    --bs-btn-hover-border-color: var(--brand-600);
+    --bs-btn-hover-color: var(--brand); /* <- keep blue text */
+    --bs-btn-active-bg: rgba(var(--bs-primary-rgb), .12);
+    --bs-btn-active-border-color: var(--brand-600);
+    --bs-btn-active-color: var(--brand); /* <- keep blue text */
+    --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
+
+/* Keep text RED on hover/active for outline-danger (Report) */
+.job-card .btn-outline-danger {
+    --bs-btn-color: #dc3545;
+    --bs-btn-hover-bg: rgba(220,53,69,.08); /* you already had this */
+    --bs-btn-hover-border-color: #dc3545;
+    --bs-btn-hover-color: #dc3545; /* <- keep red text */
+    --bs-btn-active-bg: rgba(220,53,69,.12);
+    --bs-btn-active-border-color: #dc3545;
+    --bs-btn-active-color: #dc3545; /* <- keep red text */
+}
+
+/* Filled Save state (bookmark on) stays white text, but ensure contrast on hover */
+.js-save[aria-pressed="true"] {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand-600);
+    --bs-btn-hover-border-color: var(--brand-600);
+    color: #fff;
+
+}
+
+/* ---- Polished modal visuals (matches screenshot) ---- */
+.jsr-report-modal {
+    border: 0;
+    border-radius: 18px;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 22px 70px rgba(17,17,40,.18);
+}
+
+.jsr-icon-pill {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg,#6d5efc,#4f46e5);
+    color: #fff;
+}
+
+.jsr-input {
+    border-radius: 12px;
+}
+
+    .jsr-input:focus {
+        border-color: #6d5efc !important;
+        box-shadow: 0 0 0 .2rem rgba(109,94,252,.16) !important;
+    }
+
+.jsr-callout {
+    background: #f4f3ff;
+    border: 1px solid #e6e4ff;
+    color: #4a4a7a;
+    border-radius: 12px;
+    padding: .85rem 1rem;
+    font-size: .95rem;
+}
+
+.jsr-counter {
+    position: absolute;
+    right: .25rem;
+    bottom: -1.25rem;
+    font-size: .82rem;
+    color: #8a8fa6;
+}
+
+/* Buttons */
+.jsr-btn-primary {
+    background: linear-gradient(135deg,#6d5efc,#4f46e5);
+    border: 0;
+    border-radius: 12px;
+    padding: .55rem 1rem;
+    font-weight: 600;
+}
+
+    .jsr-btn-primary:hover {
+        filter: brightness(.98);
+    }
+
+.jsr-btn-cancel {
+    background: #f0f1f5;
+    border: 0;
+    border-radius: 12px;
+    padding: .55rem 1rem;
+    font-weight: 600;
+}
+
+/* Reported pill on list rows */
+.btn-report-done {
+    background: #198754;
+    border-color: #198754;
+    color: #fff;
+}
+
+    .btn-report-done:disabled {
+        opacity: .95;
+    }
+

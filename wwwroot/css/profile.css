@@ -1,0 +1,114 @@
+﻿:root {
+    --primary: #4F46E5;
+    --bg: #F7F8FA;
+    --ink: #111827;
+    --muted: #6B7280;
+    --card: #fff;
+    --ring: rgba(79,70,229,.15);
+}
+
+.profile-wrap {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px
+}
+
+@media (max-width: 992px) {
+    .profile-wrap {
+        grid-template-columns: 1fr
+    }
+}
+
+.section-card {
+    background: var(--card);
+    border: 1px solid #E5E7EB;
+    border-radius: 14px;
+    padding: 20px
+}
+
+    .section-card h5 {
+        margin: 0 0 6px;
+        font-weight: 700
+    }
+
+.section-sub {
+    color: var(--muted);
+    margin-bottom: 14px
+}
+
+.section-btn {
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 600
+}
+
+    .section-btn:hover {
+        background: var(--ring)
+    }
+
+.right-panel {
+    position: sticky;
+    top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px
+}
+
+.kpi {
+    background: var(--card);
+    border: 1px solid #E5E7EB;
+    border-radius: 14px;
+    padding: 16px
+}
+
+.meter {
+    height: 10px;
+    background: #EEF2FF;
+    border-radius: 999px;
+    overflow: hidden
+}
+
+    .meter > span {
+        display: block;
+        height: 100%;
+        background: var(--primary);
+        width: 0
+    }
+
+.badge-soft {
+    background: #EEF2FF;
+    color: #3730A3;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-weight: 600;
+    font-size: .85rem
+}
+
+.item {
+    padding: 14px 0;
+    border-top: 1px dashed #E5E7EB
+}
+
+    .item:first-child {
+        border-top: 0
+    }
+
+    .item h6 {
+        margin: 0 0 4px;
+        font-weight: 700
+    }
+
+    .item small {
+        color: var(--muted)
+    }
+/* modal centering & tidy */
+.modal-header .btn-close {
+    outline: none
+}
+
+.modal-dialog-centered .form-control, .modal-dialog-centered .form-select {
+    border-radius: 10px
+}

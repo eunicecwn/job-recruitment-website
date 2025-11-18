@@ -1,0 +1,154 @@
+﻿.access-denied-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.access-denied-card {
+    background: #ffffff;
+    border: 2px solid #667eea;
+    border-radius: 20px;
+    padding: 60px 40px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.1);
+    max-width: 600px;
+    width: 100%;
+}
+
+.company-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+    gap: 15px;
+}
+
+.logo-text {
+    font-size: 1.5rem !important;
+    font-weight: bold !important;
+    color: #333333 !important;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+    .logo-text .text-primary {
+        color: #667eea !important;
+    }
+
+.error-code {
+    font-size: 8rem;
+    font-weight: 900;
+    color: #667eea;
+    margin: 30px 0 20px 0;
+    text-shadow: 2px 2px 4px rgba(102, 126, 234, 0.1);
+    animation: pulse 2s infinite;
+}
+
+.error-title {
+    font-size: 2.5rem;
+    color: #667eea;
+    margin: 20px 0;
+    font-weight: 700;
+}
+
+.error-message {
+    font-size: 1.2rem;
+    color: #667eea;
+    margin: 30px 0;
+    line-height: 1.6;
+}
+
+.home-btn {
+    background: #667eea;
+    border: none;
+    color: #ffffff;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    border-radius: 50px;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+    .home-btn:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+.additional-info {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #667eea;
+    color: #667eea;
+    font-size: 0.95rem;
+}
+
+.contact-link {
+    color: #667eea;
+    text-decoration: none;
+}
+
+    .contact-link:hover {
+        text-decoration: underline;
+    }
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .access-denied-card {
+        padding: 40px 20px;
+        margin: 20px;
+    }
+
+    .error-code {
+        font-size: 5rem;
+    }
+
+    .error-title {
+        font-size: 2rem;
+    }
+
+    .company-logo {
+        width: 60px;
+        height: 60px;
+    }
+
+    .logo-text {
+        font-size: 1.25rem !important;
+    }
+
+    .logo-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
