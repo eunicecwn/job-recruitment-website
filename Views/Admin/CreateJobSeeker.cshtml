@@ -1,0 +1,64 @@
+﻿@model JobRecruitment.Models.JobSeeker
+@{
+    ViewData["Title"] = "Create Job Seeker";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@{
+    // change tl form 25/7
+}
+<form asp-action="CreateJobSeeker" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <!-- Hidden Role field to satisfy model/db -->
+    <input type="hidden" asp-for="Role" value="JobSeeker" />
+
+    <div class="form-group">
+        <label asp-for="Username"></label>
+        <input asp-for="Username" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" class="form-control" type="password" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FullName"></label>
+        <input asp-for="FullName" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Address"></label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ExperienceLevel"></label>
+        <select asp-for="ExperienceLevel" class="form-control">
+            <option value="">-- Select Level --</option>
+            <option>Entry</option>
+            <option>Mid</option>
+            <option>Senior</option>
+        </select>
+    </div>
+
+    <!-- 👇 Add Gender dropdown to fix 'Gender is required' -->
+    <div class="form-group">
+        <label asp-for="Gender"></label>
+        <select asp-for="Gender" class="form-control">
+            <option value="">-- Select Gender --</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Job Seeker</button>
+</form>

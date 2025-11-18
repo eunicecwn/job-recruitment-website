@@ -1,0 +1,242 @@
+﻿@model Demo.Models.AccountViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - HireRightPro</title>
+	<link rel="icon" type="image/png" href="/images/logo.png" />
+    
+    <!--Google reCAPTCHA-->
+	<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <link href="/css/login.css" rel="stylesheet" />
+</head>
+<body class="ap-login-only">
+    <div class="login-container">
+        <!-- LEFT: Form -->
+        <div class="login-form">
+            <div class="ap-admin-badge">
+                <img src="/images/logo.png" alt="HireRightPro Logo" class="ap-logo" />
+            </div>
+            <h2>Welcome Back</h2>
+            <p>Sign in to HireRightPro</p>
+
+            <!-- Alerts -->
+            @if (ViewData.ModelState.IsValid == false)
+            {
+                <div class="alert alert-danger ap-alert full-width-section" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <div asp-validation-summary="All"></div>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(ViewBag.Error))
+            {
+                <div class="alert alert-danger ap-alert full-width-section" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>@ViewBag.Error
+                </div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success ap-alert full-width-section" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                </div>
+            }
+            @if (TempData["Info"] != null)
+            {
+                <div class="alert alert-info ap-alert full-width-section" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>@TempData["Info"]
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger ap-alert full-width-section" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                </div>
+            }
+
+            <!-- Login Form -->
+            <form method="post" asp-controller="Account" asp-action="Login" id="apLoginForm">
+                @Html.AntiForgeryToken()
+                @if (ViewData["ReturnUrl"] != null)
+                {
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                }
+
+                <div class="login-form-container">
+                    <!-- Username -->
+                    <div class="form-floating ap-form-floating">
+                        <input asp-for="Username"
+                               class="form-control ap-form-input"
+                               placeholder="Username"
+                               autocomplete="username"
+                               id="apUsername"
+                               required autofocus />
+                        <label for="apUsername" class="ap-form-label">
+                            <i class="fas fa-user me-2"></i>Username
+                        </label>
+                        <span asp-validation-for="Username" class="text-danger field-validation-error"></span>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-floating ap-form-floating position-relative">
+                        <input asp-for="Password"
+                               type="password"
+                               class="form-control ap-form-input"
+                               placeholder="Password"
+                               autocomplete="current-password"
+                               id="apPassword"
+                               required />
+                        <label for="apPassword" class="ap-form-label">
+                            <i class="fas fa-lock me-2"></i>Password
+                        </label>
+                        <i class="fas fa-eye password-toggle" id="togglePassword" title="Toggle password visibility"></i>
+                        <span asp-validation-for="Password" class="text-danger field-validation-error"></span>
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="remember-me-compact">
+                        <div class="form-check ap-form-check">
+                            <input asp-for="RememberMe" class="form-check-input ap-check-input" id="apRememberMe" />
+                            <label class="form-check-label ap-check-label" for="apRememberMe">Keep me signed in</label>
+                        </div>
+                    </div>
+                    <!--Google reCHAPTCHA-->
+                    <div class="recaptcha-container">
+                        <div class="g-recaptcha" data-sitekey="6LdhAwcrAAAAAL8pgMYvXilrOn7DiaS2VXrhT7xX" data-callback="onRecaptchaCallback"></div>
+                    </div>
+                    <input asp-for="RecaptchaResponse" type="hidden" />
+                    <span asp-validation-for="RecaptchaResponse" class="text-danger field-validation-error"></span>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="ap-btn-signin d-flex align-items-center justify-content-center" id="apLoginBtn">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="loginSpinner"></span>
+                        <i class="fas fa-sign-in-alt me-2" id="loginIcon"></i>
+                        <span id="loginText">Sign In</span>
+                    </button>
+
+                    <!-- Links -->
+                    <div class="login-links">
+                        <a href="@Url.Action("ForgotPassword", "Account")"><i class="fas fa-unlock-alt me-1"></i>Forgot Password?</a>
+                        <a href="@Url.Action("Register", "Account")"><i class="fas fa-user-plus me-1"></i>Create Account</a>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <small class="text-muted">
+                    © @DateTime.Today.Year HireRightPro. All rights reserved. Developed by MEALY Team
+                </small>
+            </div>
+        </div>
+
+        <!-- RIGHT: Illustration -->
+        <div class="login-illustration">
+            <img src="/images/login-illustration3.png" alt="Illustration" />
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            console.log('Login page loaded successfully');
+
+            // Password visibility toggle
+            $('#togglePassword').on('click', function () {
+                const input = $('#apPassword');
+                const type = input.attr('type') === 'password' ? 'text' : 'password';
+                input.attr('type', type);
+                $(this).toggleClass('fa-eye fa-eye-slash');
+            });
+
+            // Form submission with validation - SINGLE HANDLER
+            $('#apLoginForm').on('submit', function (e) {
+                console.log('Form submit event triggered');
+
+                // Remove any existing error states
+                $('.ap-form-input').removeClass('is-invalid');
+                $('.field-validation-error').remove();
+
+                const username = $('#apUsername').val().trim();
+                const password = $('#apPassword').val().trim();
+                const recaptchaResponse = $('#RecaptchaResponse').val();
+
+                let hasErrors = false;
+
+                // Validate username
+                if (!username) {
+                    e.preventDefault();
+                    $('#apUsername').addClass('is-invalid');
+                    $('#apUsername').closest('.form-floating').after('<span class="text-danger field-validation-error">Username is required</span>');
+                    hasErrors = true;
+                }
+
+                // Validate password
+                if (!password) {
+                    e.preventDefault();
+                    $('#apPassword').addClass('is-invalid');
+                    $('#apPassword').closest('.form-floating').after('<span class="text-danger field-validation-error">Password is required</span>');
+                    hasErrors = true;
+                }
+
+                // Validate reCAPTCHA
+                if (!recaptchaResponse) {
+                    e.preventDefault();
+                    if ($('.g-recaptcha').next('.field-validation-error').length === 0) {
+                        $('.g-recaptcha').after('<span class="text-danger field-validation-error">Please complete the reCAPTCHA</span>');
+                    }
+                    hasErrors = true;
+                }
+
+                if (hasErrors) {
+                    return false;
+                }
+
+                console.log('All fields filled, allowing submission');
+
+                // Show loading state if valid
+                $('#loginSpinner').removeClass('d-none');
+                $('#loginIcon').addClass('d-none');
+                $('#loginText').text('Signing in...');
+                $('#apLoginBtn').prop('disabled', true);
+
+                return true;
+            });
+
+            // Remove error state when user types
+            $('#apUsername, #apPassword').on('input', function() {
+                $(this).removeClass('is-invalid');
+                $(this).closest('.form-floating').next('.field-validation-error').remove();
+            });
+
+            // Focus username field
+            $('#apUsername').focus();
+
+            // Auto-dismiss alerts
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 7000);
+        });
+
+        // reCAPTCHA callback function
+        function onRecaptchaCallback(response) {
+            $('#RecaptchaResponse').val(response);
+            $('.g-recaptcha').next('.field-validation-error').remove();
+            console.log('reCAPTCHA completed');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1057 @@
+﻿@model X.PagedList.IPagedList<JobRecruitment.Models.Application>
+@using X.PagedList.Mvc.Core;
+@using X.PagedList;
+@using JobRecruitment.Models
+@{
+    ViewBag.Title = "Check Applications";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    var statuses = Enum.GetValues(typeof(ApplicationStatusEnum)).Cast<ApplicationStatusEnum>();
+    var selectedStatus = ViewBag.SelectedStatus as ApplicationStatusEnum?;
+    var jobs = ViewBag.Jobs as IEnumerable<Job> ?? new List<Job>();
+    var selectedJobId = ViewBag.SelectedJobId as string;
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+	<div id="errorBox"
+		 style="display: block; background: rgba(0,0,0,0.6);
+	                position: fixed; inset: 0; z-index: 9999;
+	                display: flex; justify-content: center; align-items: center;">
+
+		<div style="background: #f87171; color: white; border-radius: 12px;
+	                    padding: 25px 30px; text-align: center; width: 320px;
+	                    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+	                    animation: popIn 0.3s ease-out;">
+
+			<div style="font-size: 50px; margin-bottom: 15px;">😟</div>
+			<h2 style="margin: 0 0 10px; font-size: 1.5rem;">
+				@(TempData["ErrorTitle"] ?? "Oops!")
+			</h2>
+			<p style="font-size: 0.95rem; margin-bottom: 20px;">
+				@TempData["ErrorMessage"]
+			</p>
+
+			<button onclick="document.getElementById('errorBox').style.display='none'"
+					style="background: white; color: #b91c1c; border: none;
+	                           padding: 10px 25px; border-radius: 50px;
+	                           font-size: 1rem; cursor: pointer;">
+				OK
+			</button>
+		</div>
+	</div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+	<link rel="stylesheet" href="~/css/MessageBoxes.css">
+	<div class="success-toast">
+		<div class="success-card">
+			<div class="icon">🥳</div>
+			<h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+			<p>@TempData["SuccessMessage"]</p>
+		</div>
+	</div>
+}
+
+<style>
+/* Prevent outline buttons from filling on active */
+.btn-outline-primary.active,
+.btn-outline-secondary.active {
+    background-color: transparent !important;
+    color: inherit !important;       /* keep original text color */
+    border-width: 2px;              /* make border thicker for emphasis */
+}
+    /* Pagination styling */
+     /* Pagination styling */
+    .pagination-container {
+        margin-top: 1.5rem;
+    }
+    
+    .page-item {
+        margin: 0 0.2rem;
+    }
+    
+    .page-link {
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link:hover {
+        background-color: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary-dark);
+    }
+    
+    .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+    
+    .page-item.disabled .page-link {
+        color: #6c757d;
+        pointer-events: none;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
+</style>
+
+<input type="hidden" id="resumeUrl" value="" />
+
+<div class="container">
+    <!-- Main Card - Now fills screen -->
+    <div class="card applications-card">
+        <!-- Card Body with flex layout -->
+        <div class="card-body">
+            <!-- Filter Section -->
+            <div class="filter-panel mb-4">
+                <h3 class="mb-3">Filter Applications</h3>
+
+                <!-- Search -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="input-group">
+                            <input type="text" id="combinedSearch" class="form-control" 
+                                   placeholder="Search by name, email, or job title...">
+                            <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Combined Status and Job Filters -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <!-- Status Filter Buttons -->
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="small fw-bold text-muted align-self-center">Status:</span>
+                            <a class="btn btn-sm btn-outline-secondary @(selectedStatus == null ? "active" : "") ajax-filter"
+                               data-status="" data-job-id="@selectedJobId" href="javascript:void(0);">All</a>
+
+                            @foreach (var status in statuses)
+                            {
+                                <a class="btn btn-sm btn-outline-primary @(selectedStatus == status ? "active" : "") ajax-filter"
+                                   data-status="@status" data-job-id="@selectedJobId" href="javascript:void(0);">
+                                    @status
+                                </a>
+                            }
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="vr"></div>
+
+                        <!-- Job Filter Dropdown -->
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small fw-bold text-muted">Job:</span>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1"
+                                        type="button" data-bs-toggle="dropdown" id="jobDropdownButton">
+                                    @if (string.IsNullOrEmpty(selectedJobId))
+                                    {
+                                        <text>All Jobs</text>
+                                    }
+                                    else
+                                    {
+                                        var selectedJob = jobs.FirstOrDefault(j => j.Id == selectedJobId);
+                                        @(selectedJob?.Title ?? "Selected Job")
+                                    }
+                                </button>
+                                <ul class="dropdown-menu" style="max-height: 300px; overflow-y: auto;">
+                                    <li>
+                                        <a class="dropdown-item ajax-job-filter" href="javascript:void(0);" data-job-id="">
+                                            All Jobs
+                                        </a>
+                                    </li>
+                                    @foreach (var job in jobs)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item ajax-job-filter" href="javascript:void(0);"
+                                               data-job-id="@job.Id">
+                                                @job.Title
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clear All Filters Button -->
+                    <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" id="clearAllFilters">
+                        <i class="bi bi-x-circle"></i> Clear Filters
+                    </button>
+                </div>
+
+                <!-- Quick Stats -->
+               <div class="row">
+                    <div class="col">
+                        <small class="text-muted" id="resultsCount">
+                        Showing @Model.Count() applications
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Table Container -->
+            <div id="applicationsTableContainer" class="table-container">
+                <partial name="_ApplicationListPartialView" model="Model" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resumeModal" tabindex="-1" aria-labelledby="resumeModalLabel">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resumeModalLabel">Resume Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; max-height: 70vh;">
+                <!-- PDF.js container -->
+                <div id="pdfViewerContainer" style="overflow: auto;">
+                    <canvas id="pdfCanvas"></canvas>
+                    <div id="pdfControls" class="d-flex justify-content-center align-items-center mt-3">
+                        <button class="btn btn-sm btn-outline-secondary me-2" id="prevPage">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </button>
+                        <span class="mx-3" id="pageInfo">Page 1 of 1</span>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" id="nextPage">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <div class="ms-3">
+                            <label for="zoomLevel" class="form-label me-2">Zoom:</label>
+                            <select id="zoomLevel" class="form-select form-select-sm" style="width: 100px;">
+                                <option value="0.5">50%</option>
+                                <option value="0.75">75%</option>
+                                <option value="1" selected>100%</option>
+                                <option value="1.25">125%</option>
+                                <option value="1.5">150%</option>
+                                <option value="2">200%</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="downloadPdfLink" href="#" class="btn btn-primary">
+                    <i class="bi bi-download"></i> Download
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.PageCount > 1)
+{
+    <div class="pagination-container mt-3 d-flex justify-content-center">
+        @Html.PagedListPager(Model, page => Url.Action("CheckApplications", new
+        {
+            page,
+            status = ViewBag.SelectedStatus,
+            jobId = ViewBag.SelectedJobId,
+            sortColumn = ViewBag.SortColumn,
+            sortDirection = ViewBag.SortDirection
+        }), new PagedListRenderOptions {
+            LiElementClasses = new string[] { "page-item" },
+            PageClasses = new string[] { "page-link" },
+            ActiveLiElementClass = "active",
+            DisplayLinkToFirstPage = PagedListDisplayMode.IfNeeded,
+            DisplayLinkToLastPage = PagedListDisplayMode.IfNeeded,
+            DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+            DisplayLinkToNextPage = PagedListDisplayMode.Always,
+            MaximumPageNumbersToDisplay = 5
+        })
+    </div>
+}
+
+<script>
+    // Auto-dismiss alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert.classList.contains('show')) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 2000);
+        });
+    });
+</script>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
+    <script>
+// PDF.js variables
+let pdfDoc = null;
+let pageNum = 1;
+let pageRendering = false;
+let pageNumPending = null;
+let scale = 1;
+let currentResumeUrl = '';
+
+// Global variables for filtering
+let currentPage = @(Model?.PageNumber ?? 1);
+let currentStatus = '@(selectedStatus?.ToString() ?? "")';
+let currentJobId = '@(selectedJobId ?? "")';
+let currentSearch = '';
+let isRequestPending = false;
+let pdfViewerInitialized = false;
+let currentPdfRenderTask = null;
+let currentPdfUrl = '';
+let currentSortColumn = '@(ViewBag.SortColumn ?? "AppliedDate")';
+let currentSortDirection = '@(ViewBag.SortDirection ?? "Descending")';
+
+// Modal instance
+let resumeModal = null;
+
+function initializePdfViewer() {
+    if (pdfViewerInitialized) {
+        return;
+    }
+    
+    // Set the worker path for PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    pdfViewerInitialized = true;
+    console.log('PDF viewer initialized successfully');
+}
+
+function validatePdfUrl(url) {
+    // Check if URL is valid
+    if (!url || typeof url !== 'string') {
+        return false;
+    }
+    
+    // Check if it's a relative URL
+    if (url.startsWith('/')) {
+        return true; // Relative URLs are fine
+    }
+    
+    // Check if it's a valid HTTP/HTTPS URL
+    try {
+        const parsedUrl = new URL(url);
+        return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
+
+function loadPdf(url) {
+    if (!validatePdfUrl(url)) {
+        console.error('Invalid PDF URL:', url);
+        showPdfError('Invalid resume URL');
+        return;
+    }
+
+    if (!url) {
+        console.warn('No URL provided for PDF loading');
+        showPdfError('No resume URL provided');
+        return;
+    }
+    
+    // Check if we're already viewing this PDF
+    if (currentPdfUrl === url) {
+        console.log('PDF already loaded:', url);
+        return;
+    }
+    
+    currentPdfUrl = url;
+    
+    const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+    if (!pdfViewerContainer) {
+        console.error('PDF viewer container not found');
+        return;
+    }
+    
+    // Show loading state
+    pdfViewerContainer.innerHTML = '<div class="text-center p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading resume...</p></div>';
+    
+    // Clean up previous PDF
+    cleanupPdfViewer();
+    
+    const loadingTask = pdfjsLib.getDocument({
+        url: url,
+        withCredentials: false // Important for CORS issues
+    });
+    
+    loadingTask.promise.then(function(pdf) {
+        console.log('PDF loaded successfully');
+        pdfDoc = pdf;
+        
+        // Clear container and create canvas
+        pdfViewerContainer.innerHTML = '';
+        const canvas = document.createElement('canvas');
+        canvas.id = 'pdfCanvas';
+        canvas.className = 'border';
+        pdfViewerContainer.appendChild(canvas);
+        
+        // Render the first page
+        pageNum = 1;
+        renderPage(pageNum);
+        
+    }).catch(function(error) {
+        console.error('Error loading PDF:', error);
+        
+        // Check if it's a 404 error
+        if (error.name === 'MissingPDFException' || error.message.includes('404')) {
+            showPdfError('Resume file not found. It may have been moved or deleted.');
+        } else {
+            showPdfError('Error loading resume. Please try again.');
+        }
+    });
+
+    const resizeCanvas = () => {
+        const canvas = document.getElementById('pdfCanvas');
+        if (canvas && pdfDoc) {
+            const container = document.getElementById('pdfViewerContainer');
+            const containerWidth = container.clientWidth;
+            
+            // Adjust canvas width to fit container but maintain aspect ratio
+            if (canvas.width > containerWidth) {
+                const ratio = containerWidth / canvas.width;
+                canvas.style.width = containerWidth + 'px';
+                canvas.style.height = (canvas.height * ratio) + 'px';
+            }
+        }
+    };
+    
+    // Call initially and on window resize
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Cleanup event listener when modal is closed
+    $('#resumeModal').on('hidden.bs.modal', function() {
+        window.removeEventListener('resize', resizeCanvas);
+    });
+}
+
+function showPdfError(message) {
+    const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+    if (pdfViewerContainer) {
+        pdfViewerContainer.innerHTML = `
+            <div class="alert alert-danger text-center">
+                <i class="bi bi-exclamation-triangle"></i>
+                ${message}
+            </div>
+        `;
+    }
+}
+
+function renderPage(num) {
+    if (!pdfDoc) return;
+    
+    // Cancel any ongoing render task
+    if (currentPdfRenderTask && !currentPdfRenderTask._completed) {
+        currentPdfRenderTask.cancel();
+    }
+    
+    pageRendering = true;
+
+    pdfDoc.getPage(num).then(function(page) {
+        const viewport = page.getViewport({ scale: scale });
+        const canvas = document.getElementById('pdfCanvas');
+        if (!canvas) return;
+    
+        const ctx = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+
+        currentPdfRenderTask = page.render(renderContext);
+
+        currentPdfRenderTask.promise.then(function() {
+            pageRendering = false;
+        
+            // Add navigation controls if they don't exist
+            const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+            if (!document.getElementById('pdfControls')) {
+                const controlsHtml = `
+                    <div id="pdfControls" class="d-flex justify-content-center align-items-center mt-3">
+                        <button class="btn btn-sm btn-outline-secondary me-2" id="prevPage">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </button>
+                        <span class="mx-3" id="pageInfo">Page ${num} of ${pdfDoc.numPages}</span>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" id="nextPage">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <div class="ms-3">
+                            <label for="zoomLevel" class="form-label me-2">Zoom:</label>
+                            <select id="zoomLevel" class="form-select form-select-sm" style="width: 100px;">
+                                <option value="0.5">50%</option>
+                                <option value="0.75">75%</option>
+                                <option value="1" selected>100%</option>
+                                <option value="1.25">125%</option>
+                                <option value="1.5">150%</option>
+                                <option value="2">200%</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                pdfViewerContainer.insertAdjacentHTML('beforeend', controlsHtml);
+                attachPdfControls();
+            } else {
+                // Update page info if controls already exist
+                const pageInfo = document.getElementById('pageInfo');
+                if (pageInfo) pageInfo.textContent = `Page ${num} of ${pdfDoc.numPages}`;
+            }
+
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+        }).catch(function(error) {
+            console.log('Render task cancelled or failed:', error);
+            pageRendering = false;
+            // Try to render again if it failed
+            if (!pageRendering) {
+                renderPage(num);
+            }
+        });
+    });
+}
+
+function cleanupPdfViewer() {
+    // Clean up PDF document
+    if (pdfDoc) {
+        pdfDoc.destroy();
+        pdfDoc = null;
+    }
+    
+    // Reset PDF variables
+    pageNum = 1;
+    pageRendering = false;
+    pageNumPending = null;
+    currentPdfUrl = '';
+    
+    // Clear the container
+    const pdfViewerContainer = document.getElementById('pdfViewerContainer');
+    if (pdfViewerContainer) {
+        pdfViewerContainer.innerHTML = '';
+    }
+}
+
+function modalShowHandler() {
+    const resumeUrl = document.getElementById('resumeUrl').value;
+    console.log('Modal shown, loading PDF:', resumeUrl);
+    
+    // Set download button href
+    const downloadBtn = document.getElementById('downloadPdfLink');
+    if (downloadBtn && resumeUrl) {
+        downloadBtn.href = resumeUrl.replace('ViewResume', 'DownloadResume');
+    }
+    
+    loadPdf(resumeUrl);
+}
+
+function attachPdfControls() {
+    const prevPage = document.getElementById('prevPage');
+    const nextPage = document.getElementById('nextPage');
+    const zoomLevel = document.getElementById('zoomLevel');
+
+    if (prevPage) {
+        prevPage.onclick = onPrevPage;
+    }
+    if (nextPage) {
+        nextPage.onclick = onNextPage;
+    }
+    if (zoomLevel) {
+        zoomLevel.onchange = function() {
+            scale = parseFloat(this.value);
+            renderPage(pageNum);
+        };
+    }
+}
+
+function onPrevPage() {
+    if (pageNum <= 1 || !pdfDoc) return;
+    pageNum--;
+    queueRenderPage(pageNum);
+}
+
+function onNextPage() {
+    if (pageNum >= pdfDoc.numPages || !pdfDoc) return;
+    pageNum++;
+    queueRenderPage(pageNum);
+}
+
+function queueRenderPage(num) {
+    if (pageRendering) {
+        pageNumPending = num;
+    } else {
+        renderPage(num);
+    }
+}
+
+function markAsReviewed(applicationId, event) {
+    console.log('Marking as reviewed:', applicationId);
+    
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const button = event.currentTarget;
+    const resumeUrl = button.getAttribute('data-resume-url');
+    
+    // If no resume URL, show error and return
+    if (!resumeUrl) {
+        showAlert('No resume file available for this application', 'warning');
+        return false;
+    }
+    
+    // Set the resume URL in the hidden field
+    document.getElementById('resumeUrl').value = resumeUrl;
+    
+    // First open the modal, then update status
+if (initializeModal() && resumeModal) {
+    resumeModal.show();
+
+    // Set download link immediately
+    const downloadBtn = document.getElementById('downloadPdfLink');
+    if (downloadBtn && resumeUrl) {
+        downloadBtn.href = resumeUrl.replace('ViewResume', 'DownloadResume');
+    }
+
+    // Load PDF immediately (don't wait for status update)
+    loadPdf(resumeUrl);
+}
+
+// Make the fetch request for status update
+fetch('/Application/UpdateStatusToReviewed', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({
+        id: applicationId
+    })
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+})
+.then(data => {
+    if (data.success) {
+    console.log('Status updated successfully');
+    updateApplications();
+}
+
+})
+.catch(error => {
+    console.error('Error updating status:', error);
+    // no alert here
+});
+
+    
+    return false;
+}
+
+function initializeModal() {
+    const modalElement = document.getElementById('resumeModal');
+    if (modalElement) {
+        // Only create modal instance if it doesn't exist
+        if (!resumeModal) {
+            resumeModal = new bootstrap.Modal(modalElement);
+            
+            // Remove any existing event listeners first
+            $(modalElement).off('show.bs.modal');
+            $(modalElement).off('hidden.bs.modal');
+            
+            // Add new event listeners
+            $(modalElement).on('show.bs.modal', modalShowHandler);
+            $(modalElement).on('hidden.bs.modal', cleanupPdfViewer);
+        }
+        return true;
+    }
+    return false;
+}
+
+// Function to update results count text
+// Update results count text - ENHANCED VERSION
+function updateResultsCount() {
+    const count = $('#applicationsTableContainer table tbody tr').length;
+    let text = `Showing ${count} applications`;
+    
+    // Add job filter info
+    if (currentJobId) {
+        // Get the selected job title from the dropdown button
+        const jobTitle = $('#jobDropdownButton').text().trim();
+        text += ` for "${jobTitle}"`;
+    }
+    
+    // Add status filter info
+    if (currentStatus) {
+        text += ` with status: ${currentStatus}`;
+    }
+    
+    // Add search filter info
+    if (currentSearch) {
+        text += ` containing "${currentSearch}"`;
+    }
+    
+    $('#resultsCount').text(text);
+}
+
+// Function to update applications via AJAX
+function updateApplications() {
+    if (isRequestPending) return;
+
+    isRequestPending = true;
+    
+    // Show loading indicator (add this to your HTML if needed)
+    // $('#loadingIndicator').removeClass('d-none');
+
+    const params = {
+        status: currentStatus,
+        jobId: currentJobId,
+        page: currentPage,
+        searchTerm: currentSearch,
+        sortColumn: currentSortColumn,
+        sortDirection: currentSortDirection
+    };
+
+    // Remove empty parameters
+    Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key];
+        }
+    });
+
+    $.ajax({
+        url: '@Url.Action("FilterApplications", "Application")',
+        type: 'GET',
+        data: params,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(data) {
+            $('#applicationsTableContainer').html(data);
+            updateResultsCount();
+            updateActiveFilterButtons();
+            updateSortIndicators();
+            updatePaginationActiveState();
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching applications:', error);
+            $('#applicationsTableContainer').html(
+                '<div class="alert alert-danger">Error loading applications. Please try again.</div>'
+            );
+        },
+        complete: function() {
+            isRequestPending = false;
+            // Hide loading indicator
+            // $('#loadingIndicator').addClass('d-none');
+        }
+    });
+}
+
+function updatePaginationActiveState() {
+    // Remove active class from all pagination items
+    $('.page-item').removeClass('active');
+    
+    // Add active class to the current page
+    $(`.page-item a[data-page="${currentPage}"]`).parent().addClass('active');
+    
+    // If no page found with data-page attribute, try to find by text content
+    if ($('.page-item.active').length === 0) {
+        $('.pagination-container .page-link').each(function() {
+            const text = $(this).text().trim();
+            const pageNumFromText = parseInt(text);
+            if (!isNaN(pageNumFromText) && pageNumFromText === currentPage) {
+                $(this).parent().addClass('active');
+            }
+        });
+    }
+}
+
+// Update active state of filter buttons
+function updateActiveFilterButtons() {
+    $('.ajax-filter').removeClass('active');
+    $(`.ajax-filter[data-status="${currentStatus}"]`).addClass('active');
+    
+    // Also update the job dropdown button text
+    const jobFilter = $('.ajax-job-filter[data-job-id="' + currentJobId + '"]');
+    if (jobFilter.length) {
+        $('#jobDropdownButton').html(jobFilter.text());
+    } else {
+        $('#jobDropdownButton').html('All Jobs');
+    }
+}
+
+// Function to show alert messages
+function showAlert(message, type) {
+    // Handle undefined or null messages
+    if (!message || message === 'undefined') {
+        message = type === 'success' ? 'Operation completed successfully.' : 'An error occurred.';
+    }
+
+    // Remove any existing alerts
+    $('.alert-dismissible').alert('close');
+
+    // Create new alert - use proper escaping for the message
+    const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi ${iconClass}"></i> 
+            ${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+
+    // Prepend to container or body
+    $('.container').prepend(alertHtml);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = $('.alert-dismissible').first();
+        if (alert.length) {
+            try {
+                const bsAlert = new bootstrap.Alert(alert[0]);
+                bsAlert.close();
+            } catch (error) {
+                alert.remove();
+            }
+        }
+    }, 5000);
+}
+
+// Handle sorting
+function handleSort(column) {
+    if (currentSortColumn === column) {
+        // Toggle direction if same column
+        currentSortDirection = currentSortDirection === 'Ascending' ? 'Descending' : 'Ascending';
+    } else {
+        // New column, default to descending
+        currentSortColumn = column;
+        currentSortDirection = 'Descending';
+    }
+    
+    currentPage = 1; // Reset to first page when sorting
+    updateApplications();
+}
+
+// Update sort indicators in table headers
+function updateSortIndicators() {
+    $('.sortable-header').removeClass('active asc desc');
+    
+    const activeHeader = $(`.sortable-header[data-sort-column="${currentSortColumn}"]`);
+    if (activeHeader.length) {
+        activeHeader.addClass('active');
+        activeHeader.addClass(currentSortDirection.toLowerCase() === 'ascending' ? 'asc' : 'desc');
+    }
+}
+
+// Handle pagination clicks
+function handlePaginationClick(link) {
+    let page = $(link).data('page');
+    
+    // If no data-page attribute, try to extract from text
+    if (!page) {
+        const text = $(link).text().trim();
+        page = parseInt(text);
+    }
+    
+    // If still no page, try to extract from href
+    if (!page || isNaN(page)) {
+        const href = $(link).attr('href');
+        if (href) {
+            const pageMatch = href.match(/page=(\d+)/);
+            if (pageMatch && pageMatch[1]) {
+                page = parseInt(pageMatch[1]);
+            }
+        }
+    }
+    
+    if (page && !isNaN(page)) {
+        currentPage = parseInt(page);
+        updateApplications();
+        
+        // Update active state immediately for better UX
+        updatePaginationActiveState();
+    }
+    return false; // Prevent default link behavior
+}
+
+function openResumeModal(resumeUrl) {
+    if (initializeModal() && resumeModal) {
+        // Set download link
+        const downloadBtn = document.getElementById('downloadPdfLink');
+        if (downloadBtn && resumeUrl) {
+            downloadBtn.href = resumeUrl.replace('ViewResume', 'DownloadResume');
+        }
+        
+        // Show modal
+        resumeModal.show();
+        
+        // Load PDF after a short delay to ensure modal is visible
+        setTimeout(() => {
+            if (validatePdfUrl(resumeUrl)) {
+                loadPdf(resumeUrl);
+            } else {
+                showPdfError('Invalid resume URL');
+            }
+        }, 100);
+    }
+}
+
+function scheduleInterview(applicationId) {
+    // Open the calendar page with the specific application
+    window.location.href = '/Application/ScheduleInterview?applicationId=' + applicationId;
+}
+
+// Initialize everything when document is ready
+$(document).ready(function() {
+    console.log('Document ready');
+    initializePdfViewer();
+    
+    // Initialize sort indicators
+    updateSortIndicators();
+    
+    // Initialize pagination active state
+    updatePaginationActiveState();
+    
+    // Event handlers for sorting
+    $(document).on('click', '.sortable-header', function() {
+        const column = $(this).data('sort-column');
+        handleSort(column);
+    });
+
+// Event handlers for status filter buttons
+$(document).on('click', '.ajax-filter', function() {
+    currentStatus = $(this).data('status');
+    currentJobId = $(this).data('job-id') || ''; // This should now be empty for the "All" button
+    currentPage = 1;
+    updateApplications();
+    
+    // Update active state
+    $('.ajax-filter').removeClass('active');
+    $(this).addClass('active');
+});
+
+// Toggle dropdown manually
+$('#jobDropdownButton').on('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    $('.dropdown-menu').toggleClass('show');
+});
+
+// Close dropdown when clicking elsewhere
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('.dropdown').length) {
+        $('.dropdown-menu').removeClass('show');
+    }
+});
+
+$(document).on('click', '.ajax-job-filter', function() {
+        currentJobId = $(this).data('job-id') || '';
+        currentPage = 1;
+        updateApplications();
+
+        // Update dropdown button text
+        const buttonText = currentJobId ? $(this).text() : 'All Jobs';
+        $('#jobDropdownButton').html(buttonText);
+    });
+
+
+    // Clear search button
+    $(document).on('click', '#clearSearch', function() {
+        $('#combinedSearch').val('');
+        currentSearch = '';
+        currentPage = 1;
+        updateApplications();
+    });
+
+    // Clear all filters button
+    $(document).on('click', '#clearAllFilters', function() {
+        currentStatus = '';
+        currentJobId = '';
+        currentSearch = '';
+        currentPage = 1;
+        $('#combinedSearch').val('');
+        $('#jobDropdownButton').html('All Jobs');
+        
+        // Update active state of buttons
+        $('.ajax-filter').removeClass('active');
+        $('.ajax-filter[data-status=""]').addClass('active');
+        
+        updateApplications();
+    });
+
+    // Search with debouncing
+    let searchTimeout;
+    $(document).on('input', '#combinedSearch', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            currentSearch = $('#combinedSearch').val();
+            currentPage = 1;
+            updateApplications();
+        }, 500);
+    });
+
+    // Resume preview buttons
+    $(document).on('click', '.resume-preview-btn, button[data-resume-url]', function(e) {
+        const applicationId = $(this).data('application-id');
+        const resumeUrl = $(this).data('resume-url');
+        
+        if (applicationId && resumeUrl) {
+            markAsReviewed(applicationId, e);
+        } else if (resumeUrl) {
+            // Just open the modal without updating status
+            document.getElementById('resumeUrl').value = resumeUrl;
+            openResumeModal(resumeUrl);
+            e.preventDefault();
+        }
+    });
+
+    // Pagination event handler
+    $(document).on('click', '.pagination-container .page-link', function(e) {
+        e.preventDefault();
+        handlePaginationClick(this);
+    });
+
+    // Status update forms
+    $(document).on('submit', 'form[action*="UpdateStatus"]', function(e) {
+        e.preventDefault();
+        const form = $(this);
+    
+        $.ajax({
+            url: form.attr('action'),
+            type: form.attr('method'),
+            data: form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    showAlert(response.message, 'success');
+                    // Refresh the applications list after status change
+                    updateApplications();
+                } else {
+                    showAlert(response.message, 'danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating status:', error);
+                showAlert('Error updating status. Please try again.', 'danger');
+            }
+        });
+    });
+});
+</script>
+}

@@ -1,0 +1,79 @@
+﻿@model JobRecruitment.Models.JobSeekerViewModels.JobSeekerEditVm.PreferenceRow
+@{
+    ViewData["Title"] = "Preferences";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string[] selected = (Model?.PreferredWorkTypes ?? "")
+        .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(s => s.Trim())
+        .ToArray();
+
+    bool IsChecked(string v) => selected.Contains(v, StringComparer.OrdinalIgnoreCase);
+}
+@await Html.PartialAsync("_FlashMessages")
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 fw-bold text-dark m-0">Job Preferences</h1>
+        <small class="text-muted">Tell us what you’re looking for so we can tailor results.</small>
+    </div>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/Profile/JobSeeker">Profile</a></li>
+            <li class="breadcrumb-item active">Preferences</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="SavePreferences" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Availability</label>
+                    <select asp-for="Availability" class="form-select">
+                        <option value="">-- Select --</option>
+                        <option value="Immediate">Immediate</option>
+                        <option value="1 Month">1 Month</option>
+                        <option value="2 Months">2 Months</option>
+                        <option value="3+ Months">3+ Months</option>
+                    </select>
+                </div>
+
+                <div class="col-md-8">
+                    <label class="form-label d-block">Preferred work types</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach (var wt in new[] { "Full Time", "Part Time", "Contract", "Internship", "Freelance", "Onsite", "Hybrid", "Remote" })
+                        {
+                            var id = "wt-" + wt.Replace(" ", "");
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="PreferredWorkTypes" id="@id" value="@wt" @(IsChecked(wt) ? "checked" : "") />
+                                <label class="form-check-label" for="@id">@wt</label>
+                            </div>
+                        }
+                    </div>
+                    <small class="text-muted">You can pick multiple types.</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Preferred locations</label>
+                    <input class="form-control" name="PreferredLocations" value="@Model?.PreferredLocations" placeholder="e.g., Kuala Lumpur; Selangor" />
+                    <small class="text-muted">Use commas or semicolons for multiple locations.</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Target salary (RM)</label>
+                    <input type="number" step="0.01" class="form-control" name="SalaryExpectation" value="@(Model?.SalaryExpectation?.ToString("0.##") ?? "")" />
+                </div>
+
+                <div class="col-12 d-flex gap-2 mt-2">
+                    <a href="/Profile/JobSeeker" class="btn btn-outline-secondary">Back to Profile</a>
+                    <button type="submit" class="btn btn-primary">Save Preferences</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

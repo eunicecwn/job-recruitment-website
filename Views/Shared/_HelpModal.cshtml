@@ -1,0 +1,958 @@
+﻿<!-- PART 1: Updated Help Modal (without AI chat tab) -->
+<!-- File: Views/Shared/_HelpModal.cshtml -->
+
+<style>
+    :root {
+        --primary: #4F46E5;
+        --primary-light: #6366F1;
+        --primary-dark: #4338CA;
+        --secondary: #10B981;
+        --dark: #111827;
+        --light: #F9FAFB;
+        --gray: #6B7280;
+        --light-gray: #E5E7EB;
+        --bg-light: #F3F4F6;
+    }
+
+    .help-modal .modal-dialog {
+        max-width: 900px;
+        margin: 2rem auto;
+    }
+
+    .help-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        max-height: 90vh;
+        overflow: hidden;
+    }
+
+    .help-modal .modal-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        border: none;
+        padding: 1.5rem 2rem;
+        position: relative;
+    }
+
+        .help-modal .modal-header h4 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+    .help-modal .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+    }
+
+        .help-modal .btn-close:hover {
+            opacity: 1;
+        }
+
+    .help-modal .modal-body {
+        padding: 0;
+        max-height: 70vh;
+        overflow: hidden;
+    }
+
+    /* Tab Navigation */
+    .help-tabs {
+        display: flex;
+        background: var(--bg-light);
+        border-bottom: 1px solid var(--light-gray);
+        margin: 0;
+        padding: 0;
+    }
+
+    .help-tab {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        color: var(--gray);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+    }
+
+        .help-tab:hover {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+        }
+
+        .help-tab.active {
+            background: white;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+    /* Tab Content */
+    .help-content {
+        height: 60vh;
+        overflow-y: auto;
+        padding: 2rem;
+    }
+
+        .help-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .help-content::-webkit-scrollbar-track {
+            background: var(--light);
+        }
+
+        .help-content::-webkit-scrollbar-thumb {
+            background: var(--light-gray);
+            border-radius: 3px;
+        }
+
+            .help-content::-webkit-scrollbar-thumb:hover {
+                background: var(--gray);
+            }
+
+    .tab-pane {
+        display: none;
+    }
+
+        .tab-pane.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+    .fade-in {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+        .fade-in.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    /* User Guide Styles */
+    .guide-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+        .guide-section:last-child {
+            border-bottom: none;
+        }
+
+    .guide-title {
+        color: var(--primary);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .guide-steps {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .guide-step {
+        display: flex;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--light);
+        border-radius: 8px;
+    }
+
+    .step-number {
+        background: var(--primary);
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+
+    .step-content h6 {
+        margin: 0 0 0.5rem 0;
+        color: var(--dark);
+        font-weight: 600;
+    }
+
+    .step-content p {
+        margin: 0;
+        color: var(--gray);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* Policy Styles */
+    .policy-section {
+        margin-bottom: 2rem;
+    }
+
+    .policy-title {
+        color: var(--dark);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .policy-content {
+        color: var(--gray);
+        line-height: 1.6;
+    }
+
+    .policy-list {
+        padding-left: 1.5rem;
+    }
+
+        .policy-list li {
+            margin-bottom: 0.5rem;
+        }
+
+    /* Alert Styles */
+    .help-alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid;
+    }
+
+        .help-alert.info {
+            background: #EBF8FF;
+            border-color: #3182CE;
+            color: #2A4A5B;
+        }
+
+        .help-alert.warning {
+            background: #FFFBEB;
+            border-color: #D69E2E;
+            color: #744210;
+        }
+
+        .help-alert.success {
+            background: #F0FFF4;
+            border-color: var(--secondary);
+            color: #22543D;
+        }
+
+    /* Chatbot Button Styles */
+    .chatbot-btn {
+        background: linear-gradient(135deg, var(--secondary) 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 12px;
+        width: 100%;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+        .chatbot-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, #059669 0%, var(--secondary) 100%);
+        }
+
+        .chatbot-btn i {
+            font-size: 1.2rem;
+            margin-right: 0.75rem;
+        }
+
+    .sidebar-collapsed .chatbot-btn {
+        padding: 0.75rem 0.5rem;
+        margin: 0.5rem auto;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .sidebar-collapsed .chatbot-btn i {
+            margin: 0;
+        }
+
+        .sidebar-collapsed .chatbot-btn .btn-text {
+            display: none;
+        }
+
+    /* Chat Window Styles */
+    .chat-window {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 400px;
+        height: 600px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        display: none;
+        flex-direction: column;
+        z-index: 1050;
+        overflow: hidden;
+    }
+
+        .chat-window.show {
+            display: flex;
+            animation: slideInUp 0.3s ease;
+        }
+
+    .slide-up {
+        transform: translateY(100%);
+        opacity: 0;
+        transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    }
+
+        .slide-up.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+    .chat-header {
+        background: linear-gradient(135deg, var(--secondary) 0%, #059669 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .chat-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+    .chat-close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+        .chat-close-btn:hover {
+            opacity: 1;
+        }
+
+    .chat-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        background: var(--light);
+    }
+
+    .chat-message {
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+
+    .chat-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+        .chat-avatar.bot {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .chat-avatar.user {
+            background: var(--primary);
+            color: white;
+        }
+
+    .chat-bubble {
+        max-width: 70%;
+        padding: 0.75rem 1rem;
+        border-radius: 16px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+        .chat-bubble.bot {
+            background: white;
+            color: var(--dark);
+            border: 1px solid var(--light-gray);
+        }
+
+        .chat-bubble.user {
+            background: var(--primary);
+            color: white;
+        }
+
+    .chat-input-container {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid var(--light-gray);
+    }
+
+    .chat-input-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: 1px solid var(--light-gray);
+        border-radius: 20px;
+        padding: 0.75rem 1rem;
+        resize: none;
+        max-height: 80px;
+        font-size: 0.9rem;
+    }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+    .chat-send-btn {
+        background: var(--secondary);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .chat-send-btn:hover:not(:disabled) {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .typing-indicator {
+        display: none;
+        padding: 0.5rem 1rem;
+        font-style: italic;
+        color: var(--gray);
+        font-size: 0.85rem;
+    }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+    .quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0 1rem 1rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-action {
+        background: white;
+        border: 1px solid var(--light-gray);
+        border-radius: 16px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        color: var(--gray);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .quick-action:hover {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+    /* Mobile Responsiveness */
+    .chat-window {
+        width: 400px;
+        height: 600px;
+        border-radius: 12px;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #fff;
+    }
+
+        .chat-window.mobile {
+            bottom: 0;
+            right: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+        }
+</style>
+
+<!-- Help Modal (without AI chat tab) -->
+<div class="modal fade help-modal" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="helpModalLabel">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Help & Support Center
+                </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tab Navigation (removed AI Assistant tab) -->
+                <div class="help-tabs">
+                    <button class="help-tab active" onclick="switchHelpTab('guide')">
+                        <i class="bi bi-book me-2"></i>User Guide
+                    </button>
+                    <button class="help-tab" onclick="switchHelpTab('policies')">
+                        <i class="bi bi-shield-check me-2"></i>Policies
+                    </button>
+                    <button class="help-tab" onclick="switchHelpTab('terms')">
+                        <i class="bi bi-file-text me-2"></i>Terms & Conditions
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="help-content">
+                    <!-- User Guide Tab -->
+                    <div id="guide-tab" class="tab-pane active">
+                        <div class="help-alert info">
+                            <strong>Welcome to HireRightPro!</strong> This guide will help you navigate and make the most of our platform.
+                            <br><br>
+                            <strong>Need instant help?</strong> Try our AI chatbot by clicking the chat button in the sidebar!
+                        </div>
+
+                        <!-- For Job Seekers -->
+                        <div class="guide-section">
+                            <h3 class="guide-title">
+                                <i class="bi bi-person-badge"></i>
+                                For Job Seekers
+                            </h3>
+                            <ol class="guide-steps">
+                                <li class="guide-step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <h6>Create Your Profile</h6>
+                                        <p>Complete your profile with professional information, skills, experience, and upload a professional photo to make a great first impression.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <h6>Search for Jobs</h6>
+                                        <p>Use the search function to find jobs by keywords, location, salary range, or job type. Use filters to narrow down results.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <h6>Apply for Positions</h6>
+                                        <p>Click "Apply Now" on job listings, upload your resume, write a personalized cover letter, and submit your application.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-content">
+                                        <h6>Track Applications</h6>
+                                        <p>Monitor your applications in "My Applications" section. You'll receive notifications about application status updates.</p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- For Employers -->
+                        <div class="guide-section">
+                            <h3 class="guide-title">
+                                <i class="bi bi-building"></i>
+                                For Employers
+                            </h3>
+                            <ol class="guide-steps">
+                                <li class="guide-step">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <h6>Set Up Company Profile</h6>
+                                        <p>Create a compelling company profile with your logo, description, culture, and benefits to attract top talent.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <h6>Post Job Openings</h6>
+                                        <p>Create detailed job descriptions with requirements, responsibilities, salary range, and benefits. Choose appropriate job categories.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <h6>Review Applications</h6>
+                                        <p>Access candidate applications, review resumes, and use our filtering tools to identify the best matches for your positions.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number">4</div>
+                                    <div class="step-content">
+                                        <h6>Communicate with Candidates</h6>
+                                        <p>Send messages, schedule interviews, and update application statuses to keep candidates informed throughout the process.</p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- General Navigation -->
+                        <div class="guide-section">
+                            <h3 class="guide-title">
+                                <i class="bi bi-compass"></i>
+                                Platform Navigation
+                            </h3>
+                            <ol class="guide-steps">
+                                <li class="guide-step">
+                                    <div class="step-number"><i class="bi bi-house-door"></i></div>
+                                    <div class="step-content">
+                                        <h6>Dashboard</h6>
+                                        <p>Your main hub showing recent activity, quick stats, and personalized recommendations based on your role.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number"><i class="bi bi-search"></i></div>
+                                    <div class="step-content">
+                                        <h6>Global Search</h6>
+                                        <p>Use the search bar in the top navigation to quickly find jobs, companies, or specific content across the platform.</p>
+                                    </div>
+                                </li>
+                                <li class="guide-step">
+                                    <div class="step-number"><i class="bi bi-bell"></i></div>
+                                    <div class="step-content">
+                                        <h6>Notifications</h6>
+                                        <p>Stay updated with real-time notifications about application status, new job matches, and important updates.</p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Policies Tab -->
+                    <div id="policies-tab" class="tab-pane">
+                        <div class="help-alert warning">
+                            <strong>Important:</strong> Please read our policies carefully to ensure compliance and understand your rights and responsibilities.
+                        </div>
+
+                        <div class="policy-section">
+                            <h3 class="policy-title">Privacy Policy</h3>
+                            <div class="policy-content">
+                                <p><strong>Data Collection:</strong> We collect information you provide when creating accounts, applying for jobs, and using our services. This includes personal information, employment history, and usage data.</p>
+
+                                <p><strong>Data Usage:</strong> Your information is used to:</p>
+                                <ul class="policy-list">
+                                    <li>Provide and improve our recruitment services</li>
+                                    <li>Match job seekers with relevant opportunities</li>
+                                    <li>Enable communication between employers and candidates</li>
+                                    <li>Send relevant notifications and updates</li>
+                                </ul>
+
+                                <p><strong>Data Protection:</strong> We implement industry-standard security measures to protect your personal information and never sell your data to third parties without explicit consent.</p>
+                            </div>
+                        </div>
+
+                        <div class="policy-section">
+                            <h3 class="policy-title">Community Guidelines</h3>
+                            <div class="policy-content">
+                                <p><strong>Respectful Communication:</strong> All users must maintain professional and respectful communication. Harassment, discrimination, or inappropriate behavior is strictly prohibited.</p>
+
+                                <p><strong>Accurate Information:</strong> Users must provide truthful and accurate information in profiles, job listings, and applications. Misrepresentation may result in account suspension.</p>
+
+                                <p><strong>Prohibited Content:</strong></p>
+                                <ul class="policy-list">
+                                    <li>Discriminatory job postings or profiles</li>
+                                    <li>Spam or irrelevant content</li>
+                                    <li>False or misleading information</li>
+                                    <li>Content that violates applicable laws</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms & Conditions Tab -->
+                    <div id="terms-tab" class="tab-pane">
+                        <div class="help-alert info">
+                            <strong>Legal Agreement:</strong> By using HireRightPro, you agree to these terms and conditions. Please read them carefully.
+                        </div>
+
+                        <div class="policy-section">
+                            <h3 class="policy-title">Service Agreement</h3>
+                            <div class="policy-content">
+                                <p><strong>Service Provision:</strong> HireRightPro provides an online platform connecting job seekers with employers. We facilitate the recruitment process but do not guarantee employment outcomes.</p>
+
+                                <p><strong>User Accounts:</strong> Users are responsible for maintaining account security and keeping login credentials confidential. Account sharing is prohibited.</p>
+
+                                <p><strong>Service Availability:</strong> While we strive for 99.9% uptime, we cannot guarantee uninterrupted service availability. Scheduled maintenance will be announced in advance.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Standalone Chat Window -->
+<div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+        <div>
+            <h5><i class="bi bi-robot me-2"></i>AI Assistant</h5>
+            <small>Ask me anything about HireRightPro</small>
+        </div>
+        <button class="chat-close-btn" onclick="closeChatWindow()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="chat-messages" id="chatWindowMessages">
+        <div class="chat-message">
+            <div class="chat-avatar bot">
+                <i class="bi bi-robot"></i>
+            </div>
+            <div class="chat-bubble bot">
+                Hi! I'm your AI assistant. I can help you with questions about using HireRightPro, our policies, or general guidance. What would you like to know?
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <button class="quick-action" onclick="sendChatQuickMessage('How do I apply for a job?')">
+            How to apply for jobs?
+        </button>
+        <button class="quick-action" onclick="sendChatQuickMessage('How do I post a job?')">
+            How to post jobs?
+        </button>
+        <button class="quick-action" onclick="sendChatQuickMessage('What are your privacy policies?')">
+            Privacy policies
+        </button>
+        <button class="quick-action" onclick="sendChatQuickMessage('How do I delete my account?')">
+            Account management
+        </button>
+    </div>
+
+    <div class="typing-indicator" id="chatWindowTyping">
+        AI Assistant is typing...
+    </div>
+
+    <div class="chat-input-container">
+        <div class="chat-input-group">
+            <textarea class="chat-input"
+                      id="chatWindowInput"
+                      placeholder="Ask me anything about HireRightPro..."
+                      rows="1"
+                      onkeypress="handleChatWindowKeypress(event)"
+                      oninput="autoResizeChatInput(this)"></textarea>
+            <button class="chat-send-btn" id="chatWindowSendBtn" onclick="sendChatWindowMessage()">
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Help Modal Functions (renamed to avoid conflicts)
+    function switchHelpTab(tabName) {
+        document.querySelectorAll('.help-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+        event.target.classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    function openHelpModal() {
+        const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
+        helpModal.show();
+    }
+
+    // Chat Window Functions
+    let chatWindowHistory = [];
+
+    function openChatWindow() {
+        document.getElementById('chatWindow').classList.add('show');
+        setTimeout(() => {
+            document.getElementById('chatWindowInput').focus();
+        }, 300);
+    }
+
+    function closeChatWindow() {
+        document.getElementById('chatWindow').classList.remove('show');
+    }
+
+    function handleChatWindowKeypress(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendChatWindowMessage();
+        }
+    }
+
+    function autoResizeChatInput(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 80) + 'px';
+    }
+
+    function sendChatQuickMessage(message) {
+        document.getElementById('chatWindowInput').value = message;
+        sendChatWindowMessage();
+    }
+
+    async function sendChatWindowMessage() {
+        const input = document.getElementById('chatWindowInput');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        addChatWindowMessage(message, 'user');
+        input.value = '';
+        input.style.height = 'auto';
+
+        showChatWindowTyping();
+
+        try {
+            const response = await getChatWindowResponse(message);
+            hideChatWindowTyping();
+            addChatWindowMessage(response, 'bot');
+        } catch (error) {
+            hideChatWindowTyping();
+            addChatWindowMessage('I apologize, but I\'m having trouble connecting right now. Please try again or contact our support team at support@hirerightpro.com', 'bot');
+        }
+    }
+
+    function addChatWindowMessage(message, sender) {
+        const chatMessages = document.getElementById('chatWindowMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = `chat-avatar ${sender}`;
+        avatar.innerHTML = sender === 'bot' ? '<i class="bi bi-robot"></i>' : '<i class="bi bi-person"></i>';
+
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${sender}`;
+        bubble.textContent = message;
+
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        chatMessages.appendChild(messageDiv);
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatWindowHistory.push({ role: sender === 'user' ? 'user' : 'assistant', content: message });
+    }
+
+    function showChatWindowTyping() {
+        document.getElementById('chatWindowTyping').classList.add('show');
+        document.getElementById('chatWindowSendBtn').disabled = true;
+    }
+
+    function hideChatWindowTyping() {
+        document.getElementById('chatWindowTyping').classList.remove('show');
+        document.getElementById('chatWindowSendBtn').disabled = false;
+    }
+
+    function getAntiForgeryToken() {
+        let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        if (!token) {
+            const forms = document.querySelectorAll('form');
+            for (let form of forms) {
+                const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+                if (tokenInput) {
+                    token = tokenInput.value;
+                    break;
+                }
+            }
+        }
+
+        return token;
+    }
+
+    async function getChatWindowResponse(userMessage) {
+        try {
+            const antiForgeryToken = getAntiForgeryToken();
+
+            const response = await fetch('/Help/SendChatMessage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiForgeryToken || ''
+                },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return data.response;
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        } catch (error) {
+            console.error('Chat API Error:', error);
+            return getChatFallbackResponse(userMessage);
+        }
+    }
+
+    function getChatFallbackResponse(message) {
+        const lowerMessage = message.toLowerCase();
+
+        if (lowerMessage.includes('apply') || lowerMessage.includes('job application')) {
+            return "To apply for a job: 1) Search for jobs using our search function, 2) Click on a job that interests you, 3) Click 'Apply Now', 4) Upload your resume and write a cover letter, 5) Submit your application. You can track all applications in 'My Applications'.";
+        } else if (lowerMessage.includes('post') && lowerMessage.includes('job')) {
+            return "To post a job: 1) Go to 'Post a Job' in the navigation, 2) Fill out the job details form including title, description, and requirements, 3) Set salary range and job type, 4) Review and publish. Your job will be live within 24 hours after review.";
+        } else if (lowerMessage.includes('profile') || lowerMessage.includes('account')) {
+            return "To manage your profile: Click on your avatar in the sidebar and select 'My Profile' or 'Company Profile'. You can update personal information, upload photos, add skills, and manage your settings there.";
+        } else if (lowerMessage.includes('password')) {
+            return "To change your password: Go to Settings > Security, click 'Change Password', enter your current password and new password, then click 'Update Password'. Make sure to use a strong, unique password.";
+        } else if (lowerMessage.includes('privacy') || lowerMessage.includes('policy')) {
+            return "Our privacy policy covers how we collect, use, and protect your data. We never sell your information to third parties. You can read the full policy in the Help & Support section or contact support@hirerightpro.com for specific questions.";
+        } else if (lowerMessage.includes('delete') || lowerMessage.includes('cancel')) {
+            return "To delete your account: Go to Settings > Account and look for the 'Delete Account' option. Note that this action is permanent and cannot be undone. All your data will be removed within 30 days.";
+        } else {
+            return "I'm here to help with questions about using HireRightPro! You can ask me about applying for jobs, posting jobs, managing your profile, or our policies. For specific account issues, please contact our support team at support@hirerightpro.com.";
+        }
+    }
+
+    // Close chat window when clicking outside
+    document.addEventListener('click', function(event) {
+        const chatWindow = document.getElementById('chatWindow');
+        if (chatWindow.classList.contains('show') && !chatWindow.contains(event.target)) {
+            const chatBtn = document.getElementById('chatbotBtn');
+            if (chatBtn && !chatBtn.contains(event.target)) {
+                closeChatWindow();
+            }
+        }
+    });
+</script>

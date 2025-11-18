@@ -1,0 +1,418 @@
+﻿@model JobRecruitment.Models.JobSeekerViewModels.JobSearchVm
+@using System.Collections.Generic
+@using JobRecruitment.Models
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+
+@section Styles {
+    <!-- Load pager.css AFTER Bootstrap so it actually wins -->
+    <link rel="stylesheet" href="~/css/pager.css" asp-append-version="true" />
+    <style>
+        /* Sticky pager bar consistent across pages */
+        .pager-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 102;
+            background: #fff;
+            border-top: 1px solid #eee;
+            padding: .5rem .75rem;
+            display: flex;
+            justify-content: center;
+        }
+        /* Bootstrap 5 compatibility shim so your Bootstrap 3 pager.css rules apply */
+        .pagination {
+            display: inline-block !important;
+        }
+
+            .pagination .page-link {
+                position: relative;
+                float: left;
+                padding: 6px 12px;
+                margin-left: -1px;
+                line-height: 1.428571429;
+                text-decoration: none;
+                background-color: #ffffff;
+                border: 1px solid #dddddd;
+            }
+
+        .page-item:first-child .page-link {
+            margin-left: 0;
+            border-bottom-left-radius: 4px;
+            border-top-left-radius: 4px;
+        }
+
+        .page-item:last-child .page-link {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .page-item.active .page-link,
+        .page-item.active .page-link:focus,
+        .page-item.active .page-link:hover {
+            z-index: 2;
+            color: #ffffff;
+            background-color: #428bca;
+            border-color: #428bca;
+            cursor: default;
+        }
+
+        .page-item.disabled .page-link,
+        .page-item.disabled .page-link:hover,
+        .page-item.disabled .page-link:focus {
+            color: #999999;
+            cursor: not-allowed;
+            background-color: #ffffff;
+            border-color: #dddddd;
+        }
+
+        /* Cards/grid (unchanged) */
+        .job-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%
+        }
+
+        .job-card__more {
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+            flex: 1 1 auto
+        }
+
+        .job-card__actions {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            margin-top: auto
+        }
+
+            .job-card__actions .btn {
+                min-width: 70px
+            }
+
+        .posted-date {
+            color: #6c757d;
+            font-size: .875rem
+        }
+
+        .job-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+            gap: 16px
+        }
+       @@media (min-width:1200px) {
+            .job-grid
+
+        {
+            gap: 18px
+        }
+
+        }
+    </style>
+}
+
+@* ---------- Toasts ---------- *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css" />
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] as string ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null || TempData["Error"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css" />
+    <div class="error-toast">
+        <div class="error-card">
+            <div class="icon">⚠️</div>
+            <h2>@(TempData["ErrorTitle"] as string ?? "Error")</h2>
+            <p>@(TempData["ErrorMessage"] ?? TempData["Error"])</p>
+        </div>
+    </div>
+}
+
+<script>
+    // Close any open modal if a toast is present (avoid dim overlay)
+    document.addEventListener("DOMContentLoaded", function () {
+      if (document.querySelector(".success-toast") || document.querySelector(".error-toast")) {
+        const modalEl = document.querySelector(".modal.show");
+        if (modalEl) {
+          try { bootstrap.Modal.getInstance(modalEl)?.hide(); } catch {}
+          modalEl.classList.remove("show");
+          modalEl.style.display = "none";
+          document.body.classList.remove("modal-open");
+          document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+        }
+      }
+    });
+</script>
+
+@functions {
+    string FormatSalary(decimal? min, decimal? max)
+    {
+        var hasMin = min.HasValue && min.Value > 0;
+        var hasMax = max.HasValue && max.Value > 0;
+        if (!hasMin && !hasMax) return "Salary: not specified";
+        if (hasMin && hasMax) return $"RM {min.Value:N0} – RM {max.Value:N0}";
+        if (hasMin) return $"From RM {min.Value:N0}";
+        return $"Up to RM {max.Value:N0}";
+    }
+    string JobTypeText(int jt) => Enum.IsDefined(typeof(JobType), jt) ? ((JobType)jt).ToString() : "Other";
+}
+
+@{
+    // Normalize paging inputs
+    Model.Page = Math.Max(1, Model.Page);
+    Model.CurrentPageSize = Math.Max(1, Model.CurrentPageSize);
+    Model.Total = Math.Max(0, Model.Total);
+
+    var savedIds = ViewBag.SavedJobIds as HashSet<string> ?? new HashSet<string>();
+    var isAuth = User?.Identity?.IsAuthenticated == true;
+}
+
+@if (Model.Results == null || Model.Results.Count == 0)
+{
+    <div class="text-center text-muted py-4">
+        <i class="bi bi-search fs-1 d-block mb-2"></i>
+        No matching jobs found.
+    </div>
+}
+else
+{
+    @* Anti-forgery token for Save/Unsave AJAX *@
+    <form id="saveTokenForm">@Html.AntiForgeryToken()</form>
+
+    <div class="job-grid">
+        @foreach (var item in Model.Results)
+        {
+            var isSaved = savedIds.Contains(item.JobId);
+
+            <article class="job-card" tabindex="0" aria-label="@item.Title">
+                <div class="job-card__head">
+                    <a class="job-card__title"
+                       asp-controller="JobSearch"
+                       asp-action="Details"
+                       asp-route-id="@item.JobId">
+                        @item.Title
+                    </a>
+                </div>
+
+                <ul class="job-meta">
+                    <li><i class="bi bi-building"></i> @item.CompanyName</li>
+                    <li><i class="bi bi-geo-alt"></i> @item.Location</li>
+                    <li><i class="bi bi-cash-coin"></i> @FormatSalary(item.MinSalary, item.MaxSalary)</li>
+                </ul>
+
+                <div class="job-card__more">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        @if (!string.IsNullOrWhiteSpace(item.CategoryName))
+                        {
+                            <span class="badge bg-light text-dark"><i class="bi bi-tag me-1"></i>@item.CategoryName</span>
+                        }
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                            <i class="bi bi-briefcase me-1"></i>@JobTypeText(item.JobType)
+                        </span>
+                    </div>
+
+                    <small class="posted-date">Posted @item.PostedDateUtc.ToLocalTime().ToString("dd MMM yyyy")</small>
+
+                    <div class="job-card__actions">
+                        <button class="btn btn-outline-primary btn-sm js-save"
+                                type="button"
+                                data-job-id="@item.JobId"
+                                data-saved="@(isSaved ? "1" : "0")"
+                                aria-pressed="@(isSaved ? "true" : "false")"
+                                title="Save this job">
+                            <i class="bi @(isSaved ? "bi-bookmark-fill" : "bi-bookmark") me-1"></i>
+                            <span>@(isSaved ? "Saved" : "Save")</span>
+                        </button>
+
+                        <a class="btn btn-sm btn-outline-primary"
+                           asp-controller="JobSearch"
+                           asp-action="Details"
+                           asp-route-id="@item.JobId">
+                            View
+                        </a>
+
+                        <a class="btn btn-primary btn-sm js-apply"
+                           href="@Url.Action("Details", "JobSearch", new { id = item.JobId })"
+                           data-apply-jobid="@item.JobId">
+                            Apply
+                        </a>
+
+                        @if (isAuth)
+                        {
+                            <button class="btn btn-outline-danger btn-sm report-btn"
+                                    type="button"
+                                    data-jobid="@item.JobId"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reportJobModal">
+                                Report
+                            </button>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-danger btn-sm"
+                               href="@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path + Context.Request.QueryString })">
+                                Report
+                            </a>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@{
+    // Dummy IPagedList to drive the pager UI
+    var paged = new StaticPagedList<int>(
+        Enumerable.Empty<int>(),
+        Model.Page,
+        Model.CurrentPageSize,
+        Model.Total
+    );
+
+    Func<int, string> urlBuilder = p => Url.Action("Search", "JobSearch", new
+    {
+        Q = Model.Q,
+        CategoryId = Model.CategoryId,
+        Location = Model.Location,
+        JobType = Model.JobType,
+        MinSalary = Model.MinSalary,
+        MaxSalary = Model.MaxSalary,
+        SortBy = Model.SortBy,
+        Page = p
+    })!;
+}
+
+<div class="pager-bar">
+    <nav aria-label="Job search pages">
+        @Html.PagedListPager(
+        paged,
+        urlBuilder,
+                new PagedListRenderOptions
+                {
+                    LiElementClasses = new[] { "page-item" },
+                    PageClasses = new[] { "page-link", "js-dash-page" },
+                    UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                    DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                    DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                    DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                    DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                    MaximumPageNumbersToDisplay = 7
+                }
+                )
+    </nav>
+</div>
+
+<script>
+    (() => {
+      // AJAX pager (Search => SearchPartial)
+      document.addEventListener('click', function (e) {
+        const a = e.target.closest('a.js-dash-page');
+        if (!a) return;
+        e.preventDefault();
+
+        const partialUrl = a.href.replace('/JobSearch/Search', '/JobSearch/SearchPartial');
+        fetch(partialUrl, { headers: { 'X-Requested-With':'XMLHttpRequest' } })
+          .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+          .then(html => {
+            const host = document.getElementById('resultsHost');
+            if (host) host.innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          })
+          .catch(() => window.location.href = a.href);
+      });
+
+      // Save / Unsave
+        function getToken() {
+        const f = document.getElementById('saveTokenForm');
+        return f?.querySelector('input[name="__RequestVerificationToken"]')?.value || null;
+      }
+
+      // Prefer JobSeekerActions routes (your current controllers), fallback to old ones if you kept them.
+      const SAVE_URLS = ['/JobSeekerActions/SaveJob', '/JobActions/Save'];
+      const UNSAVE_URLS = ['/JobSeekerActions/UnsaveJob', '/JobActions/Unsave'];
+
+      async function postWithFallback(urls, fd) {
+        let lastErr;
+        for (const url of urls) {
+          try {
+            const resp = await fetch(url, {
+              method: 'POST',
+              body: fd,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              credentials: 'same-origin'
+            });
+            // Expect JSON { success: true, message?: string }
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok && data?.success === true) return data;
+            lastErr = data?.message || `HTTP ${resp.status}`;
+          } catch (e) {
+            lastErr = e?.message || 'Network error';
+          }
+        }
+        throw new Error(lastErr || 'Request failed');
+      }
+
+      async function toggleSave(btn) {
+        const jobId = btn.getAttribute('data-job-id');
+        const currentlySaved = btn.getAttribute('data-saved') === '1';
+        if (!jobId) return;
+
+        const fd = new FormData();
+        fd.append('jobId', jobId);
+
+        // Anti-forgery: include both form field and header (covers both ValidateAntiForgeryToken variants)
+        const token = getToken();
+        if (token) {
+          fd.append('__RequestVerificationToken', token);
+        }
+
+        btn.disabled = true;
+
+        try {
+          const data = await postWithFallback(currentlySaved ? UNSAVE_URLS : SAVE_URLS, fd);
+
+          // Flip local state
+          const nowSaved = !currentlySaved;
+          btn.setAttribute('data-saved', nowSaved ? '1' : '0');
+          btn.setAttribute('aria-pressed', nowSaved ? 'true' : 'false');
+
+          const icon = btn.querySelector('i');
+          const txt  = btn.querySelector('span');
+          if (icon) icon.className = 'bi ' + (nowSaved ? 'bi-bookmark-fill me-1' : 'bi-bookmark me-1');
+          if (txt)  txt.textContent = nowSaved ? 'Saved' : 'Save';
+
+          // Feedback + redirect behavior
+          if (nowSaved) {
+            // Success toast then redirect user to Saved list so they can see the card there
+            (window.showToast ?? alert)('Job saved! Opening your Saved Jobs…', true);
+            // Use your actual route helper; this keeps it robust under virtual dirs/areas.
+            setTimeout(() => { window.location.href = '@Url.Action("Saved", "JobSeeker")'; }, 900);
+          } else {
+            // Unsaved feedback only (no redirect from Search)
+            (window.showToast ?? alert)('Removed from saved.', true);
+          }
+        } catch (err) {
+          (window.showToast ?? alert)(`Could not ${currentlySaved ? 'remove from' : 'save to'} saved jobs. ${err?.message ?? ''}`, false);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-save');
+        if (!btn) return;
+        e.preventDefault();
+        toggleSave(btn);
+      });
+    })();
+</script>

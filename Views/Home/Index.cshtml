@@ -1,0 +1,104 @@
+﻿@{
+    ViewBag.Title = "Welcome to HireRightPro";
+}
+
+<!-- Hero Section -->
+<section class="d-flex flex-column justify-content-center align-items-center text-center py-5"
+         style="min-height: 75vh; background: linear-gradient(to right, var(--bg-light), #ffffff);">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3" style="color: var(--dark);">
+            Build Your Future with <span style="color: var(--primary)">JobRecruit</span>
+        </h1>
+        <p class="lead text-muted mb-4" style="max-width: 650px; margin: 0 auto;">
+            Whether you’re a <span class="fw-semibold">job seeker</span> looking to take the next step
+            or an <span class="fw-semibold">employer</span> searching for top talent —
+            HireRightPro makes hiring and applying simple, smart, and effective.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="/Account/Register" class="auth-btn btn-signup">🚀 Get Started</a>
+            <a href="/Account/Login" class="auth-btn btn-login">🔑 Login</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Job Seekers -->
+            <div class="col-md-4">
+                <div class="p-4 bg-white shadow-sm rounded-3 h-100 hover-card">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--primary);">👩‍💼</div>
+                    <h5 class="fw-bold" style="color: var(--primary);">Opportunities for Job Seekers</h5>
+                    <p class="text-muted mt-2">Access thousands of job listings across industries. Apply with ease and track your applications all in one place.</p>
+                </div>
+            </div>
+            <!-- Employers -->
+            <div class="col-md-4">
+                <div class="p-4 bg-white shadow-sm rounded-3 h-100 hover-card">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--primary);">🏢</div>
+                    <h5 class="fw-bold" style="color: var(--primary);">Tools for Employers</h5>
+                    <p class="text-muted mt-2">Create job posts in minutes, manage applicants efficiently, and connect with the right candidates faster.</p>
+                </div>
+            </div>
+            <!-- Security -->
+            <div class="col-md-4">
+                <div class="p-4 bg-white shadow-sm rounded-3 h-100 hover-card">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--primary);">🔒</div>
+                    <h5 class="fw-bold" style="color: var(--primary);">Secure & Reliable</h5>
+                    <p class="text-muted mt-2">Your data is protected with enterprise-level security and privacy standards you can trust.</p>
+                </div>
+            </div>
+            <!-- Career Growth -->
+            <div class="col-md-4">
+                <div class="p-4 bg-white shadow-sm rounded-3 h-100 hover-card">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--primary);">📈</div>
+                    <h5 class="fw-bold" style="color: var(--primary);">Career Growth</h5>
+                    <p class="text-muted mt-2">Gain access to resources, insights, and tools designed to help you level up your career and skills.</p>
+                </div>
+            </div>
+            <!-- Smart Matching -->
+            <div class="col-md-4">
+                <div class="p-4 bg-white shadow-sm rounded-3 h-100 hover-card">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--primary);">🤖</div>
+                    <h5 class="fw-bold" style="color: var(--primary);">Smart Job Matching</h5>
+                    <p class="text-muted mt-2">Our intelligent system recommends the most relevant jobs and candidates, saving you time and effort.</p>
+                </div>
+            </div>
+            <!-- Community -->
+            <div class="col-md-4">
+                <div class="p-4 bg-white shadow-sm rounded-3 h-100 hover-card">
+                    <div class="mb-3" style="font-size: 2rem; color: var(--primary);">🌍</div>
+                    <h5 class="fw-bold" style="color: var(--primary);">Community & Support</h5>
+                    <p class="text-muted mt-2">Join a growing community of professionals and employers. Get support when you need it, 24/7.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Banner -->
+<section class="py-5 text-center" style="background-color: var(--primary); color: white;">
+    <div class="container">
+        <h3 class="fw-bold mb-3">Ready to take the next step?</h3>
+        <p class="mb-4">Create your free account today and unlock endless opportunities.</p>
+        <a href="/Account/Register" class="auth-btn btn-light"
+           style="border: none; background-color: white; color: var(--primary);">
+            ✨ Join Now
+        </a>
+    </div>
+</section>
+
+<!-- Small CSS enhancement -->
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+</style>

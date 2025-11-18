@@ -1,0 +1,372 @@
+﻿@model JobRecruitment.Models.EmployerReportsViewModel
+@{
+    ViewBag.Title = "Employer Reports & Analytics";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    // Calculate report data using the ViewModel
+    var applicationStatusCounts = Model.Applications
+        .GroupBy(a => a.Status)
+        .Select(g => new { Status = g.Key, Count = g.Count() })
+        .ToList();
+
+    var jobPerformance = Model.Jobs
+        .Select(j => new
+        {
+            Job = j,
+            ApplicationCount = j.Applications.Count,
+            HireCount = j.Applications.Count(a => a.Status == JobRecruitment.Models.ApplicationStatusEnum.Hired)
+        })
+        .OrderByDescending(x => x.ApplicationCount)
+        .ToList();
+}
+
+<style>
+    .stat-card {
+        border-top: 4px solid transparent; /* default */
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    /* Specific colors */
+    .stat-jobs {
+        border-top-color: #0d6efd; /* Bootstrap primary blue */
+    }
+
+    .stat-applications {
+        border-top-color: #198754; /* Bootstrap success green */
+    }
+
+    .stat-interviews {
+        border-top-color: #ffc107; /* Bootstrap warning yellow */
+    }
+
+    .stat-hires {
+        border-top-color: #0dcaf0; /* Bootstrap info cyan */
+    }
+
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="@Url.Action("EmployerDashboard", "Employer")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="exportToPDF()">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </button>
+            <button class="btn btn-outline-success" onclick="exportToExcel()">
+                <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Report Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Report Filters</h5>
+        </div>
+        <div class="card-body">
+            <form id="reportFilterForm" class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" name="dateRange">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last Year</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Job</label>
+                    <select class="form-select" name="jobId">
+                        <option value="">All Jobs</option>
+                        @foreach (var job in Model.Jobs)
+                        {
+                            <option value="@job.Id">@job.Title</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        @foreach (var status in Enum.GetValues(typeof(JobRecruitment.Models.ApplicationStatusEnum)))
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card stat-jobs">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Jobs Posted</h5>
+                    <h2 class="text-primary">@Model.Jobs.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-applications">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Applications</h5>
+                    <h2 class="text-success">@Model.Applications.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-interviews">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Interview Rate</h5>
+                    <h2 class="text-warning">
+                        @(Model.Applications.Count > 0 ? Math.Round((Model.Applications.Count(a => a.Status == JobRecruitment.Models.ApplicationStatusEnum.InterviewScheduled) / (double)Model.Applications.Count) * 100, 1) : 0)%
+                    </h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-hires">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Hire Rate</h5>
+                    <h2 class="text-info">
+                        @(Model.Applications.Count > 0 ? Math.Round((Model.Applications.Count(a => a.Status == JobRecruitment.Models.ApplicationStatusEnum.Hired) / (double)Model.Applications.Count) * 100, 1) : 0)%
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Graphs -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Application Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Applications Over Time</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="timelineChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Reports -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Job Performance Report</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Job Title</th>
+                                    <th>Status</th>
+                                    <th>Applications</th>
+                                    <th>Interviews</th>
+                                    <th>Hires</th>
+                                    <th>Conversion Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var job in jobPerformance)
+                                {
+                                    <tr>
+                                        <td>@job.Job.Title</td>
+                                        <td>
+                                            <span class="badge bg-@(job.Job.Status == JobRecruitment.Models.JobStatus.Open ? "success" : "secondary")">
+                                                @job.Job.Status
+                                            </span>
+                                        </td>
+                                        <td>@job.ApplicationCount</td>
+                                        <td>@job.Job.Applications.Count(a => a.Status == JobRecruitment.Models.ApplicationStatusEnum.InterviewScheduled)</td>
+                                        <td>@job.HireCount</td>
+                                        <td>@(job.ApplicationCount > 0 ? Math.Round((job.HireCount / (double)job.ApplicationCount) * 100, 1) : 0)%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Applications Over Time Chart
+        var timelineLabels = @Html.Raw(Model.TimelineLabelsJson);
+        var timelineCounts = @Html.Raw(Model.TimelineCountsJson);
+
+        var timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        var timelineChart = new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: timelineLabels,
+                datasets: [{
+                    label: 'Applications Over Time',
+                    data: timelineCounts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // Application Status Distribution Chart
+        var statusLabels = @Html.Raw(Model.StatusLabelsJson);
+        var statusCounts = @Html.Raw(Model.StatusCountsJson);
+
+        var statusCtx = document.getElementById('statusChart').getContext('2d');
+        var statusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 206, 86, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+
+        // Export functions
+        function exportToPDF() {
+            var form = document.getElementById('reportFilterForm');
+            var formData = new FormData(form);
+            var params = new URLSearchParams(formData).toString();
+
+            window.location.href = '@Url.Action("ExportToPDF", "Employer")?' + params;
+        }
+
+        function exportToExcel() {
+            var form = document.getElementById('reportFilterForm');
+            var formData = new FormData(form);
+            var params = new URLSearchParams(formData).toString();
+
+            window.location.href = '@Url.Action("ExportToExcel", "Employer")?' + params;
+        }
+
+        // Form submission to refresh with filters
+        document.getElementById('reportFilterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var form = e.target;
+            var formData = new FormData(form);
+            var params = new URLSearchParams(formData).toString();
+
+            window.location.href = '@Url.Action("EmployerReports", "Employer")?' + params;
+        });
+
+        // Preserve filter values from URL parameters
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Set date range
+            const dateRange = urlParams.get('dateRange');
+            if (dateRange) {
+                document.querySelector('select[name="dateRange"]').value = dateRange;
+            }
+
+            // Set job ID
+            const jobId = urlParams.get('jobId');
+            if (jobId) {
+                document.querySelector('select[name="jobId"]').value = jobId;
+            }
+
+            // Set status
+            const status = urlParams.get('status');
+            if (status) {
+                document.querySelector('select[name="status"]').value = status;
+            }
+        });
+
+        // Form submission to refresh with filters
+        document.getElementById('reportFilterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const params = new URLSearchParams();
+
+            // Add all form data to URL parameters
+            for (const [key, value] of formData.entries()) {
+                if (value) {
+                    params.append(key, value);
+                }
+            }
+
+            // Redirect with filter parameters
+            window.location.href = '@Url.Action("EmployerReports", "Employer")?' + params.toString();
+        });
+
+        // Export functions (keep your existing ones)
+        function exportToPDF() {
+            var form = document.getElementById('reportFilterForm');
+            var formData = new FormData(form);
+            var params = new URLSearchParams(formData).toString();
+
+            window.location.href = '@Url.Action("ExportToPDF", "Employer")?' + params;
+        }
+
+        function exportToExcel() {
+            var form = document.getElementById('reportFilterForm');
+            var formData = new FormData(form);
+            var params = new URLSearchParams(formData).toString();
+
+            window.location.href = '@Url.Action("ExportToExcel", "Employer")?' + params;
+        }
+
+    </script>
+}

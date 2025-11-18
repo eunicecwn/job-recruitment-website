@@ -1,0 +1,249 @@
+﻿@model Demo.Controllers.ApplicationController.ReportApplicantViewModel
+
+@{
+    ViewBag.Title = "Report Applicant";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-flag"></i> Report Applicant
+                        </h4>
+                        <a href="@Url.Action("ApplicationDetails", new { id = Model.ApplicationId })"
+                           class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-arrow-left"></i> Back to Application
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Applicant Information -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle"></i> You are about to report:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Applicant:</strong> @Model.ApplicantName<br>
+                                <strong>Email:</strong> @Model.ApplicantEmail
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Position:</strong> @Model.JobTitle<br>
+                                <strong>Company:</strong> @Model.CompanyName
+                            </div>
+                        </div>
+                        <hr>
+                        <small>
+                            <i class="bi bi-info-circle"></i>
+                            Please only report if there are legitimate concerns about this applicant's behavior,
+                            information accuracy, or professionalism. False reports may result in action against your account.
+                        </small>
+                    </div>
+
+                    <!-- Report Form -->
+                    <form asp-action="ReportApplicant" method="post" id="reportForm">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" asp-for="ApplicationId" />
+                        <input type="hidden" asp-for="ReportedUserId" />
+                        <input type="hidden" asp-for="ApplicantName" />
+                        <input type="hidden" asp-for="ApplicantEmail" />
+                        <input type="hidden" asp-for="JobTitle" />
+                        <input type="hidden" asp-for="CompanyName" />
+
+                        <div class="mb-4">
+                            <label asp-for="Reason" class="form-label">
+                                <strong>Reason for Report</strong> <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Reason" class="form-select" id="reasonSelect" required>
+                                <option value="">-- Select a reason --</option>
+                                <option value="Inappropriate Behavior">Inappropriate Behavior</option>
+                                <option value="False Information">False Information in Application</option>
+                                <option value="No Show to Interview">No Show to Interview</option>
+                                <option value="Unprofessional Conduct">Unprofessional Conduct</option>
+                                <option value="Suspicious Activity">Suspicious Activity</option>
+                                <option value="Fake Profile">Fake Profile/Identity</option>
+                                <option value="Harassment">Harassment</option>
+                                <option value="Spam Application">Spam Application</option>
+                                <option value="Violation of Terms">Violation of Terms of Service</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span asp-validation-for="Reason" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Details" class="form-label">
+                                <strong>Detailed Description</strong> <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Details"
+                                      class="form-control"
+                                      rows="6"
+                                      placeholder="Please provide specific details about your report. Include:&#10;- What happened and when&#10;- Any relevant communications or interactions&#10;- Why you believe this warrants a report&#10;- Any supporting evidence or context"
+                                      maxlength="1000"
+                                      required></textarea>
+                            <div class="form-text">
+                                Be as specific as possible. Include dates, times, and any relevant context.
+                                This information helps our team investigate effectively.
+                            </div>
+                            <div class="form-text text-end">
+                                <span id="charCount">0</span>/1000 characters
+                            </div>
+                            <span asp-validation-for="Details" class="text-danger"></span>
+                        </div>
+
+                        <!-- Guidelines -->
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-shield-check"></i> Reporting Guidelines</h6>
+                            <ul class="mb-0 small">
+                                <li>Reports are reviewed by our admin team within 24-48 hours</li>
+                                <li>You may be contacted for additional information if needed</li>
+                                <li>Provide only factual information - avoid opinions or assumptions</li>
+                                <li>Include specific dates, times, and details where possible</li>
+                                <li>False or malicious reports may result in account restrictions</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="@Url.Action("ApplicationDetails", new { id = Model.ApplicationId })"
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="submitBtn">
+                                <i class="bi bi-flag"></i> Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6><i class="bi bi-question-circle"></i> Need Help?</h6>
+                    <p class="small mb-0">
+                        If you're experiencing technical issues or need assistance with the reporting process,
+                        please contact our support team at
+                        <a href="mailto:support@hiredrightpro.com">support@hiredrightpro.com</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .alert {
+            border-radius: 8px;
+        }
+
+        .form-label strong {
+            font-size: 0.95rem;
+        }
+
+        #charCount {
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Character count for textarea
+            const textarea = document.getElementById('Details');
+            const charCount = document.getElementById('charCount');
+
+            function updateCharCount() {
+                const count = textarea.value.length;
+                charCount.textContent = count;
+
+                // Change color based on character count
+                if (count > 800) {
+                    charCount.style.color = '#dc3545'; // Red
+                } else if (count > 600) {
+                    charCount.style.color = '#fd7e14'; // Orange
+                } else {
+                    charCount.style.color = '#6c757d'; // Gray
+                }
+            }
+
+            if (textarea) {
+                textarea.addEventListener('input', updateCharCount);
+                updateCharCount(); // Initial count
+
+                // Auto-resize textarea
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                });
+            }
+
+            // Form submission handling
+            const form = document.getElementById('reportForm');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (form && submitBtn) {
+                form.addEventListener('submit', function(e) {
+                    const reason = document.getElementById('reasonSelect').value;
+                    const details = textarea.value.trim();
+
+                    // Additional validation
+                    if (!reason) {
+                        e.preventDefault();
+                        alert('Please select a reason for your report.');
+                        return;
+                    }
+
+                    if (!details || details.length < 10) {
+                        e.preventDefault();
+                        alert('Please provide at least 10 characters of details about your report.');
+                        textarea.focus();
+                        return;
+                    }
+
+                    // Confirm submission
+                    if (!confirm('Are you sure you want to submit this report? This action cannot be undone.')) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    // Show loading state
+                    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+                    submitBtn.disabled = true;
+                });
+            }
+        });
+    </script>
+}

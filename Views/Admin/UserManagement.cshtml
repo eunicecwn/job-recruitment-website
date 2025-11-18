@@ -1,0 +1,30 @@
+﻿@model List<JobRecruitment.Models.JobSeeker>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<h2>Manage Job Seekers</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var js in Model)
+        {
+            <tr>
+                <td>@js.Username</td>
+                <td>@js.Email</td>
+                <td>@(js.IsActive ? "Active" : "Blocked")</td>
+                <td>
+                    <a asp-action="BlockUser" asp-route-id="@js.Id" class="btn btn-warning btn-sm">Block</a>
+                    <a asp-action="UnblockUser" asp-route-id="@js.Id" class="btn btn-info btn-sm">Unblock</a>
+                    <a asp-action="DeleteUser" asp-route-id="@js.Id" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

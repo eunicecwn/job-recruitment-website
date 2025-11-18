@@ -1,0 +1,288 @@
+﻿@model IEnumerable<JobRecruitment.Models.Application>
+@using JobRecruitment.Models
+@using Demo;
+
+<style>
+    .table.compact-table td {
+        padding: 0.85rem 0.75rem !important;
+        white-space: normal; /* allow wrapping */
+        word-break: break-word; /* wrap long words */
+        vertical-align: middle !important; /* keep things centered */
+    }
+
+    .table.compact-table th {
+        padding: 1rem 0.75rem !important;
+        vertical-align: middle !important;
+    }
+
+    /* Resume column */
+    .table.compact-table td:nth-child(5) {
+        width: 130px;
+        white-space: nowrap;
+    }
+
+    /* Status column */
+    .table.compact-table td:nth-child(6),
+    .table.compact-table th:nth-child(6) {
+        min-width: 250px; /* reserve more space by default */
+        width: auto; /* let it expand naturally */
+        white-space: nowrap; /* keep status text in one line */
+        vertical-align: middle !important;
+        text-align: center; /* center horizontally */
+    }
+
+    /* Actions column */
+    .table.compact-table td:nth-child(7) {
+        width: 50px;
+        white-space: nowrap;
+    }
+
+    /* Table styling */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fff;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+        .table th {
+            background-color: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border: none;
+            text-align: left;
+        }
+
+        .table td {
+            padding: 0.75rem 1rem;
+            color: var(--dark);
+            border-top: 1px solid var(--primary-dark);
+        }
+
+    .table-striped tbody tr:nth-of-type(even) {
+        background-color: var(--primary-light);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: var(--purple-accent);
+        color: #fff;
+        transition: background-color 0.2s ease;
+    }
+
+    .table.compact-table td:nth-child(6),
+    .table.compact-table th:nth-child(6) {
+        min-width: 120px;
+        max-width: 150px;
+        white-space: nowrap; /* stay on one line */
+    }
+
+    /* Status badge */
+    .status-badge {
+        padding: 0.35rem 0.6rem;
+        align-items: center; /* vertical center inside badge */
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.6rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        line-height: normal;
+        white-space: nowrap; /* don’t break inside badge */
+        max-width: none;
+    }
+
+    /* Status colors */
+    .status-pending {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        border: 1px solid #e5e7eb;
+    }
+
+    .status-shortlisted {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .status-interview {
+        background-color: #e0e7ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+    }
+
+    .status-offer {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-hired {
+        background-color: #166534;
+        color: white;
+        border: 1px solid #15803d;
+    }
+
+    .status-rejected {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    /* Buttons */
+    .btn-sm {
+        line-height: 1.2; /* normalize height */
+    }
+
+    .action-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* Sorting arrows */
+    .table th.sortable-header,
+    .table th.sortable-header:hover,
+    .table th.sortable-header:focus,
+    .table th.sortable-header:active {
+        background-color: var(--primary) !important;
+        color: #fff !important;
+        position: relative;
+    }
+
+        .table th.sortable-header::after {
+            content: "⇅";
+            font-size: 12px;
+            margin-left: 6px;
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.2s ease, content 0.2s ease;
+        }
+
+        .table th.sortable-header.active::after {
+            content: "▲";
+            color: #fff;
+        }
+
+        .table th.sortable-header.active.desc::after {
+            content: "▼";
+            color: #fff;
+        }
+
+    /* Pagination styling */
+    .pagination-container {
+        margin-top: 1.5rem;
+    }
+
+    .page-item {
+        margin: 0 0.2rem;
+    }
+
+    .page-link {
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .page-link:hover {
+            background-color: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+    .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .page-item.disabled .page-link {
+        color: #6c757d;
+        pointer-events: none;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
+</style>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle"></i> No applications found matching your criteria.
+    </div>
+}
+else
+{
+    <div id="applicationsTable">
+        <table class="table table-striped compact-table table-hover">
+            <thead>
+                <tr>
+                    <th class="sortable-header" data-sort-column="JobSeeker.FullName">Applicant Name</th>
+                    <th class="sortable-header" data-sort-column="JobSeeker.Email">Email</th>
+                    <th class="sortable-header" data-sort-column="AppliedDate">Applied Date</th>
+                    <th>Job Title</th>
+                    <th>Resume</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var app in Model)
+                {
+                    <tr>
+                        <td>@(app.JobSeeker?.FullName ?? "N/A")</td>
+                        <td>@(app.JobSeeker?.Email ?? "N/A")</td>
+                        <td>@app.AppliedDate.ToString("dd MMM yyyy")</td>
+                        <td>@(app.Job?.Title ?? "N/A")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(app.ResumeFileName))
+                            {
+                                <div class="btn-group" role="group">
+                                    <!-- Preview -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary resume-preview-btn"
+                                            data-resume-url="@Url.Action("ViewResume", "Application", new { fileName = app.ResumeFileName })"
+                                            data-application-id="@app.Id"
+                                            title="Preview Resume">
+                                        Preview
+                                    </button>
+
+                                    <!-- Download -->
+                                    <a href="@Url.Action("DownloadResume", "Application", new { fileName = app.ResumeFileName })"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="Download Resume">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No resume</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="status-badge @Helper.GetStatusBadgeClass((ApplicationStatusEnum)app.Status)">
+                                <i class="@Helper.GetStatusIcon((ApplicationStatusEnum)app.Status)"></i>
+                                @app.Status
+                            </div>
+                        </td>
+                        <td>
+                            <a href="@Url.Action("ApplicationDetails", "Application", new { id = app.Id })"
+                               class="btn btn-sm btn-outline-primary action-btn"
+                               title="View Application Details">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

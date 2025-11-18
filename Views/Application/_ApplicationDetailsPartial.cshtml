@@ -1,0 +1,75 @@
+﻿@model JobRecruitment.Models.Application
+
+<div class="application-details">
+    <div class="row">
+        <div class="col-md-6">
+            <h6>Applicant Information</h6>
+            <div class="border rounded p-3 bg-light mb-3">
+                <div class="mb-2">
+                    <strong>Name:</strong> @(Model.JobSeeker?.FullName ?? "N/A")
+                </div>
+                <div class="mb-2">
+                    <strong>Email:</strong> @(Model.JobSeeker?.Email ?? "N/A")
+                </div>
+                <div class="mb-2">
+                    <strong>Phone:</strong> @(Model.JobSeeker?.Phone ?? "N/A")
+                </div>
+                <div class="mb-2">
+                    <strong>Applied:</strong> @Model.AppliedDate.ToString("dd MMM yyyy")
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h6>Interview Details</h6>
+            <div class="border rounded p-3 bg-light mb-3">
+                <div class="mb-2">
+                    <strong>Position:</strong> @(Model.Job?.Title ?? "N/A")
+                </div>
+                <div class="mb-2">
+                    <strong>Company:</strong> @(Model.Job?.Employer?.CompanyName ?? "N/A")
+                </div>
+                <div class="mb-2">
+                    <strong>Date:</strong> @(Model.InterviewDate?.ToString("dd MMM yyyy") ?? "Not scheduled")
+                </div>
+                <div class="mb-2">
+                    <strong>Time:</strong>
+                    @if (Model.InterviewDate.HasValue)
+                    {
+                        <text>
+                            @Model.InterviewDate?.ToString("hh:mm tt") -
+                            @(Model.InterviewEndDate?.ToString("hh:mm tt") ?? Model.InterviewDate?.AddHours(1).ToString("hh:mm tt"))
+                        </text>
+                    }
+                    else
+                    {
+                        <text>Not scheduled</text>
+                    }
+                </div>
+                <div class="mb-2">
+                    <strong>Location:</strong> @(Model.InterviewLocation ?? "Not specified")
+                </div>
+                <div class="mb-2">
+                    <strong>Interviewers:</strong> @(Model.InterviewerInfo ?? "Not specified")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h6>Additional Notes</h6>
+            <div class="border rounded p-3 bg-light">
+                @if (!string.IsNullOrEmpty(Model.InterviewNotes))
+                {
+                    <p>@Model.InterviewNotes</p>
+                }
+                else
+                {
+                    <p class="text-muted">No additional notes provided.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,202 @@
+﻿@using System.Globalization
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@model IEnumerable<JobRecruitment.Models.JobSeekerViewModels.SavedJobItemVm>
+
+@{
+    ViewData["Title"] = "Saved Jobs";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string Money(object? val)
+    {
+        if (val is null) return "-";
+        var s = val.ToString() ?? "-";
+        if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+            return d.ToString("N0", CultureInfo.InvariantCulture);
+        return s;
+    }
+
+    // ---- Paging (same pattern as Applications.cshtml) ----
+    var currPage = Math.Max(1, (int?)ViewBag.Page ?? 1);
+    var pageSize = Math.Max(1, (int?)ViewBag.PageSize ?? 12);
+    var totalItems = Math.Max(0, (int?)ViewBag.Total ?? (Model?.Count() ?? 0));
+
+    var paged = new StaticPagedList<int>(
+        Enumerable.Empty<int>(),
+        currPage,
+        pageSize,
+        totalItems
+    );
+    Func<int, string> urlBuilder = p => Url.Action("Saved", "JobSeeker", new { page = p })!;
+}
+
+@section Styles {
+    <!-- Reuse Search look & pager look -->
+    <link rel="stylesheet" href="~/css/jobseeker.search.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pager.css" />
+    <style>
+        /* Minor spacing tweaks to match Applications */
+        .job-grid {
+            margin-top: .5rem;
+        }
+
+        .job-card {
+            min-height: 180px;
+        }
+
+        .pager-rail {
+            display: flex;
+            justify-content: flex-start;
+            margin-top: 12px;
+        }
+
+            .pager-rail .pagination {
+                margin-bottom: 0;
+            }
+    </style>
+}
+
+<div class="container-xxl">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-controller="JobSeeker" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to dashboard
+        </a>
+    </div>
+
+    <div class="d-flex align-items-center">
+        <h2 class="h5 fw-semibold mb-0">Saved Jobs</h2>
+        <span class="ms-2 text-muted">(@totalItems)</span>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info mt-3">You haven’t saved any jobs yet.</div>
+    }
+    else
+    {
+        <!-- Same grid/card classes used by Search & Applications -->
+        <div class="job-grid">
+            @foreach (var item in Model)
+            {
+                <article class="job-card" data-card="@item.JobId">
+                    <!-- header -->
+                    <div class="job-card__head">
+                        <a class="job-card__title h5 mb-0 text-decoration-none"
+                           asp-controller="JobSearch" asp-action="Details" asp-route-id="@item.JobId">
+                            @item.Title
+                        </a>
+                    </div>
+
+                    <!-- meta -->
+                    <ul class="job-meta">
+                        <li><i class="bi bi-building"></i><span>@item.CompanyName</span></li>
+                        @if (!string.IsNullOrWhiteSpace(item.Location))
+                        {
+                            <li><i class="bi bi-geo-alt"></i><span>@item.Location</span></li>
+                        }
+                        <li>
+                            <i class="bi bi-cash-coin"></i>
+                            <span>RM @Money(item.MinSalary) – RM @Money(item.MaxSalary)</span>
+                        </li>
+                    </ul>
+
+                    <!-- actions pinned to bottom -->
+                    <div class="job-card__actions">
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-controller="JobSearch" asp-action="Details" asp-route-id="@item.JobId">
+                            View / Apply
+                        </a>
+
+                        <form asp-controller="JobSeekerActions" asp-action="UnsaveJob" method="post" class="unsave-form d-inline" data-job="@item.JobId">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="jobId" value="@item.JobId" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                Remove
+                            </button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+
+        <!-- Pagination (same config, styled by pager.css) -->
+        <div class="pager-rail">
+            @Html.PagedListPager(
+            paged,
+                urlBuilder,
+                new PagedListRenderOptions
+                {
+                    LiElementClasses = new[] { "page-item" },
+                    PageClasses = new[] { "page-link" },
+                    UlElementClasses = new[] { "pagination", "pagination-sm" },
+                    DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                    DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                    DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                    DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                    MaximumPageNumbersToDisplay = 7
+                })
+    </div>
+        }
+</div>
+
+@section Scripts {
+    <script>
+        // AJAX unsave (no full reload)
+        (function () {
+            function toast(msg, ok = true) {
+                let c = document.querySelector('.toast-container');
+                if (!c) {
+                    c = document.createElement('div');
+                    c.className = 'toast-container position-fixed top-0 end-0 p-3';
+                    c.style.zIndex = '1080';
+                    document.body.appendChild(c);
+                }
+                const el = document.createElement('div');
+                el.className = `toast align-items-center text-white ${ok ? 'bg-success' : 'bg-danger'} border-0 show`;
+                el.role = 'alert';
+                el.style.minWidth = '280px';
+                el.innerHTML = `
+                  <div class="d-flex">
+                    <div class="toast-body">${msg}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                  </div>`;
+                c.appendChild(el);
+                setTimeout(()=> el.remove(), 3000);
+            }
+
+            document.addEventListener('submit', async (e) => {
+                const form = e.target.closest('.unsave-form');
+                if (!form) return;
+                e.preventDefault();
+
+                const fd = new FormData(form);
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': token
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (res.status === 401 || res.status === 403) return;
+                    if (!res.ok) { toast('Failed to remove saved job.', false); return; }
+
+                    const json = await res.json();
+                    if (json?.success) {
+                        form.closest('[data-card]')?.remove();
+                        toast('Removed from saved.');
+                    } else {
+                        toast(json?.message || 'Failed to remove saved job.', false);
+                    }
+                } catch {
+                    toast('Failed to remove saved job.', false);
+                }
+            });
+        })();
+    </script>
+}

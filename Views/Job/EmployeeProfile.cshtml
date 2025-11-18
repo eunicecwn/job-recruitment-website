@@ -1,0 +1,740 @@
+﻿@model JobRecruitment.ViewModels.EmployeeProfileViewModel
+@{
+    ViewBag.Title = "Employee Profile";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+<!-- Cropper.js CSS -->
+<link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">
+
+<style>
+    /* Enhanced Profile Photo Upload Styles */
+    .profile-upload-container {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .profile-preview {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #e9ecef;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .profile-preview:hover {
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
+
+        .profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .default-profile-icon {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #6c757d;
+        font-size: 3rem;
+    }
+
+    .profile-preview-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 123, 255, 0.8);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-size: 1.5rem;
+    }
+
+    .profile-preview:hover .profile-preview-overlay {
+        opacity: 1;
+    }
+
+    .upload-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .upload-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #007bff;
+        color: white;
+    }
+
+        .upload-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .upload-btn.secondary {
+            background: #6c757d;
+        }
+
+            .upload-btn.secondary:hover {
+                background: #545b62;
+            }
+
+        .upload-btn.danger {
+            background: #dc3545;
+        }
+
+            .upload-btn.danger:hover {
+                background: #c82333;
+            }
+
+    .hidden-file-input {
+        display: none !important;
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+
+    /* Image Editor Modal Styles */
+    .image-editor-modal {
+        max-width: 900px;
+    }
+
+    .image-editor-container {
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+    }
+
+    .editor-controls {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .control-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+    .control-btn {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        background: white;
+        color: #495057;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .control-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+    .zoom-slider {
+        width: 150px;
+        margin: 0 0.5rem;
+    }
+
+    .aspect-ratio-btns {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .aspect-btn {
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        background: white;
+        color: #495057;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+        .aspect-btn:hover,
+        .aspect-btn.active {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+
+    .current-image-info {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    /* Phone validation styles */
+    .is-invalid {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+
+    .invalid-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="card shadow-sm p-4 mb-4 text-center" style="max-width: 500px; margin: auto;">
+        <!-- Update Form -->
+        <form asp-action="EmployeeProfile" method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="Id" />
+
+            <!-- Enhanced Profile Picture Upload -->
+            <div class="form-group">
+                <div class="profile-upload-container" id="profileUploadContainer">
+                    <div class="profile-preview" id="profilePreview">
+                        @if (!string.IsNullOrEmpty(Model.ProfilePhotoFileName))
+                        {
+                            <img id="profilePreviewImg" src="~/uploads/profilepics/@Model.ProfilePhotoFileName" alt="Profile Picture">
+                        }
+                        else
+                        {
+                            <img id="profilePreviewImg" src="" alt="Profile Picture" style="display:none;">
+                            <div class="default-profile-icon" id="defaultProfileIcon">
+                                <i class="bi bi-person"></i>
+                            </div>
+                        }
+                        <div class="profile-preview-overlay">
+                            <i class="bi bi-camera"></i>
+                        </div>
+                    </div>
+                    <div class="upload-controls">
+                        <label class="upload-btn" for="ProfilePictureInput" id="uploadLabel">
+                            <i class="bi bi-upload"></i>
+                            @(!string.IsNullOrEmpty(Model.ProfilePhotoFileName) ? "Change Photo" : "Upload Photo")
+                        </label>
+                        <button type="button" class="upload-btn secondary" id="editBtn" style="display:@(!string.IsNullOrEmpty(Model.ProfilePhotoFileName) ? "inline-flex" : "none");">
+                            <i class="bi bi-pencil"></i> Edit Photo
+                        </button>
+                        <button type="button" class="upload-btn danger" id="removeBtn" style="display:@(!string.IsNullOrEmpty(Model.ProfilePhotoFileName) ? "inline-flex" : "none");">
+                            <i class="bi bi-trash"></i> Remove Photo
+                        </button>
+                        <input type="file" asp-for="ProfilePhoto" accept="image/*" id="ProfilePictureInput" class="hidden-file-input">
+                        <div class="form-text">
+                            Max size: 5MB (jpg, jpeg, png, gif, webp)
+                        </div>
+                        <div id="profilePictureError" class="text-danger" style="display:none;"></div>
+                        <div class="current-image-info" id="imageInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Name & Email -->
+            <h4 class="mt-3 mb-1">@Model.FullName</h4>
+            <p class="text-muted">@Model.Email</p>
+
+            <!-- Success Message -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success mt-3">@TempData["Success"]</div>
+            }
+
+            <div class="form-group row mb-3 align-items-center">
+                <label asp-for="Username" class="col-sm-3 col-form-label text-start"></label>
+                <div class="col-sm-9">
+                    <input asp-for="Username" class="form-control" disabled />
+                </div>
+            </div>
+
+            <div class="form-group row mb-3 align-items-center">
+                <label asp-for="FullName" class="col-sm-3 col-form-label text-start"></label>
+                <div class="col-sm-9">
+                    <input asp-for="FullName" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-group row mb-3 align-items-center">
+                <label asp-for="Email" class="col-sm-3 col-form-label text-start"></label>
+                <div class="col-sm-9">
+                    <input asp-for="Email" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-group row mb-3 align-items-center">
+                <label class="col-sm-3 col-form-label text-start">@Html.DisplayNameFor(m => m.Gender)</label>
+                <div class="col-sm-9 d-flex align-items-center">
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="radio" asp-for="Gender" value="Male" id="genderMale" />
+                        <label class="form-check-label" for="genderMale">Male</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="Gender" value="Female" id="genderFemale" />
+                        <label class="form-check-label" for="genderFemale">Female</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group row mb-3 align-items-center">
+                <label asp-for="Phone" class="col-sm-3 col-form-label text-start"></label>
+                <div class="col-sm-9">
+                    <input asp-for="Phone"
+                           class="form-control"
+                           type="tel"
+                           pattern="[0-9+\-\s()]+"
+                           title="Please enter only numbers, +, -, spaces, and parentheses"
+                           maxlength="20"
+                           placeholder="e.g., +60 162889889" />
+                    <div class="invalid-feedback" id="phoneError"></div>
+                </div>
+            </div>
+
+            <div class="form-group row mb-3 align-items-center">
+                <label asp-for="DateOfBirth" class="col-sm-3 col-form-label text-start"></label>
+                <div class="col-sm-9">
+                    <input asp-for="DateOfBirth" class="form-control" type="date" />
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary px-4">Update Profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Enhanced Image Editor Modal -->
+<div class="modal fade" id="imageEditorModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog image-editor-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-crop"></i> Edit Profile Picture
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="image-editor-container">
+                    <img id="cropperImage" style="max-width: 100%;">
+                </div>
+                <div class="editor-controls">
+                    <div class="control-group">
+                        <span><i class="bi bi-zoom-out"></i></span>
+                        <input type="range" id="zoomSlider" class="zoom-slider" min="0" max="2" step="0.1" value="1">
+                        <span><i class="bi bi-zoom-in"></i></span>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="control-btn" id="rotateLeft" title="Rotate Left">
+                            <i class="bi bi-arrow-counterclockwise"></i> Rotate Left
+                        </button>
+                        <button type="button" class="control-btn" id="rotateRight" title="Rotate Right">
+                            <i class="bi bi-arrow-clockwise"></i> Rotate Right
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="control-btn" id="flipHorizontal" title="Flip Horizontal">
+                            <i class="bi bi-arrows"></i> Flip H
+                        </button>
+                        <button type="button" class="control-btn" id="flipVertical" title="Flip Vertical">
+                            <i class="bi bi-arrow-down-up"></i> Flip V
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <span>Aspect:</span>
+                        <div class="aspect-ratio-btns">
+                            <button type="button" class="aspect-btn active" data-aspect="1">1:1</button>
+                            <button type="button" class="aspect-btn" data-aspect="1.33">4:3</button>
+                            <button type="button" class="aspect-btn" data-aspect="1.77">16:9</button>
+                            <button type="button" class="aspect-btn" data-aspect="free">Free</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="control-btn" id="resetCrop" title="Reset">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveCrop">
+                    <i class="bi bi-check"></i> Apply Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cropper.js JS -->
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<script>
+    let cropper;
+    let currentImageFile = null;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    // DOM elements
+    const profilePreview = document.getElementById('profilePreview');
+    const profilePreviewImg = document.getElementById('profilePreviewImg');
+    const defaultProfileIcon = document.getElementById('defaultProfileIcon');
+    const fileInput = document.getElementById('ProfilePictureInput');
+    const editBtn = document.getElementById('editBtn');
+    const removeBtn = document.getElementById('removeBtn');
+    const uploadLabel = document.getElementById('uploadLabel');
+    const imageInfo = document.getElementById('imageInfo');
+    const errorDiv = document.getElementById('profilePictureError');
+
+    // Modal elements
+    const modal = document.getElementById('imageEditorModal');
+    const cropperImage = document.getElementById('cropperImage');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const aspectBtns = document.querySelectorAll('.aspect-btn');
+
+    // Event Listeners
+    profilePreview.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileSelection);
+    editBtn.addEventListener('click', openImageEditor);
+    removeBtn.addEventListener('click', removePhoto);
+
+    // Modal event listeners
+    document.getElementById('rotateLeft').addEventListener('click', () => cropper && cropper.rotate(-90));
+    document.getElementById('rotateRight').addEventListener('click', () => cropper && cropper.rotate(90));
+    document.getElementById('flipHorizontal').addEventListener('click', () => {
+        if (cropper) {
+            scaleX = scaleX === 1 ? -1 : 1;
+            cropper.scaleX(scaleX);
+        }
+    });
+    document.getElementById('flipVertical').addEventListener('click', () => {
+        if (cropper) {
+            scaleY = scaleY === 1 ? -1 : 1;
+            cropper.scaleY(scaleY);
+        }
+    });
+    document.getElementById('resetCrop').addEventListener('click', resetCropper);
+    document.getElementById('saveCrop').addEventListener('click', saveCroppedImage);
+
+    // Zoom slider
+    zoomSlider.addEventListener('input', function() {
+        if (cropper) {
+            cropper.zoomTo(parseFloat(this.value));
+        }
+    });
+
+    // Aspect ratio buttons
+    aspectBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            aspectBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            if (cropper) {
+                const aspect = this.dataset.aspect;
+                if (aspect === 'free') {
+                    cropper.setAspectRatio(NaN);
+                } else {
+                    cropper.setAspectRatio(parseFloat(aspect));
+                }
+            }
+        });
+    });
+
+    // PHONE VALIDATION - Added validation logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneInput = document.querySelector('input[name="Phone"]');
+        const phoneError = document.getElementById('phoneError');
+
+        if (phoneInput) {
+            // Real-time input filtering - only allow numbers and common phone characters
+            phoneInput.addEventListener('input', function(e) {
+                // Remove any character that's not a digit, +, -, space, or parentheses
+                this.value = this.value.replace(/[^0-9+\-\s()]/g, '');
+
+                // Clear error message when user starts typing valid characters
+                if (this.value.match(/^[0-9+\-\s()]*$/)) {
+                    hidePhoneError();
+                }
+            });
+
+            // Validation on blur (when user leaves the field)
+            phoneInput.addEventListener('blur', function(e) {
+                validatePhoneNumber(this);
+            });
+
+            // Prevent pasting invalid characters
+            phoneInput.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    this.value = this.value.replace(/[^0-9+\-\s()]/g, '');
+                    validatePhoneNumber(this);
+                }, 10);
+            });
+        }
+
+        // Form submission validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const phoneInput = document.querySelector('input[name="Phone"]');
+
+            if (phoneInput && !validatePhoneNumber(phoneInput)) {
+                e.preventDefault(); // Prevent form submission
+                phoneInput.focus(); // Focus on the invalid field
+                return false;
+            }
+        });
+
+        function validatePhoneNumber(input) {
+            const phoneValue = input.value.trim();
+            const phoneError = document.getElementById('phoneError');
+
+            // Check if phone contains only valid characters
+            if (phoneValue && !phoneValue.match(/^[0-9+\-\s()]+$/)) {
+                showPhoneError('Phone number can only contain numbers, +, -, spaces, and parentheses');
+                return false;
+            }
+
+            // Check minimum length (adjust as needed)
+            const digitsOnly = phoneValue.replace(/[^0-9]/g, '');
+            if (phoneValue && digitsOnly.length < 7) {
+                showPhoneError('Phone number must contain at least 7 digits');
+                return false;
+            }
+
+            // If validation passes
+            hidePhoneError();
+            return true;
+        }
+
+        function showPhoneError(message) {
+            const phoneInput = document.querySelector('input[name="Phone"]');
+            const phoneError = document.getElementById('phoneError');
+
+            phoneError.textContent = message;
+            phoneError.style.display = 'block';
+            phoneInput.classList.add('is-invalid');
+        }
+
+        function hidePhoneError() {
+            const phoneInput = document.querySelector('input[name="Phone"]');
+            const phoneError = document.getElementById('phoneError');
+
+            phoneError.style.display = 'none';
+            phoneInput.classList.remove('is-invalid');
+        }
+    });
+
+    function handleFileSelection(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file
+        const validationResult = validateImageFile(file);
+        if (!validationResult.valid) {
+            showError(validationResult.message);
+            fileInput.value = '';
+            return;
+        }
+
+        hideError();
+        currentImageFile = file;
+
+        // Read and display file
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            updatePreview(e.target.result);
+            updateImageInfo(file);
+            openImageEditor();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function validateImageFile(file) {
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+        if (!allowedTypes.includes(file.type)) {
+            return {
+                valid: false,
+                message: 'Please select a valid image file (jpg, jpeg, png, gif, webp)'
+            };
+        }
+
+        if (file.size > maxSize) {
+            return {
+                valid: false,
+                message: 'File size must be less than 5MB'
+            };
+        }
+
+        return { valid: true };
+    }
+
+    function updatePreview(imageSrc) {
+        profilePreviewImg.src = imageSrc;
+        profilePreviewImg.style.display = 'block';
+        if (defaultProfileIcon) defaultProfileIcon.style.display = 'none';
+
+        // Update button visibility
+        editBtn.style.display = 'inline-flex';
+        removeBtn.style.display = 'inline-flex';
+        uploadLabel.innerHTML = '<i class="bi bi-upload"></i> Change Photo';
+    }
+
+    function updateImageInfo(file) {
+        const sizeKB = Math.round(file.size / 1024);
+        const sizeText = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
+        imageInfo.textContent = `${file.name} (${sizeText})`;
+    }
+
+    function removePhoto() {
+        if (confirm('Are you sure you want to remove the profile photo?')) {
+            profilePreviewImg.style.display = 'none';
+            profilePreviewImg.src = '';
+            if (defaultProfileIcon) defaultProfileIcon.style.display = 'flex';
+
+            fileInput.value = '';
+            currentImageFile = null;
+
+            // Update button visibility
+            editBtn.style.display = 'none';
+            removeBtn.style.display = 'none';
+            uploadLabel.innerHTML = '<i class="bi bi-upload"></i> Upload Photo';
+            imageInfo.textContent = '';
+            hideError();
+        }
+    }
+
+    function openImageEditor() {
+        if (!currentImageFile && !profilePreviewImg.src) return;
+
+        const imageSrc = profilePreviewImg.src || '';
+        if (!imageSrc) return;
+
+        cropperImage.src = imageSrc;
+
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+
+        // Initialize cropper after modal is shown
+        modal.addEventListener('shown.bs.modal', function() {
+            initializeCropper();
+        }, { once: true });
+    }
+
+    function initializeCropper() {
+        if (cropper) {
+            cropper.destroy();
+        }
+
+        cropper = new Cropper(cropperImage, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 0.8,
+            responsive: true,
+            ready() {
+                // Reset zoom slider
+                zoomSlider.value = 1;
+            },
+            zoom(event) {
+                // Update zoom slider when user zooms manually
+                zoomSlider.value = event.detail.ratio;
+            }
+        });
+
+        // Reset scale values
+        scaleX = 1;
+        scaleY = 1;
+    }
+
+    function resetCropper() {
+        if (cropper) {
+            cropper.reset();
+            zoomSlider.value = 1;
+            scaleX = 1;
+            scaleY = 1;
+
+            // Reset aspect ratio to 1:1
+            aspectBtns.forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.aspect-btn[data-aspect="1"]').classList.add('active');
+            cropper.setAspectRatio(1);
+        }
+    }
+
+    function saveCroppedImage() {
+        if (!cropper) return;
+
+        cropper.getCroppedCanvas({
+            width: 300,
+            height: 300,
+            imageSmoothingQuality: 'high'
+        }).toBlob(function(blob) {
+            // Update preview
+            const url = URL.createObjectURL(blob);
+            updatePreview(url);
+
+            // Update file input with cropped image
+            const dt = new DataTransfer();
+            const fileName = currentImageFile ? currentImageFile.name : 'profile.jpg';
+            dt.items.add(new File([blob], fileName, { type: 'image/jpeg' }));
+            fileInput.files = dt.files;
+
+            // Update image info
+            updateImageInfo(new File([blob], fileName, { type: 'image/jpeg' }));
+
+            // Hide modal
+            bootstrap.Modal.getInstance(modal).hide();
+        }, 'image/jpeg', 0.95);
+    }
+
+    function showError(message) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    function hideError() {
+        errorDiv.style.display = 'none';
+    }
+
+    // Clean up on modal close
+    modal.addEventListener('hidden.bs.modal', function() {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    });
+</script>

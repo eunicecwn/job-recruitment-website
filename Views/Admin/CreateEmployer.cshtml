@@ -1,0 +1,61 @@
+﻿@model JobRecruitment.Models.Employer
+@{
+    ViewData["Title"] = "Create Employer";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+@{
+    // change tl form 25/7
+}
+<form asp-action="CreateEmployer" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <!-- Hidden field to prevent 'Role is required' validation error -->
+    <input type="hidden" asp-for="Role" value="Employer" />
+
+    <div class="form-group">
+        <label asp-for="Username"></label>
+        <input asp-for="Username" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" class="form-control" type="password" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FullName"></label>
+        <input asp-for="FullName" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Gender"></label>
+        <select asp-for="Gender" class="form-control">
+            <option value="">-- Select Gender --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CompanyName"></label>
+        <input asp-for="CompanyName" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CompanyAddress"></label>
+        <input asp-for="CompanyAddress" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Industry"></label>
+        <input asp-for="Industry" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Employer</button>
+</form>

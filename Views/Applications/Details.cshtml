@@ -1,0 +1,365 @@
+﻿@using JobRecruitment.Models
+@using JobRecruitment.Models.JobSeekerViewModels
+@model ApplicationDetailsVm
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Application Details";
+
+    string StatusText(ApplicationStatusEnum s) => s switch
+    {
+        ApplicationStatusEnum.Pending => "Pending",
+        ApplicationStatusEnum.Shortlisted => "Shortlisted",
+        ApplicationStatusEnum.InterviewScheduled => "Interview Scheduled",
+        ApplicationStatusEnum.OfferSent => "Offer Sent",
+        ApplicationStatusEnum.Hired => "Hired",
+        ApplicationStatusEnum.Rejected => "Rejected",
+        _ => "Unknown"
+    };
+    string Badge(ApplicationStatusEnum s) => s switch
+    {
+        ApplicationStatusEnum.Hired => "bg-success",
+        ApplicationStatusEnum.OfferSent => "bg-success",
+        ApplicationStatusEnum.Rejected => "bg-danger",
+        ApplicationStatusEnum.InterviewScheduled => "bg-info text-dark",
+        ApplicationStatusEnum.Shortlisted => "bg-primary",
+        ApplicationStatusEnum.Pending => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+}
+
+@section Styles {
+    <style>
+        :root {
+            --brand: var(--primary,#4F46E5);
+            --brand-600: var(--primary-dark,#4338CA);
+        }
+
+        .brand-card {
+            border: 2px solid var(--brand-600);
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(25,35,70,.06);
+        }
+
+            .brand-card .card-header {
+                border-bottom: 1px solid rgba(79,70,229,.25);
+                border-radius: 16px 16px 0 0 !important;
+                padding: .6rem .9rem;
+            }
+
+            .brand-card .card-body {
+                padding: .9rem;
+            }
+
+        /* Bigger, clearer status chip */
+        .status-chip {
+            border-radius: 999px;
+            padding: .32rem .85rem;
+            font-weight: 600;
+            font-size: .95rem;
+            box-shadow: 0 1px 0 rgba(0,0,0,.05);
+        }
+        /* Pending pops more */
+        .bg-warning.text-dark {
+            background: #F4B400 !important; /* richer yellow */
+            color: #1f2937 !important;
+        }
+
+        /* Key/val rows in Job Info */
+        .kv {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: .45rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+
+            .kv:last-child {
+                border-bottom: 0
+            }
+
+            .kv .k {
+                color: #6b7280
+            }
+
+            .kv .v {
+                font-weight: 600
+            }
+
+        /* Timeline — fix dot overlap & spacing */
+        .timeline {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 22px; /* left gutter for vertical rule */
+            position: relative;
+            border-left: 2px solid rgba(79,70,229,.35);
+            border-radius: 2px;
+        }
+
+            .timeline .item {
+                position: relative;
+                padding-left: 12px;
+                margin: 8px 0 14px;
+            }
+
+                .timeline .item::before {
+                    content: "";
+                    position: absolute;
+                    left: -22px;
+                    top: .35rem;
+                    width: 9px;
+                    height: 9px;
+                    border-radius: 50%;
+                    background: var(--brand);
+                    box-shadow: 0 0 0 3px #ffffff; /* white halo so it never touches text */
+                }
+
+            .timeline .title {
+                font-weight: 700;
+                margin-bottom: 2px;
+            }
+
+            .timeline .when {
+                color: #6b7280;
+                font-size: .9rem;
+            }
+
+        /* Buttons scale */
+        .btn {
+            border-radius: 10px;
+            padding: .42rem .7rem;
+        }
+
+        .btn-outline-primary {
+            --bs-btn-color: var(--brand);
+            --bs-btn-border-color: var(--brand);
+            --bs-btn-hover-bg: rgba(var(--bs-primary-rgb),.08);
+            --bs-btn-hover-border-color: var(--brand-600);
+            --bs-btn-hover-color: var(--brand);
+        }
+
+        /* Containers: compact */
+        .container-xxl {
+            max-width: 1200px;
+        }
+
+        .card {
+            margin-bottom: .85rem;
+        }
+
+        .h5, h5 {
+            font-size: 1.02rem;
+        }
+    </style>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css" />
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] as string ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null || TempData["Error"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css" />
+    <div class="error-toast">
+        <div class="error-card">
+            <div class="icon">⚠️</div>
+            <h2>@(TempData["ErrorTitle"] as string ?? "Error")</h2>
+            <p>@(TempData["ErrorMessage"] ?? TempData["Error"])</p>
+        </div>
+    </div>
+}
+
+<div class="container-xxl py-3">
+    <div class="d-flex align-items-center mb-2">
+        <a class="btn btn-outline-secondary btn-sm me-2"
+           asp-controller="Applications" asp-action="MyApplications">
+            ← Back to Applications
+        </a>
+        <div class="ms-auto">
+            <span class="status-chip badge @Badge(Model.Application.Status)">@StatusText(Model.Application.Status)</span>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- LEFT -->
+        <div class="col-lg-8">
+            <!-- Job Info -->
+            <div class="card brand-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">Job Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="kv"><span class="k"><i class="bi bi-briefcase me-2"></i>Job Title</span><span class="v">@Model.Job?.Title</span></div>
+                    <div class="kv"><span class="k"><i class="bi bi-building me-2"></i>Company</span><span class="v">@Model.Job?.Employer?.CompanyName</span></div>
+                    <div class="kv"><span class="k"><i class="bi bi-geo-alt me-2"></i>Location</span><span class="v">@Model.Job?.Location</span></div>
+                    <div class="kv"><span class="k"><i class="bi bi-calendar-check me-2"></i>Applied Date</span><span class="v">@Model.Application.AppliedDate.ToLocalTime().ToString("dd MMM yyyy")</span></div>
+                </div>
+            </div>
+
+            <!-- Cover Letter -->
+            <div class="card brand-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">Cover Letter</h5>
+                </div>
+                <div class="card-body">
+                    @if (string.IsNullOrWhiteSpace(Model.CoverLetter))
+                    {
+                        <div class="text-muted">No cover letter provided.</div>
+                    }
+                    else
+                    {
+                        <div class="form-control-plaintext" style="white-space:pre-wrap">@Model.CoverLetter</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Resume -->
+            <div class="card brand-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">Resume</h5>
+                </div>
+                <div class="card-body d-flex align-items-center gap-2">
+                    @if (!string.IsNullOrWhiteSpace(Model.ResumeFileName))
+                    {
+                        <a class="btn btn-outline-primary"
+                           href="~/@Model.ResumeFileName"
+                           target="_blank" rel="noopener">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> View Resume
+                        </a>
+                        <a class="btn btn-light"
+                           href="~/@Model.ResumeFileName"
+                           download>
+                            <i class="bi bi-download me-1"></i> Download
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="text-muted">No resume uploaded.</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Q&A -->
+            @{
+                var hasAnswers = (Model?.Questions?.Any(q => !string.IsNullOrWhiteSpace(q.Answer)) ?? false);
+            }
+            <div class="card brand-card">
+                <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0 text-primary">Application Questions</h5>
+                    <span class="badge bg-secondary">@((Model?.Questions?.Count ?? 0))</span>
+                </div>
+                <div class="card-body">
+                    @if (!hasAnswers)
+                    {
+                        <div class="alert alert-secondary mb-0">No answers were submitted for this application.</div>
+                    }
+                    else
+                    {
+                        <div class="row g-2">
+                            @foreach (var r in (Model.Questions ?? new List<ApplicationDetailsVm.QuestionAnswerVm>()).OrderBy(q => q.QuestionId))
+                            {
+                                <div class="col-12">
+                                    <div class="border rounded p-3">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="fw-semibold">@r.QuestionText</div>
+                                            <span class="badge text-bg-light">@r.Type.ToString()</span>
+                                        </div>
+                                        <div class="mt-1">
+                                            <div class="form-control-plaintext" style="white-space:pre-wrap">@r.Answer</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="col-lg-4">
+            <div class="card brand-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">Application Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="timeline">
+                        <li class="item">
+                            <div class="title">Applied</div>
+                            <div class="when">@Model.Application.AppliedDate.ToLocalTime().ToString("dd MMM yyyy")</div>
+                        </li>
+                        @if (Model.Application.Status >= ApplicationStatusEnum.Shortlisted)
+                        {
+                            <li class="item">
+                                <div class="title">Shortlisted</div>
+                                <div class="when">Status reached</div>
+                            </li>
+                        }
+                        @if (Model.Application.Status == ApplicationStatusEnum.InterviewScheduled && Model.Application.InterviewDate.HasValue)
+                        {
+                            <li class="item">
+                                <div class="title">Interview Scheduled</div>
+                                <div class="when">@Model.Application.InterviewDate.Value.ToLocalTime().ToString("dd MMM yyyy • h:mm tt")</div>
+                            </li>
+                        }
+                        @if (Model.Application.Status == ApplicationStatusEnum.OfferSent)
+                        {
+                            <li class="item">
+                                <div class="title">Offer Sent</div>
+                                <div class="when">Awaiting your response</div>
+                            </li>
+                        }
+                        @if (Model.Application.Status == ApplicationStatusEnum.Hired)
+                        {
+                            <li class="item">
+                                <div class="title">Hired</div>
+                                <div class="when">🎉</div>
+                            </li>
+                        }
+                        @if (Model.Application.Status == ApplicationStatusEnum.Rejected)
+                        {
+                            <li class="item">
+                                <div class="title">Rejected</div>
+                                <div class="when">Application closed</div>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="d-flex gap-2 mt-2">
+                        <a class="btn btn-outline-primary"
+                           asp-controller="JobSearch" asp-action="Details" asp-route-id="@Model.JobId">
+                            View Job
+                        </a>
+                        <a class="btn btn-light"
+                           asp-controller="Applications" asp-action="MyApplications">
+                            My Applications
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          if (document.querySelector(".success-toast") || document.querySelector(".error-toast")) {
+            const modalEl = document.querySelector(".modal.show");
+            if (modalEl && window.bootstrap) {
+              const inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+              inst.hide();
+            }
+            document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+            document.body.classList.remove("modal-open");
+          }
+        });
+    </script>
+}

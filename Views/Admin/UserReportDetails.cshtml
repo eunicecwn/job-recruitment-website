@@ -1,0 +1,573 @@
+﻿@model JobRecruitment.Models.ReportBase
+@{
+    ViewData["Title"] = "Report Details";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    var userReport = Model as JobRecruitment.Models.UserReport;
+    var employerReport = Model as JobRecruitment.Models.EmployerReport;
+    var isUserReport = userReport != null;
+    var reportType = isUserReport ? "User Report" : "Employer Report";
+
+    // Determine the status of the reported entity
+    bool isEntityActive = false;
+    string entityId = "";
+    string entityType = "";
+
+    if (isUserReport && userReport.ReportedUser != null)
+    {
+        isEntityActive = userReport.ReportedUser.IsActive;
+        entityId = userReport.ReportedUserId;
+        entityType = "User";
+    }
+    else if (!isUserReport && employerReport.Employer != null)
+    {
+        isEntityActive = employerReport.Employer.IsActive;
+        entityId = employerReport.EmployerId;
+        entityType = "Employer";
+    }
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="page-title">Report Details</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item">
+                                    <a href="@Url.Action("Index", "Admin")">Dashboard</a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="@Url.Action("Reports")">Reports</a>
+                                </li>
+                                <li class="breadcrumb-item active">@reportType Details</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("Reports")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Report Information -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-flag text-danger me-2"></i>
+                        @reportType Information
+                    </h5>
+                    <span class="badge @(isUserReport ? "bg-warning text-dark" : "bg-info") fs-6">
+                        @reportType
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Report ID</label>
+                            <p class="fw-bold">@Model.Id</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Date Reported</label>
+                            <p class="fw-bold">@Model.DateReported.ToString("MMMM dd, yyyy 'at' HH:mm")</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mt-2">
+                        <div class="col-12">
+                            <label class="form-label text-muted">Report Reason</label>
+                            <div>
+                                <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                @Model.Reason
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reported Entity Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas @(isUserReport ? "fa-user" : "fa-building") text-primary me-2"></i>
+                        @(isUserReport ? "Reported User" : "Reported Employer") Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (isUserReport)
+                    {
+                        <div class="d-flex align-items-center mb-3">
+                            @if (!string.IsNullOrEmpty(userReport.ReportedUser?.ProfilePhotoFileName))
+                            {
+                                <img src="~/uploads/profiles/@userReport.ReportedUser.ProfilePhotoFileName"
+                                     alt="Profile" class="rounded-circle me-3" width="60" height="60">
+                            }
+                            else
+                            {
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            }
+                            <div>
+                                <h6 class="mb-1">@(userReport.ReportedUser?.FullName ?? "Unknown User")</h6>
+                                <span class="text-muted">@(userReport.ReportedUser?.Role ?? "N/A")</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">User ID</label>
+                                <p class="mb-0">@(userReport.ReportedUser?.Id ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Username</label>
+                                <p class="mb-0">@(userReport.ReportedUser?.Username ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email</label>
+                                <p class="mb-0">@(userReport.ReportedUser?.Email ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Phone</label>
+                                <p class="mb-0">@(userReport.ReportedUser?.Phone ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Account Status</label>
+                                <span class="badge @(userReport.ReportedUser?.IsActive == true ? "bg-success" : "bg-danger")">
+                                    @(userReport.ReportedUser?.IsActive == true ? "Active" : "Blocked")
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Member Since</label>
+                                <p class="mb-0">@(userReport.ReportedUser?.CreatedDate.ToString("MMMM yyyy") ?? "N/A")</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 60px; height: 60px;">
+                                <i class="fas fa-building text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">@(employerReport.Employer?.CompanyName ?? "Unknown Company")</h6>
+                                <span class="text-muted">Employer</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Employer ID</label>
+                                <p class="mb-0">@(employerReport.Employer?.Id ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Contact Person</label>
+                                <p class="mb-0">@(employerReport.Employer?.FullName ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email</label>
+                                <p class="mb-0">@(employerReport.Employer?.Email ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Industry</label>
+                                <p class="mb-0">@(employerReport.Employer?.Industry ?? "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Website</label>
+                                <p class="mb-0">
+                                    @if (!string.IsNullOrEmpty(employerReport.Employer?.Website))
+                                    {
+                                        <a href="@employerReport.Employer.Website" target="_blank" class="text-decoration-none">
+                                            @employerReport.Employer.Website <i class="fas fa-external-link-alt ms-1"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Account Status</label>
+                                <span class="badge @(employerReport.Employer?.IsActive == true ? "bg-success" : "bg-danger")">
+                                    @(employerReport.Employer?.IsActive == true ? "Active" : "Blocked")
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Approval Status</label>
+                                <span class="badge @(employerReport.Employer?.ApprovalStatus == "Approved" ? "bg-success" :
+                                                                                                                                                                        employerReport.Employer?.ApprovalStatus == "Rejected" ? "bg-danger" : "bg-warning text-dark")">
+                                @(employerReport.Employer?.ApprovalStatus ?? "N/A")
+                            </span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted">Company Address</label>
+                            <p class="mb-0">@(employerReport.Employer?.CompanyAddress ?? "N/A")</p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(employerReport.Employer?.CompanyDescription))
+                            {
+                                <div class="col-12">
+                                    <label class="form-label text-muted">Company Description</label>
+                                    <p class="mb-0">@employerReport.Employer.CompanyDescription</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Reporter Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-edit text-success me-2"></i>
+                        Reporter Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (isUserReport)
+                    {
+                        <div class="text-center mb-3">
+                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-building text-white"></i>
+                            </div>
+                            <h6 class="mb-1">@(userReport.Employer?.CompanyName ?? "Unknown Company")</h6>
+                            <small class="text-muted">Employer</small>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Contact Person</label>
+                            <p class="mb-0 fw-semibold">@(userReport.Employer?.FullName ?? "N/A")</p>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Email</label>
+                            <p class="mb-0">@(userReport.Employer?.Email ?? "N/A")</p>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Industry</label>
+                            <p class="mb-0">@(userReport.Employer?.Industry ?? "N/A")</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center mb-3">
+                            @if (!string.IsNullOrEmpty(employerReport.Reporter?.ProfilePhotoFileName))
+                            {
+                                <img src="~/uploads/profiles/@employerReport.Reporter.ProfilePhotoFileName"
+                                     alt="Profile" class="rounded-circle mb-2" width="50" height="50">
+                            }
+                            else
+                            {
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                     style="width: 50px; height: 50px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            }
+                            <h6 class="mb-1">@(employerReport.Reporter?.FullName ?? "Unknown User")</h6>
+                            <small class="text-muted">@(employerReport.Reporter?.Role ?? "User")</small>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Username</label>
+                            <p class="mb-0 fw-semibold">@(employerReport.Reporter?.Username ?? "N/A")</p>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small">Email</label>
+                            <p class="mb-0">@(employerReport.Reporter?.Email ?? "N/A")</p>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label text-muted small">Phone</label>
+                            <p class="mb-0">@(employerReport.Reporter?.Phone ?? "N/A")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs text-warning me-2"></i>
+                        Admin Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @if (isEntityActive)
+                        {
+                            <!-- Block Button -->
+                            <button type="button" class="btn btn-danger"
+                                    onclick="blockEntity('@entityId', '@entityType'); location.reload();"
+                                    title="Block Reported Entity">
+                                <i class="fas fa-ban me-2"></i>
+                                Block @(isUserReport ? "User" : "Employer")
+                            </button>
+                        }
+                        else
+                        {
+                            <!-- Unblock Button -->
+                            <button type="button" class="btn btn-success"
+                                    onclick="unblockEntity('@entityId', '@entityType'); location.reload();"
+                                    title="Unblock Reported Entity">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Unblock @(isUserReport ? "User" : "Employer")
+                            </button>
+                        }
+
+
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            All actions are logged and cannot be undone. Use with caution.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Process Report Modal -->
+<div class="modal fade" id="processReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Process Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="processReportForm">
+                <div class="modal-body">
+                    <input type="hidden" id="reportId" />
+                    <input type="hidden" id="reportAction" />
+
+                    <div class="mb-3">
+                        <label for="adminNotes" class="form-label">Admin Notes (Optional)</label>
+                        <textarea class="form-control" id="adminNotes" rows="3"
+                                  placeholder="Add any notes about this action..."></textarea>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone. Are you sure you want to proceed?
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Action</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+<script>
+    // Entity action functions
+    function blockEntity(entityId, entityType) {
+        if (confirm('Are you sure you want to block this ' + entityType.toLowerCase() + '?')) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("BlockEntity", "Admin")',
+                type: 'POST',
+                data: {
+                    Id: entityId,
+                    Type: entityType,
+                    __RequestVerificationToken: token
+                },
+                success: function(data) {
+                    if (data.success) {
+                        alert(data.message || entityType + ' blocked successfully');
+                        location.reload(); // Reload to show updated status
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to block ' + entityType));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while blocking the ' + entityType.toLowerCase());
+                }
+            });
+        }
+    }
+
+    function unblockEntity(entityId, entityType) {
+        if (confirm('Are you sure you want to unblock this ' + entityType.toLowerCase() + '?')) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("UnblockEntity", "Admin")',
+                type: 'POST',
+                data: {
+                    Id: entityId,
+                    Type: entityType,
+                    __RequestVerificationToken: token
+                },
+                success: function(data) {
+                    if (data.success) {
+                        alert(data.message || entityType + ' unblocked successfully');
+                        location.reload(); // Reload to show updated status
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to unblock ' + entityType));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while unblocking the ' + entityType.toLowerCase());
+                }
+            });
+        }
+    }
+
+    function deleteReport(reportId) {
+        if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("DeleteReport", "Admin")',
+                type: 'POST',
+                data: {
+                    id: reportId,
+                    __RequestVerificationToken: token
+                },
+                success: function(data) {
+                    if (data.success) {
+                        alert(data.message);
+                        // Redirect back to reports list
+                        window.location.href = '@Url.Action("Reports", "Admin")';
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the report.');
+                }
+            });
+        }
+    }
+</script>
+<style>
+    /* Custom styling for the report details page */
+    .page-header {
+        background: #764ba2;
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+    }
+
+        .page-header .breadcrumb {
+            background: none;
+            margin-bottom: 0;
+        }
+
+        .page-header .breadcrumb-item a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .page-header .breadcrumb-item.active {
+            color: white;
+        }
+
+    .card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        transition: all 0.15s ease-in-out;
+    }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+    .card-header {
+        background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+        border-radius: 1rem 1rem 0 0 !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5em 0.75em;
+        font-weight: 500;
+    }
+
+    .btn {
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.15s ease-in-out;
+    }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+    .alert {
+        border-radius: 0.75rem;
+        border: none;
+        font-weight: 500;
+    }
+
+    .modal-content {
+        border-radius: 1rem;
+        border: none;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .modal-footer {
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    /* Profile image styling */
+    img.rounded-circle {
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Status badges */
+    .bg-success {
+        background-color: #28a745 !important;
+    }
+
+    .bg-danger {
+        background-color: #dc3545 !important;
+    }
+
+    .bg-warning {
+        background-color: #ffc107 !important;
+    }
+
+    .bg-info {
+        background-color: #17a2b8 !important;
+    }
+</style>

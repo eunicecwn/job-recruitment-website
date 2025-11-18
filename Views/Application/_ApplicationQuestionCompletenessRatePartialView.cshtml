@@ -1,0 +1,195 @@
+﻿@model JobRecruitment.Models.Application
+@using JobRecruitment.Models
+
+@{
+    var questions = Model.Job?.QuestionSet?.Questions?.ToList() ?? new List<Question>();
+    var responses = Model.QuestionResponses?
+        .ToDictionary(qr => qr.QuestionId, qr => qr)
+        ?? new Dictionary<string, QuestionResponse>();
+
+    // Handle case when there are no questions
+    var hasQuestions = questions.Any();
+    var answeredCount = hasQuestions ? responses.Count(r => !string.IsNullOrEmpty(r.Value.Answer) && r.Value.Answer.Trim() != "") : 0;
+    var totalCount = hasQuestions ? questions.Count : 0;
+    var completenessRate = hasQuestions ? (double)answeredCount / totalCount * 100 : 0;
+    var strokeDasharray = 2 * Math.PI * 40; // Circumference of the circle
+    var strokeDashoffset = strokeDasharray * (1 - (completenessRate / 100));
+}
+
+<style>
+    .completeness-circle {
+        width: 100px;
+        height: 100px;
+        position: relative;
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: #e9ecef;
+        stroke-width: 8;
+    }
+
+    .circle-progress {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .progress-success {
+        stroke: var(--bs-success);
+    }
+
+    .progress-warning {
+        stroke: var(--bs-warning);
+    }
+
+    .progress-danger {
+        stroke: var(--bs-danger);
+    }
+
+    .progress-info {
+        stroke: var(--bs-info);
+    }
+
+    .circle-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .completeness-rate {
+        font-size: 1.5rem;
+        line-height: 1;
+        margin-bottom: 0.1rem;
+    }
+
+    .completeness-label {
+        font-size: 0.7rem;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .completeness-stats {
+        font-size: 0.85rem;
+    }
+</style>
+
+<div class="card mb-3">
+    <div class="card-body">
+        @if (hasQuestions)
+        {
+            <div class="d-flex align-items-center">
+                <!-- Circular Progress -->
+                <div class="completeness-circle me-4">
+                    <svg class="completeness-circle" viewBox="0 0 100 100">
+                        <circle class="circle-bg" cx="50" cy="50" r="40"></circle>
+                        <circle class="circle-progress @GetProgressCircleClass(completenessRate)"
+                                cx="50" cy="50" r="40"
+                                stroke-dasharray="@strokeDasharray"
+                                stroke-dashoffset="@strokeDashoffset"></circle>
+                    </svg>
+                    <div class="circle-text">
+                        <div class="completeness-rate @GetProgressTextClass(completenessRate)">
+                            @(completenessRate.ToString("0"))%
+                        </div>
+                        <div class="completeness-label text-muted">Complete</div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="flex-grow-1">
+                    <h6 class="mb-2">Question Completion</h6>
+                    <div class="completeness-stats">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Total Questions:</span>
+                            <span class="fw-bold">@totalCount</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>Answered:
+                            </span>
+                            <span class="fw-bold text-success">@answeredCount</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-danger">
+                                <i class="bi bi-x-circle-fill me-1"></i>Not Answered:
+                            </span>
+                            <span class="fw-bold text-danger">@(totalCount - answeredCount)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Status -->
+            <div class="mt-3 pt-3 border-top">
+                <div class="text-center">
+                    <span class="badge @GetProgressBadgeClass(completenessRate) px-3 py-2">
+                        <i class="@GetProgressIcon(completenessRate) me-1"></i>
+                        @GetProgressStatus(completenessRate)
+                    </span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- No Questions State -->
+            <div class="text-center py-4">
+                <div class="mb-3">
+                    <i class="bi bi-question-circle text-muted" style="font-size: 3rem;"></i>
+                </div>
+                <h5 class="text-muted">No Questions Available</h5>
+                <p class="text-muted mb-0">This job application doesn't have any questions to answer.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    private string GetProgressCircleClass(double rate)
+    {
+        if (rate >= 90) return "progress-success";
+        if (rate >= 70) return "progress-info";
+        if (rate >= 50) return "progress-warning";
+        return "progress-danger";
+    }
+
+    private string GetProgressTextClass(double rate)
+    {
+        if (rate >= 90) return "text-success";
+        if (rate >= 70) return "text-info";
+        if (rate >= 50) return "text-warning";
+        return "text-danger";
+    }
+
+    private string GetProgressBadgeClass(double rate)
+    {
+        if (rate >= 90) return "bg-success";
+        if (rate >= 70) return "bg-info";
+        if (rate >= 50) return "bg-warning";
+        return "bg-danger";
+    }
+
+    private string GetProgressIcon(double rate)
+    {
+        if (rate >= 90) return "bi bi-check-circle-fill";
+        if (rate >= 70) return "bi bi-info-circle-fill";
+        if (rate >= 50) return "bi bi-exclamation-circle-fill";
+        return "bi bi-x-circle-fill";
+    }
+
+    private string GetProgressStatus(double rate)
+    {
+        if (rate >= 90) return "Excellent Completion";
+        if (rate >= 70) return "Good Progress";
+        if (rate >= 50) return "Moderate Progress";
+        if (rate > 0) return "Needs Improvement";
+        return "Not Started";
+    }
+}

@@ -1,0 +1,259 @@
+﻿@model List<JobRecruitment.Models.ViewModels.JobReportViewModel>
+@{
+    ViewData["Title"] = "Job Report Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2>Job Reports</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Card -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@ViewBag.TotalReports</h4>
+                            <p class="card-text">TOTAL JOB REPORTS</p>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-briefcase-exclamation fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="searchTerm" id="searchTerm"
+                                   value="@ViewBag.SearchTerm" placeholder="Search job reports...">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Sort by Date</label>
+                            @Html.DropDownList("sortOrder", new SelectList(new List<object>
+                            {
+                                new { Value = "desc", Text = "Newest First" },
+                                                        new { Value = "asc", Text = "Oldest First" }
+                                                        }, "Value", "Text", ViewBag.SortOrder),
+                                                        new { @class = "form-select", id = "sortOrder" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            @Html.DropDownList("statusFilter",
+                                                        new SelectList(new List<object>
+                                                        {
+                                                        new { Value = "", Text = "All" },
+                                                        new { Value = "active", Text = "Active" },
+                                                        new { Value = "blocked", Text = "Blocked" }
+                                                        }, "Value", "Text", Context.Request.Query["statusFilter"].ToString()),
+                                                        new { @class = "form-select", id = "statusFilter" })
+
+                        </div>
+
+
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="button" id="filterBtn" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Filter
+                            </button>
+                            <button type="button" id="clearBtn" class="btn btn-secondary">
+                                <i class="bi bi-x"></i> Clear
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center py-3" style="display: none;">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-2">Loading reports...</p>
+    </div>
+
+    <!-- Reports Table Container -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div id="reportsContainer">
+                        @Html.Partial("_JobReportsTable", Model)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentPage = 1;
+
+        $(document).ready(function () {
+            initializeEventHandlers();
+            currentPage = @ViewBag.CurrentPage;
+        });
+
+        function initializeEventHandlers() {
+            // ✅ Filter button click
+            $('#filterBtn').on('click', function (e) {
+                e.preventDefault();
+                currentPage = 1;
+                loadReports();
+            });
+
+            // ✅ Clear button click
+            $('#clearBtn').on('click', function (e) {
+                e.preventDefault();
+                $('#searchTerm').val('');
+                currentPage = 1;
+                loadReports();
+            });
+
+            // ✅ Press Enter in search box
+            $('#searchTerm').on('keypress', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    currentPage = 1;
+                    loadReports();
+                }
+            });
+
+            // ✅ Live search (500ms debounce)
+            let searchTimeout;
+            $('#searchTerm').on('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    currentPage = 1;
+                    loadReports();
+                }, 500);
+            });
+
+            // ✅ Auto refresh when changing sort
+            $('#sortOrder').on('change', function () {
+                currentPage = 1;
+                loadReports();
+            });
+        }
+
+              // ✅ Block/Unblock button
+             $(document).on('click', '.toggle-status-btn', function () {
+            var jobId = $(this).data('jobid');
+            var reportId = $(this).data('reportid'); // Get the unique report ID
+            var $btn = $(this);
+
+            $.ajax({
+                url: '@Url.Action("ToggleJobStatus", "Admin")',
+                type: 'POST',
+                data: { jobId: jobId },
+                success: function (response) {
+                    if (response.success) {
+                        var newStatus = response.newStatus;
+                        // Use the unique report ID for the status label
+                        var $label = $('.status-label-' + reportId);
+
+                        if (newStatus === "Active") {
+                            $label.removeClass('bg-danger').addClass('bg-success').text("Active");
+                            $btn.html('<i class="bi bi-slash-circle"></i> Block');
+                        } else {
+                            $label.removeClass('bg-success').addClass('bg-danger').text("Blocked");
+                            $btn.html('<i class="bi bi-check-circle"></i> Unblock');
+                        }
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    alert("Failed to update job status.");
+                }
+            });
+        });
+
+        // ✅ Status filter auto refresh
+        $('#statusFilter').on('change', function () {
+            currentPage = 1;
+            loadReports();
+        });
+
+        // ✅ Include statusFilter in AJAX request
+        function loadReports(page = currentPage) {
+            showLoading();
+            var searchTerm = $('#searchTerm').val();
+            var sortOrder = $('#sortOrder').val();
+            var statusFilter = $('#statusFilter').val();
+
+            $.ajax({
+                url: '@Url.Action("LoadJobReports", "Admin")',
+                type: 'GET',
+                data: { searchTerm: searchTerm, sortOrder: sortOrder, statusFilter: statusFilter, page: page, pageSize: 10 },
+                success: function (data) {
+                    $('#reportsContainer').html(data);
+                    currentPage = page;
+                    hideLoading();
+                },
+                error: function () {
+                    hideLoading();
+                    $('#reportsContainer').html('<div class="alert alert-danger">Error loading reports. Please try again.</div>');
+                }
+            });
+        }
+                // ✅ Delete Job Report
+             $(document).on('click', '.delete-btn', function () {
+            var reportId = $(this).data('id');
+            if (confirm('Are you sure you want to delete this report?')) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: '@Url.Action("DeleteJobReport", "Admin")',
+                    type: 'POST',
+                    data: {
+                        id: reportId,
+                        __RequestVerificationToken: token
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#report-row-' + reportId).fadeOut(500, function () {
+                                $(this).remove();
+                            });
+                        } else {
+                            alert(response.message || 'Failed to delete report');
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while deleting the report.');
+                    }
+                });
+            }
+        });
+
+
+        // ✅ Show & Hide Loading Spinner
+        function showLoading() {
+            $('#loadingIndicator').show();
+            $('#reportsContainer').hide();
+        }
+
+        function hideLoading() {
+            $('#loadingIndicator').hide();
+            $('#reportsContainer').show();
+        }
+    </script>
+}

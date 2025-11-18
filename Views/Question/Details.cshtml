@@ -1,0 +1,213 @@
+﻿@model JobRecruitment.Models.QuestionSet
+
+@{
+    ViewData["Title"] = "Question Set Details";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+@{
+    var questions = Model.Questions?.OrderBy(q => q.Order).ToList() ?? new List<Question>();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+}
+
+<link rel="stylesheet" href="~/css/questionForm.css">
+<link rel="stylesheet" href="~/css/jobForm.css">
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-2 question-title-display" title="@Model.Name">@Model.Name</h4>
+                        <span class="badge @(Model.IsActive ? "bg-success" : "bg-secondary")">
+                            @(Model.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Question Set ID</h6>
+                            <p class="text-overflow-handle" title="@Model.Id">@Model.Id</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Created Date</h6>
+                            <p>@Model.CreatedDate.ToString("yyyy-MM-dd")</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-muted">Description</h6>
+                        <div class="border p-3 bg-light rounded">
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                @Html.Raw(Model.Description.Replace("\n", "<br>"))
+                            }
+                            else
+                            {
+                                <span class="text-muted">No description provided</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-muted mb-0">Questions (@questions.Count)</h6>
+                            <span class="badge bg-primary">Total: @questions.Count</span>
+                        </div>
+
+                        @if (questions.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var question in questions)
+                                {
+                                    <div class="list-group-item" data-question-id="@question.Id">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">@question.Text</h6>
+                                                <small class="text-muted">
+                                                    Type: <span class="badge bg-info">@question.Type</span> |
+                                                    Required: <span class="badge @(question.IsRequired ? "bg-warning" : "bg-secondary")">@(question.IsRequired ? "Yes" : "No")</span> |
+                                                    Order: @question.Order
+                                                </small>
+
+                                                @if (!string.IsNullOrEmpty(question.Options) &&
+                                                (question.Type == QuestionType.MultipleChoice ||
+                                                question.Type == QuestionType.Checkbox ||
+                                                question.Type == QuestionType.Dropdown))
+                                                {
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">Options:</small>
+                                                        <div class="options-container">
+                                                            @foreach (var option in question.Options.Split(','))
+                                                            {
+                                                                <span class="badge bg-light text-dark me-1">@option.Trim()</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+
+                                                @if (question.MaxLength.HasValue &&
+                                                (question.Type == QuestionType.Text ||
+                                                question.Type == QuestionType.TextArea))
+                                                {
+                                                    <div class="mt-1">
+                                                        <small class="text-muted">Max Length: @question.MaxLength characters</small>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-question-circle fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">No questions added to this set yet.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 mb-3">
+                        <a asp-action="UpdateQuestion" asp-route-id="@Model.Id" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i>Edit Question Set
+                        </a>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <a asp-action="AssignToJobs" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                            <i class="fas fa-link me-1"></i>Assign to Jobs
+                        </a>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a asp-action="QuestionList" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Question Set Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Question Set ID</small>
+                        <p class="mb-0 text-overflow-handle" title="@Model.Id">@Model.Id</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Status</small>
+                        <p class="mb-0">
+                            <span class="badge @(Model.IsActive ? "bg-success" : "bg-secondary")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Created Date</small>
+                        <p class="mb-0">@Model.CreatedDate.ToString("yyyy-MM-dd")</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Days Since Created</small>
+                        <p class="mb-0">@((DateTime.UtcNow - Model.CreatedDate).Days) days ago</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Total Questions</small>
+                        <p class="mb-0">@questions.Count</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Assigned to Jobs</small>
+                        <p class="mb-0">@(Model.Jobs?.Count ?? 0) job(s)</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Created By</small>
+                        <p class="mb-0 text-overflow-handle" title="@Model.Employer?.CompanyName">
+                            @(Model.Employer?.CompanyName ?? "N/A")
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .highlight-question {
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107 !important;
+            transition: all 0.3s ease;
+        }
+    </style>
+}

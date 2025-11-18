@@ -1,0 +1,488 @@
+﻿@model JobRecruitment.Models.Application
+@using JobRecruitment.Models
+@using System.Reflection
+@using System.Linq
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Application Details";
+
+    string StatusText(ApplicationStatusEnum s) => s switch
+    {
+        ApplicationStatusEnum.Pending => "Pending",
+        ApplicationStatusEnum.Shortlisted => "Shortlisted",
+        ApplicationStatusEnum.InterviewScheduled => "Interview Scheduled",
+        ApplicationStatusEnum.OfferSent => "Offer Sent",
+        ApplicationStatusEnum.Hired => "Hired",
+        ApplicationStatusEnum.Rejected => "Rejected",
+        _ => "Unknown"
+    };
+    string Badge(ApplicationStatusEnum s) => s switch
+    {
+        ApplicationStatusEnum.Hired => "bg-success",
+        ApplicationStatusEnum.OfferSent => "bg-success",
+        ApplicationStatusEnum.Rejected => "bg-danger",
+        ApplicationStatusEnum.InterviewScheduled => "bg-info text-dark",
+        ApplicationStatusEnum.Shortlisted => "bg-primary",
+        ApplicationStatusEnum.Pending => "bg-secondary",
+        _ => "bg-secondary"
+    };
+}
+
+@functions {
+    // Resolve job type without a hard dependency on a specific property name
+    public string GetJobType()
+    {
+        var j = Model?.Job;
+        if (j == null) return "-";
+        var t = j.GetType();
+        var p = t.GetProperty("Type")
+             ?? t.GetProperty("JobType")
+             ?? t.GetProperty("EmploymentType");
+        var val = p?.GetValue(j, null);
+        return val != null && !string.IsNullOrWhiteSpace(val.ToString()) ? val.ToString() : "-";
+    }
+
+    // Build a QuestionId -> Answer string map by scanning common answer collections on the Application model
+    Dictionary<string, string> BuildAnswerMap()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var app = Model;
+        if (app == null) return map;
+
+        var appType = app.GetType();
+
+        // Likely property names for the answers collection on Application
+        var possibleCollections = new[] { "ApplicationAnswers", "Answers", "Responses" };
+
+        // For each element, we’ll try to read: QuestionId / Question.Id, and Answer / AnswerText / Value
+        foreach (var colName in possibleCollections)
+        {
+            var colProp = appType.GetProperty(colName, BindingFlags.Public | BindingFlags.Instance);
+            var colVal = colProp?.GetValue(app) as System.Collections.IEnumerable;
+            if (colVal == null) continue;
+
+            foreach (var item in colVal)
+            {
+                if (item == null) continue;
+                var it = item.GetType();
+
+                // Try to get the question id
+                string qid = null;
+
+                // Direct QuestionId property
+                qid ??= it.GetProperty("QuestionId")?.GetValue(item)?.ToString();
+
+                // Or nested Question.Id
+                var qObj = it.GetProperty("Question")?.GetValue(item);
+                if (qid == null && qObj != null)
+                {
+                    qid = qObj.GetType().GetProperty("Id")?.GetValue(qObj)?.ToString();
+                }
+
+                if (string.IsNullOrWhiteSpace(qid)) continue;
+
+                // Try to get the answer text/value
+                string ans = null;
+                ans ??= it.GetProperty("Answer")?.GetValue(item)?.ToString();
+                ans ??= it.GetProperty("AnswerText")?.GetValue(item)?.ToString();
+                ans ??= it.GetProperty("Value")?.GetValue(item)?.ToString();
+
+                if (ans != null && !map.ContainsKey(qid))
+                    map[qid] = ans;
+            }
+        }
+
+        return map;
+    }
+
+    // Try to get the Question collection from the job's question set (if assigned)
+    IEnumerable<object> GetJobQuestionsOrEmpty()
+    {
+        var job = Model?.Job;
+        if (job == null) return Enumerable.Empty<object>();
+
+        var jt = job.GetType();
+
+        // Prefer Job.QuestionSet.Questions
+        var qsProp = jt.GetProperty("QuestionSet");
+        var qs = qsProp?.GetValue(job);
+        if (qs != null)
+        {
+            var qst = qs.GetType();
+            var questionsProp = qst.GetProperty("Questions");
+            if (questionsProp != null)
+            {
+                var questions = questionsProp.GetValue(qs) as System.Collections.IEnumerable;
+                if (questions != null) return questions.Cast<object>();
+            }
+        }
+
+        // Fallback: job.Questions directly
+        var jobQuestionsProp = jt.GetProperty("Questions");
+        var jobQuestions = jobQuestionsProp?.GetValue(job) as System.Collections.IEnumerable;
+        if (jobQuestions != null) return jobQuestions.Cast<object>();
+
+        return Enumerable.Empty<object>();
+    }
+
+    // Extract fields from a Question object (Id, Text, Type, IsRequired, Options/OptionsCsv)
+    (string Id, string Text, string Type, bool IsRequired, string OptionsCsv) ReadQuestion(object q)
+    {
+        if (q == null) return (null, "-", "-", false, null);
+
+        var qt = q.GetType();
+        string id = qt.GetProperty("Id")?.GetValue(q)?.ToString();
+        string text = qt.GetProperty("Text")?.GetValue(q)?.ToString()
+                   ?? qt.GetProperty("QuestionText")?.GetValue(q)?.ToString()
+                   ?? "-";
+        string type = qt.GetProperty("Type")?.GetValue(q)?.ToString() ?? "-";
+        bool isRequired = false;
+        var reqProp = qt.GetProperty("IsRequired");
+        if (reqProp != null && reqProp.PropertyType == typeof(bool))
+            isRequired = (bool)reqProp.GetValue(q);
+
+        string options = qt.GetProperty("Options")?.GetValue(q)?.ToString()
+                      ?? qt.GetProperty("OptionsCsv")?.GetValue(q)?.ToString();
+
+        return (id, text, type, isRequired, options);
+    }
+
+    bool HasQuestionSetAssigned()
+    {
+        // "QuestionSetId" or a non-empty Question list indicates assignment
+        var j = Model?.Job;
+        if (j == null) return false;
+        var jt = j.GetType();
+
+        var qsid = jt.GetProperty("QuestionSetId")?.GetValue(j)?.ToString();
+        if (!string.IsNullOrWhiteSpace(qsid)) return true;
+
+        return GetJobQuestionsOrEmpty().Any();
+    }
+}
+
+<div class="container-xxl py-3">
+    <div class="d-flex align-items-center mb-3">
+        <a class="btn btn-outline-secondary btn-sm me-2"
+           asp-controller="Applications" asp-action="MyApplications">
+            ← Back to Applications
+        </a>
+        <nav aria-label="breadcrumb" class="ms-auto small">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active">Application Details</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row g-3">
+        <!-- LEFT: Main content -->
+        <div class="col-lg-8">
+            <!-- Job Information -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Job Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="border rounded p-3">
+                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                            <span class="text-muted"><i class="bi bi-briefcase me-2"></i>Job Title</span>
+                            <span class="fw-semibold">@Model.Job?.Title</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom py-2">
+                            <span class="text-muted"><i class="bi bi-building me-2"></i>Company</span>
+                            <span class="fw-semibold">@Model.Job?.Employer?.CompanyName</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom py-2">
+                            <span class="text-muted"><i class="bi bi-geo-alt me-2"></i>Location</span>
+                            <span class="fw-semibold text-end">@Model.Job?.Location</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom py-2">
+                            <span class="text-muted"><i class="bi bi-hourglass-split me-2"></i>Job Type</span>
+                            <span class="fw-semibold">@GetJobType()</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom py-2">
+                            <span class="text-muted"><i class="bi bi-cash-coin me-2"></i>Salary Range</span>
+                            <span class="fw-semibold">
+                                @if (Model.Job?.MinSalary != null && Model.Job?.MaxSalary != null)
+                                {
+                                    @Model.Job.MinSalary.ToString("C0")
+                                    <text> - </text>
+
+                                    @Model.Job.MaxSalary.ToString("C0")
+                                }
+                                else
+                                {
+
+                                    <text>-</text>
+                                }
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between py-2">
+                            <span class="text-muted"><i class="bi bi-calendar-check me-2"></i>Applied Date</span>
+                            <span class="fw-semibold">@Model.AppliedDate.ToLocalTime().ToString("dd MMM yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Stage-specific details *@
+            @switch (Model.Status)
+            {
+                case ApplicationStatusEnum.InterviewScheduled:
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">Interview Details</h5>
+                        </div>
+                        <div class="card-body row g-3">
+                            <div class="col-md-6">
+                                <div class="text-muted">Date & Time</div>
+                                <div class="fw-semibold">
+                                    @Model.InterviewDate?.ToLocalTime().ToString("ddd, dd MMM yyyy • h:mm tt")
+                                    @if (Model.InterviewEndDate.HasValue)
+                                    {
+                                        <text> – @Model.InterviewEndDate.Value.ToLocalTime().ToString("h:mm tt")</text>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted">Location / Link</div>
+                                <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.InterviewLocation) ? Model.InterviewLocation : "-")</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted">Interviewer</div>
+                                <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.InterviewerInfo) ? Model.InterviewerInfo : "-")</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted">Notes</div>
+                                <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.InterviewNotes) ? Model.InterviewNotes : "-")</div>
+                            </div>
+                        </div>
+                    </div>
+                    break;
+                case ApplicationStatusEnum.OfferSent:
+                    <div class="alert alert-success">An offer has been sent. Check your email for details.</div>
+                    break;
+                case ApplicationStatusEnum.Hired:
+                    <div class="alert alert-success">Congratulations! You’ve been hired for this role. 🎉</div>
+                    break;
+                case ApplicationStatusEnum.Rejected:
+                    <div class="alert alert-secondary">This application was not successful. Keep exploring more roles!</div>
+                    break;
+                case ApplicationStatusEnum.Shortlisted:
+                    <div class="alert alert-primary">You’ve been shortlisted. The employer may contact you to schedule an interview.</div>
+                    break;
+                default:
+                    <div class="alert alert-info">Your application is under review.</div>
+                    break;
+            }
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Cover Letter</h5>
+                </div>
+                <div class="card-body">
+                    @if (string.IsNullOrWhiteSpace(Model.CoverLetter))
+                    {
+                        <div class="text-muted">No cover letter provided.</div>
+                    }
+                    else
+                    {
+                        <div style="white-space:pre-wrap">@Model.CoverLetter</div>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Resume</h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.ResumeFileName))
+                    {
+                        <a class="btn btn-outline-primary"
+                           asp-controller="Application" asp-action="ViewResume"
+                           asp-route-fileName="@Model.ResumeFileName" target="_blank" rel="noopener">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> View Resume
+                        </a>
+                        <span class="ms-2 text-muted">Opens in a new tab</span>
+                    }
+                    else
+                    {
+                        <div class="text-muted">No resume uploaded.</div>
+                    }
+                </div>
+            </div>
+
+            @* ---------- Assigned Question Set (read-only answers) ---------- *@
+            @if (HasQuestionSetAssigned())
+            {
+                var answers = BuildAnswerMap();
+                var questions = GetJobQuestionsOrEmpty().ToList();
+                if (questions.Any())
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white d-flex align-items-center">
+                            <h5 class="mb-0">Application Questions</h5>
+                            <span class="badge bg-secondary ms-2">@questions.Count</span>
+                        </div>
+
+                        <!-- Scrollable body -->
+                        <div class="card-body" style="max-height: 420px; overflow: auto;">
+                            <div class="row g-3">
+                                @foreach (var q in questions)
+                                {
+                                    var meta = ReadQuestion(q);
+                                    var ans = (meta.Id != null && answers.ContainsKey(meta.Id)) ? answers[meta.Id] : null;
+
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <div class="d-flex justify-content-between">
+                                                <div class="fw-semibold">
+                                                    @meta.Text
+                                                    @if (meta.IsRequired)
+                                                    {
+                                                        <span class="text-danger">*</span>
+                                                    }
+                                                </div>
+                                                <span class="badge text-bg-light">@meta.Type</span>
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(meta.OptionsCsv))
+                                            {
+                                                <div class="mt-1 small text-muted">Options: @meta.OptionsCsv</div>
+                                            }
+
+                                            <div class="mt-2">
+                                                @if (string.IsNullOrWhiteSpace(ans))
+                                                {
+                                                    <div class="form-control-plaintext text-muted">No answer provided.</div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="form-control-plaintext" style="white-space:pre-wrap">@ans</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- RIGHT: Status / Timeline -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Application Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-center my-2">
+                        <span class="badge @Badge(Model.Status) px-3 py-2 fs-6">
+                            @StatusText(Model.Status)
+                        </span>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="fw-semibold mb-2">Application Timeline:</div>
+                        <ul class="list-unstyled small ps-2">
+                            <li class="mb-2">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-dot fs-3 lh-1 me-1 text-primary"></i>
+                                    <div>
+                                        <div class="fw-semibold">Applied</div>
+                                        <div class="text-muted">@Model.AppliedDate.ToLocalTime().ToString("dd MMM yyyy")</div>
+                                    </div>
+                                </div>
+                            </li>
+
+                            @if (Model.Status >= ApplicationStatusEnum.Shortlisted)
+                            {
+                                <li class="mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-dot fs-3 lh-1 me-1 text-primary"></i>
+                                        <div>
+                                            <div class="fw-semibold">Shortlisted</div>
+                                            <div class="text-muted">Status reached</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+
+                            @if (Model.Status == ApplicationStatusEnum.InterviewScheduled && Model.InterviewDate.HasValue)
+                            {
+                                <li class="mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-dot fs-3 lh-1 me-1 text-primary"></i>
+                                        <div>
+                                            <div class="fw-semibold">Interview Scheduled</div>
+                                            <div class="text-muted">
+                                                @Model.InterviewDate.Value.ToLocalTime().ToString("dd MMM yyyy • h:mm tt")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+
+                            @if (Model.Status == ApplicationStatusEnum.OfferSent)
+                            {
+                                <li class="mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-dot fs-3 lh-1 me-1 text-primary"></i>
+                                        <div>
+                                            <div class="fw-semibold">Offer Sent</div>
+                                            <div class="text-muted">Awaiting your response</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+
+                            @if (Model.Status == ApplicationStatusEnum.Hired)
+                            {
+                                <li class="mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-dot fs-3 lh-1 me-1 text-primary"></i>
+                                        <div>
+                                            <div class="fw-semibold">Hired</div>
+                                            <div class="text-muted">🎉</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+
+                            @if (Model.Status == ApplicationStatusEnum.Rejected)
+                            {
+                                <li class="mb-2">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-dot fs-3 lh-1 me-1 text-primary"></i>
+                                        <div>
+                                            <div class="fw-semibold">Rejected</div>
+                                            <div class="text-muted">Application closed</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-outline-secondary"
+                           asp-controller="JobSearch" asp-action="Details" asp-route-id="@Model.JobId">
+                            View Job Posting
+                        </a>
+                        <a class="btn btn-outline-secondary"
+                           asp-controller="Applications" asp-action="MyApplications">
+                            Back to My Applications
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

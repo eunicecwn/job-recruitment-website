@@ -1,0 +1,69 @@
+﻿@model List<JobRecruitment.Models.ViewModels.JobReportViewModel>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Report ID</th>
+            <th>Employer</th>
+            <th>Reason</th>
+            <th>Date Reported</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Any())
+        {
+            foreach (var report in Model)
+            {
+                <tr id="report-row-@report.Id">
+                    <td>@report.Id</td>
+                    <td>@report.EmployerName</td>
+                    <td class="truncate-text" title="@report.Reason">
+                        @report.Reason
+                    </td>
+                    <td>@report.DateReported.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <!-- Use report.Id instead of report.JobId for unique identification -->
+                        <span class="badge @(report.IsActive ? "bg-success" : "bg-danger") status-label-@report.Id">
+                            @(report.IsActive ? "Active" : "Blocked")
+                        </span>
+                    </td>
+                    <td>
+                        <!-- Keep data-jobid for the actual blocking action, but add data-reportid for UI updates -->
+                        <button class="btn btn-sm btn-warning toggle-status-btn"
+                                data-jobid="@report.JobId"
+                                data-reportid="@report.Id">
+                            <i class="bi bi-slash-circle"></i> @(report.IsActive ? "Block" : "Unblock")
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="@report.Id">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                        <a href="@Url.Action("ExportJobReport", "Admin", new { id = report.Id })"
+                           class="btn btn-sm btn-success">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </a>
+                        <a href="@Url.Action("JobReportDetails", "Admin", new { id = report.Id })"
+                           class="btn btn-sm btn-info ms-2">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center">No job reports found.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<style>
+    .truncate-text {
+        max-width: 200px; /* adjust width as needed */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>

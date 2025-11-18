@@ -1,0 +1,677 @@
+﻿@model JobRecruitment.Models.Application
+@using JobRecruitment.Models
+@using Demo;
+
+@{
+    ViewBag.Title = "Application Details";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div id="errorBox"
+         style="display: block; background: rgba(0,0,0,0.6);
+                         position: fixed; inset: 0; z-index: 9999;
+                         display: flex; justify-content: center; align-items: center;">
+
+        <div style="background: #f87171; color: white; border-radius: 12px;
+                             padding: 25px 30px; text-align: center; width: 320px;
+                             box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+                             animation: popIn 0.3s ease-out;">
+
+            <div style="font-size: 50px; margin-bottom: 15px;">😟</div>
+            <h2 style="margin: 0 0 10px; font-size: 1.5rem;">
+                @(TempData["ErrorTitle"] ?? "Oops!")
+            </h2>
+            <p style="font-size: 0.95rem; margin-bottom: 20px;">
+                @TempData["ErrorMessage"]
+            </p>
+
+            <button onclick="document.getElementById('errorBox').style.display='none'"
+                    style="background: white; color: #b91c1c; border: none;
+                                    padding: 10px 25px; border-radius: 50px;
+                                    font-size: 1rem; cursor: pointer;">
+                OK
+            </button>
+        </div>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+
+    <script>
+        // Close modal if it exists
+        document.addEventListener("DOMContentLoaded", function() {
+            const modal = document.querySelector(".modal");
+            if (modal) {
+                modal.style.display = "none";
+            }
+        });
+    </script>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main content area -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="mb-2 mb-md-0">
+                            <a href="@Url.Action("CheckApplications", "Application")" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Applications
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="@Url.Action("ReportApplicant", "Application", new { applicationId = Model.Id })"
+                               class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-flag"></i> Report Applicant
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h5>Applicant Information</h5>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <h5>Job Information</h5>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="info-section">
+                                <div class="row">
+                                    <!-- Left Column: Applicant Info -->
+                                    <div class="col-md-6 border-md-end">
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-person"></i> Full Name</div>
+                                            <div class="info-value">@(Model.JobSeeker?.FullName ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-envelope"></i> Email</div>
+                                            <div class="info-value">@(Model.JobSeeker?.Email ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-telephone"></i> Phone</div>
+                                            <div class="info-value">@(Model.JobSeeker?.Phone ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-calendar"></i> Date of Birth</div>
+                                            <div class="info-value">@(Model.JobSeeker?.DateOfBirth?.ToString("dd MMM yyyy") ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-house"></i> Address</div>
+                                            <div class="info-value">@(Model.JobSeeker?.Address ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-award"></i> Experience Level</div>
+                                            <div class="info-value">@(Model.JobSeeker?.ExperienceLevel ?? "N/A")</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column: Job Info -->
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-briefcase"></i> Job Title</div>
+                                            <div class="info-value">@(Model.Job?.Title ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-building"></i> Company</div>
+                                            <div class="info-value">@(Model.Job?.Employer?.CompanyName ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-geo-alt"></i> Location</div>
+                                            <div class="info-value">@(Model.Job?.Location ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-card-list"></i> Job Type</div>
+                                            <div class="info-value">@(Model.Job?.JobType.ToString() ?? "N/A")</div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-cash"></i> Salary Range</div>
+                                            <div class="info-value">
+                                                @if (Model.Job != null)
+                                                {
+                                                    @:$@Model.Job.MinSalary.ToString("N0") - $@Model.Job.MaxSalary.ToString("N0")
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="info-item">
+                                            <div class="info-label"><i class="bi bi-calendar-check"></i> Applied Date</div>
+                                            <div class="info-value">@Model.AppliedDate.ToString("dd MMM yyyy")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Information (if scheduled) -->
+                    @if (Model.InterviewDate.HasValue)
+                    {
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5>Interview Information</h5>
+                                <div class="info-section">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-item">
+                                                <div class="info-label"><i class="bi bi-calendar"></i> Date</div>
+                                                <div class="info-value">
+                                                    @Model.InterviewDate.Value.ToString("dd MMM yyyy")
+                                                </div>
+                                            </div>
+                                            <div class="info-item">
+                                                <div class="info-label"><i class="bi bi-clock"></i> Time</div>
+                                                <div class="info-value">
+                                                    @Model.InterviewDate.Value.ToString("h:mm tt")
+                                                    @if (Model.InterviewEndDate.HasValue)
+                                                    {
+                                                        <text> - @Model.InterviewEndDate.Value.ToString("h:mm tt")</text>
+                                                    }
+                                                </div>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(Model.InterviewLocation))
+                                            {
+                                                <div class="info-item">
+                                                    <div class="info-label"><i class="bi bi-geo-alt"></i> Location</div>
+                                                    <div class="info-value">@Model.InterviewLocation</div>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            @if (!string.IsNullOrEmpty(Model.InterviewerInfo))
+                                            {
+                                                <div class="info-item">
+                                                    <div class="info-label"><i class="bi bi-person-badge"></i> Interviewer</div>
+                                                    <div class="info-value">@Model.InterviewerInfo</div>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(Model.InterviewNotes))
+                                            {
+                                                <div class="info-item">
+                                                    <div class="info-label"><i class="bi bi-journal-text"></i> Notes</div>
+                                                    <div class="info-value text-start">
+                                                        <span style="white-space: pre-wrap;">@Model.InterviewNotes</span>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Cover Letter</h5>
+                            <div class="border rounded p-3 bg-light">
+                                @if (!string.IsNullOrEmpty(Model.CoverLetter))
+                                {
+                                    <p style="white-space: pre-wrap;">@Model.CoverLetter</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No cover letter provided.</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Resume</h5>
+                            @if (!string.IsNullOrEmpty(Model.ResumeFileName))
+                            {
+                                <div class="d-flex gap-2 align-items-center">
+                                    <a href="@Url.Action("DownloadResume", "Application", new { fileName = Model.ResumeFileName })"
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-download"></i> Download Resume
+                                    </a>
+                                    <span class="text-muted">PDF Document</span>
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(Model.JobSeeker?.ResumeFileName))
+                            {
+                                <div class="d-flex gap-2 align-items-center">
+                                    <a href="@Url.Action("DownloadResume", "Application", new { fileName = Model.JobSeeker.ResumeFileName })"
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-download"></i> Download Applicant's Resume
+                                    </a>
+                                    <span class="text-muted">PDF Document</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No resume uploaded.</p>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                        @await Html.PartialAsync("_ApplcationQuestionAnswerPartialView", Model)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right sidebar for status management -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Application Management</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Status badge -->
+                    <div class="text-center mb-4">
+                        <div class="status-badge @Helper.GetStatusBadgeClass(Model.Status)" style="font-size: 1.1rem;">
+                            <i class="@Helper.GetStatusIcon(Model.Status)"></i>
+                            @Model.Status
+                        </div>
+                    </div>
+
+                    @await Html.PartialAsync("_ApplicationQuestionCompletenessRatePartialView", Model)
+
+                    <!-- Status-specific actions -->
+                    @if (Model.Status == ApplicationStatusEnum.Pending || Model.Status == ApplicationStatusEnum.Shortlisted)
+                    {
+                        <!-- Only dropdown at early stages -->
+                        <div class="mb-3">
+                            <label class="form-label">Change Status:</label>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-arrow-repeat"></i> Update Status
+                                </button>
+                                <ul class="dropdown-menu w-100">
+                                    @foreach (var s in Helper.GetNextAvailableStatuses(Model.Status))
+                                    {
+                                        <li>
+                                            @if (s == ApplicationStatusEnum.InterviewScheduled)
+                                            {
+                                                <a class="dropdown-item"
+                                                   href="@Url.Action("ScheduleInterview", "Application", new { applicationId = Model.Id })">
+                                                    <i class="bi bi-calendar-plus"></i> Schedule Interview
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="UpdateStatus" method="post">
+                                                    <input type="hidden" name="applicationId" value="@Model.Id" />
+                                                    <input type="hidden" name="newStatus" value="@s" />
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="@Helper.GetStatusIcon(s)"></i> @s
+                                                    </button>
+                                                </form>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.Status == ApplicationStatusEnum.InterviewScheduled)
+                    {
+                        <div class="d-grid gap-2 mb-3">
+                            @if (Model.InterviewDate.HasValue && Model.InterviewDate.Value < DateTime.Now)
+                            {
+                                <!-- Interview passed -->
+                                <form asp-action="UpdateStatus" method="post">
+                                    <input type="hidden" name="applicationId" value="@Model.Id" />
+                                    <input type="hidden" name="newStatus" value="@ApplicationStatusEnum.OfferSent" />
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-check-circle"></i> Send Offer
+                                    </button>
+                                </form>
+
+                                <form asp-action="UpdateStatus" method="post">
+                                    <input type="hidden" name="applicationId" value="@Model.Id" />
+                                    <input type="hidden" name="newStatus" value="@ApplicationStatusEnum.Rejected" />
+                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                        <i class="bi bi-x-circle"></i> Reject
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <!-- Interview upcoming -->
+                                <div class="alert alert-info text-center">
+                                    <i class="bi bi-clock"></i>
+                                    Interview scheduled for @Model.InterviewDate.Value.ToString("f")
+                                </div>
+                                <a href="@Url.Action("ScheduleInterview", "Application", new { applicationId = Model.Id })"
+                                   class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-calendar-event"></i> Reschedule Interview
+                                </a>
+                                <button type="button" class="btn btn-outline-warning w-100"
+                                        data-bs-toggle="modal" data-bs-target="#cancelInterviewModal">
+                                    <i class="bi bi-x-circle"></i> Cancel Interview
+                                </button>
+                            }
+                        </div>
+                    }
+                    else if (Model.Status == ApplicationStatusEnum.OfferSent)
+                    {
+                        <div class="d-grid gap-2 mb-3">
+                            <form asp-action="UpdateStatus" method="post">
+                                <input type="hidden" name="applicationId" value="@Model.Id" />
+                                <input type="hidden" name="newStatus" value="@ApplicationStatusEnum.Hired" />
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="bi bi-person-check"></i> Mark as Hired
+                                </button>
+                            </form>
+
+                            <form asp-action="UpdateStatus" method="post">
+                                <input type="hidden" name="applicationId" value="@Model.Id" />
+                                <input type="hidden" name="newStatus" value="@ApplicationStatusEnum.Rejected" />
+                                <button type="submit" class="btn btn-outline-danger w-100">
+                                    <i class="bi bi-x-circle"></i> Withdraw Offer
+                                </button>
+                            </form>
+                        </div>
+                    }
+                    else if (Model.Status == ApplicationStatusEnum.Rejected || Model.Status == ApplicationStatusEnum.Hired)
+                    {
+                        <div class="alert alert-secondary text-center">
+                            <i class="bi bi-info-circle"></i> This application is closed.
+                        </div>
+                    }
+
+
+                    <!-- Application timeline -->
+                    <div class="mb-3">
+                        <label class="form-label">Application Timeline:</label>
+                        <div class="timeline">
+                            <div class="timeline-item @(Model.Status >= ApplicationStatusEnum.Pending ? "active" : "")">
+                                <div class="timeline-point"></div>
+                                <div class="timeline-content">
+                                    <small>Applied</small>
+                                    <div class="text-muted">@Model.AppliedDate.ToString("dd MMM yyyy")</div>
+                                </div>
+                            </div>
+                            @if (Model.Status >= ApplicationStatusEnum.Shortlisted)
+                            {
+                                <div class="timeline-item @(Model.Status >= ApplicationStatusEnum.Shortlisted ? "active" : "")">
+                                    <div class="timeline-point"></div>
+                                    <div class="timeline-content">
+                                        <small>Shortlisted</small>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.Status >= ApplicationStatusEnum.InterviewScheduled && Model.InterviewDate.HasValue)
+                            {
+                                <div class="timeline-item @(Model.Status >= ApplicationStatusEnum.InterviewScheduled ? "active" : "")">
+                                    <div class="timeline-point"></div>
+                                    <div class="timeline-content">
+                                        <small>Interview Scheduled</small>
+                                        <div class="text-muted">@Model.InterviewDate.Value.ToString("dd MMM yyyy")</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.Status >= ApplicationStatusEnum.OfferSent)
+                            {
+                                <div class="timeline-item @(Model.Status >= ApplicationStatusEnum.OfferSent ? "active" : "")">
+                                    <div class="timeline-point"></div>
+                                    <div class="timeline-content">
+                                        <small>Offer Sent</small>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.Status >= ApplicationStatusEnum.Hired)
+                            {
+                                <div class="timeline-item @(Model.Status >= ApplicationStatusEnum.Hired ? "active" : "")">
+                                    <div class="timeline-point"></div>
+                                    <div class="timeline-content">
+                                        <small>Hired</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cancelInterviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Interview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this interview?</p>
+                <div class="mb-3">
+                    <label class="form-label">Reason for cancellation (optional):</label>
+                    <textarea id="cancellationReason" class="form-control"
+                              placeholder="Enter reason for cancellation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Interview</button>
+                <button type="button" class="btn btn-warning" id="confirmCancelBtn">Yes, Cancel Interview</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* ===== Timeline ===== */
+        .timeline {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+
+        .timeline-point {
+            position: absolute;
+            left: -1.5rem;
+            top: 0.25rem;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 2px #f3f4f6;
+            transition: background-color 0.3s ease;
+        }
+
+        .timeline-item.active .timeline-point {
+            background-color: #2563eb; /* Tailwind blue-600 */
+        }
+
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: -1.05rem;
+            top: 1rem;
+            bottom: 0;
+            width: 2px;
+            background-color: #e5e7eb;
+        }
+
+        .timeline-content {
+            margin-left: 0.75rem;
+        }
+
+            .timeline-content small {
+                font-weight: 600;
+                color: #374151;
+            }
+
+        /* ===== Status Badge ===== */
+        .status-badge {
+            padding: 0.6rem 1rem;
+            border-radius: 9999px; /* pill style */
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Status-specific colors */
+        .status-pending {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .status-shortlisted {
+            background-color: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fcd34d;
+        }
+
+        .status-interview {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
+        }
+
+        .status-offer {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .status-hired {
+            background-color: #15803d;
+            color: white;
+            border: 1px solid #166534;
+        }
+
+        .status-rejected {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        /* ===== Buttons (subtle improvements) ===== */
+        .card-body .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .card-body .btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            }
+
+        /* ===== Alerts (cleaner look) ===== */
+        .alert {
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .info-section {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+
+            .info-item:last-child {
+                border-bottom: none;
+            }
+
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .info-value {
+            color: #111827;
+            font-weight: 500;
+            text-align: right;
+        }
+
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup cancel interview functionality
+            const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+            if (confirmCancelBtn) {
+                confirmCancelBtn.addEventListener('click', function() {
+                    cancelInterview();
+                });
+            }
+        });
+
+        function cancelInterview() {
+            const reason = document.getElementById('cancellationReason').value;
+            const applicationId = '@Model.Id'; // Use the model's ID
+
+            fetch('/Application/CancelInterview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    applicationId: applicationId,
+                    cancellationReason: reason
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelInterviewModal'));
+                    modal.hide();
+
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error cancelling interview');
+            });
+        }
+    </script>
+}

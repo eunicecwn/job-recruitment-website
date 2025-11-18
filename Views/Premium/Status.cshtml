@@ -1,0 +1,403 @@
+﻿@model JobRecruitment.Services.UserPremiumStatus
+@{
+    ViewBag.Title = "Premium Status";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+<div class="premium-status-container">
+    <div class="status-header">
+        <div class="plan-info">
+            <h2 class="plan-title">@Model.CurrentPlan Plan</h2>
+            <div class="plan-price">
+                @if (Model.PlanInfo.Price > 0)
+                {
+                    <span>RM @Model.PlanInfo.Price</span>
+                
+                    <small>/month</small>
+                }
+                else
+                {
+                    <span>Free</span>
+                }
+            </div>
+        </div>
+
+        @if (Model.ExpiryDate.HasValue)
+        {
+            <div class="expiry-info">
+                <div class="expiry-label">Expires on</div>
+                <div class="expiry-date">@Model.ExpiryDate?.ToString("MMM dd, yyyy")</div>
+                <div class="days-remaining">
+                    @{
+                        var daysRemaining = (Model.ExpiryDate.Value - DateTime.UtcNow).Days;
+                    }
+                    (@daysRemaining days remaining)
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="usage-stats">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.JobPostsUsed</div>
+                <div class="stat-label">Jobs Posted This Month</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-content">
+                <div class="stat-number">
+                    @if (Model.JobPostsRemaining == int.MaxValue)
+                    {
+                        <span>Unlimited</span>
+                    }
+                    else
+                    {
+                        <span>@Model.JobPostsRemaining</span>
+                    }
+                </div>
+                <div class="stat-label">Remaining Posts</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-content">
+                <div class="stat-number">@Model.PlanInfo.Features.Length</div>
+                <div class="stat-label">Active Features</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <h3>Your Plan Features</h3>
+        <div class="features-grid">
+            @foreach (var feature in Model.PlanInfo.Features)
+            {
+                <div class="feature-item">
+                    <span class="feature-check">✓</span>
+                    <span>@feature</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.CurrentPlan != "Premium")
+    {
+        <div class="upgrade-section">
+            <h3>Want to do more?</h3>
+            <p>Upgrade your plan to unlock additional features and post more jobs.</p>
+            <a href="@Url.Action("Upgrade")" class="btn-upgrade">
+                Upgrade Plan
+            </a>
+        </div>
+    }
+
+    @if (Model.CurrentPlan != "Normal")
+    {
+        <div class="manage-section">
+            <h3>Manage Subscription</h3>
+            <div class="manage-buttons">
+                <button class="btn-cancel" onclick="cancelSubscription()">
+                    Cancel Subscription
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (ViewBag.PaymentHistory != null && ((List<Payment>)ViewBag.PaymentHistory).Any())
+    {
+        <div class="payment-history">
+            <h3>Payment History</h3>
+            <div class="history-table">
+                <div class="table-header">
+                    <div>Date</div>
+                    <div>Plan</div>
+                    <div>Amount</div>
+                    <div>Status</div>
+                </div>
+                @foreach (var payment in (List<Payment>)ViewBag.PaymentHistory)
+                {
+                    <div class="table-row">
+                        <div>@payment.PaymentDate.ToString("MMM dd, yyyy")</div>
+                        <div>@payment.Subscription?.PlanType</div>
+                        <div>RM @payment.Amount</div>
+                        <div class="status-@payment.Status.ToLower()">@payment.Status</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .premium-status-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .status-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .plan-title {
+        font-size: 2.5rem;
+        margin: 0 0 0.5rem 0;
+        font-weight: bold;
+    }
+
+    .plan-price {
+        font-size: 1.5rem;
+        opacity: 0.9;
+    }
+
+        .plan-price small {
+            font-size: 1rem;
+        }
+
+    .expiry-info {
+        text-align: right;
+    }
+
+    .expiry-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .expiry-date {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+    }
+
+    .days-remaining {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .usage-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        background: #f8f9ff;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #4F46E5;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .features-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+        .features-section h3 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: #f8f9ff;
+        border-radius: 8px;
+    }
+
+    .feature-check {
+        color: #4CAF50;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .upgrade-section {
+        background: linear-gradient(135deg, #FF6B6B, #ee5a24);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+        .upgrade-section h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .upgrade-section p {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+    .btn-upgrade {
+        display: inline-block;
+        background: white;
+        color: #FF6B6B;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+        .btn-upgrade:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+    .manage-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .manage-buttons {
+        margin-top: 1rem;
+    }
+
+    .btn-cancel {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+        .btn-cancel:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+    .payment-history {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+        .payment-history h3 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+    .history-table {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .table-header, .table-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .table-header {
+        background: #f8f9ff;
+        font-weight: bold;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+
+    .status-completed {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .status-pending {
+        color: #ffc107;
+        font-weight: bold;
+    }
+
+    .status-failed {
+        color: #dc3545;
+        font-weight: bold;
+    }
+ 
+</style>
+
+<script>
+    async function cancelSubscription() {
+        if (!confirm('Are you sure you want to cancel your subscription? You will be downgraded to the Normal plan.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/Premium/CancelSubscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Your subscription has been cancelled successfully.');
+                window.location.reload();
+            } else {
+                alert('Failed to cancel subscription: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error cancelling subscription:', error);
+            alert('Failed to cancel subscription. Please try again.');
+        }
+    }
+</script>

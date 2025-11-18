@@ -1,0 +1,1017 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewBag.Title - HireRightPro</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="~/css/app.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/otp.css">
+    <link rel="shortcut icon" href="/images/logo.png">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #6366F1;
+            --primary-dark: #4338CA;
+            --dark: #111827;
+            --light: #F9FAFB;
+            --gray: #6B7280;
+            --light-gray: #E5E7EB;
+            --bg-light: #F3F4F6;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            --purple-accent: #8B5CF6;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: white;
+            border-right: 1px solid var(--light-gray);
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Collapsed State */
+        .sidebar-collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-collapsed .nav-link-text,
+        .sidebar-collapsed .logo-text,
+        .sidebar-collapsed .user-info,
+        .sidebar-collapsed .nav-section-header {
+            display: none !important;
+        }
+
+        .sidebar-collapsed .nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+            margin: 0.25rem 0;
+        }
+
+        .sidebar-collapsed .logo {
+            justify-content: center;
+        }
+
+        .sidebar-collapsed .avatar {
+            margin: 0 auto;
+        }
+
+        /* Main Content Adjustment */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-collapsed ~ .main-content {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        /* General Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .nav-link {
+            color: var(--gray);
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary);
+            background-color: rgba(79, 70, 229, 0.1);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .avatar {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            border-radius: 50% !important;
+            flex-shrink: 0 !important;
+            transition: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            object-fit: cover;
+        }
+
+        /* Avatar Dropdown Styles */
+        .avatar-lg {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown-menu {
+            border: 1px solid var(--light-gray);
+            border-radius: 10px;
+        }
+
+        .dropdown-toggle::after {
+            display: none !important;
+        }
+
+        /* Hover effect */
+        .dropdown-toggle:hover {
+            background-color: rgba(79, 70, 229, 0.05);
+            border-radius: 8px;
+        }
+
+        /* Navigation section headers */
+        .nav-section-header {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Tooltip styles */
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link .tooltip {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--dark);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1001;
+            margin-left: 10px;
+        }
+
+        .sidebar-collapsed .nav-item:hover .tooltip {
+            display: block;
+        }
+
+        /* Role badge styles */
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .role-badge.jobseeker {
+            background-color: #EFF6FF;
+            color: #2563EB;
+        }
+
+        .role-badge.employer {
+            background-color: #F0FDF4;
+            color: #16A34A;
+        }
+
+        .role-badge.admin {
+            background-color: #FEF3C7;
+            color: #D97706;
+        }
+
+        /* AI Assistant Button */
+        .chatbot-btn {
+            background-color: var(--primary);
+            max-width:200px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            max-height:50px;
+            top:8px;
+        }
+
+        .chatbot-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Collapse button styling */
+        .sidebar-collapse-btn {
+            color: var(--gray);
+            transition: all 0.2s;
+        }
+
+        .sidebar-collapse-btn:hover {
+            color: var(--primary);
+            background-color: rgba(79, 70, 229, 0.1);
+        }
+        
+        /* Chat window styles */
+        .chat-window {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            z-index: 1050;
+            transform: translateY(110%);
+            transition: transform 0.3s ease;
+        }
+        
+        .chat-window.show {
+            transform: translateY(0);
+        }
+        
+        .chat-header {
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .chat-message {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+        
+        .chat-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .chat-avatar.bot {
+            background-color: var(--primary-light);
+            color: white;
+        }
+        
+        .chat-avatar.user {
+            background-color: var(--light-gray);
+            color: var(--dark);
+        }
+        
+        .chat-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+        }
+        
+        .chat-bubble.bot {
+            background-color: #f1f5f9;
+            border-top-left-radius: 4px;
+        }
+        
+        .chat-bubble.user {
+            background-color: var(--primary);
+            color: white;
+            border-top-right-radius: 4px;
+            margin-left: auto;
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-top: 1px solid var(--light-gray);
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .quick-action {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-action:hover {
+            background-color: #eef2ff;
+            border-color: var(--primary-light);
+        }
+        
+        .typing-indicator {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            color: var(--gray);
+            display: none;
+        }
+        
+        .typing-indicator.show {
+            display: block;
+        }
+        
+        .chat-input-container {
+            padding: 0.75rem;
+        }
+        
+        .chat-input-group {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+        
+        .chat-input {
+            flex: 1;
+            border: 1px solid var(--light-gray);
+            border-radius: 20px;
+            padding: 0.75rem 1rem;
+            resize: none;
+            max-height: 120px;
+            font-family: inherit;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+        
+        .chat-send-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .chat-send-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .chat-send-btn:disabled {
+            background-color: var(--light-gray);
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <aside class="sidebar d-flex flex-column p-3">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a href="/" class="logo d-flex align-items-center text-decoration-none">
+                    <img src="/images/logo.png" alt="Logo" width="36" height="36">
+                    <span class="logo-text fs-4 fw-bold text-dark ms-2">HireRight<span class="text-primary">Pro</span></span>
+                </a>
+                <button class="sidebar-collapse-btn btn btn-link p-0 d-none d-lg-block">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-grow-1">
+                <ul class="nav flex-column gap-1">
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a href="/Employer/EmployerDashboard" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-buildings fs-5"></i>
+                            <span class="nav-link-text ms-3">Employer Dashboard</span>
+                            <span class="tooltip">Employer Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/Premium/Upgrade" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-gem fs-5"></i>
+                            <span class="nav-link-text ms-3">Premium Upgrade</span>
+                            <span class="tooltip">Premium Upgrade</span>
+                        </a>
+                    </li>
+
+                    <!-- Job Management Section -->
+                    <li class="nav-item">
+                        <div class="nav-section-header px-3 py-2 text-uppercase small fw-bold text-muted mt-4">
+                            Job Management
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="/Job/JobPost" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-plus-circle fs-5"></i>
+                            <span class="nav-link-text ms-3">Post New Job</span>
+                            <span class="tooltip">Post New Job</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="/Job/JobList" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-briefcase fs-5"></i>
+                            <span class="nav-link-text ms-3">My Job Listings</span>
+                            <span class="tooltip">My Job Listings</span>
+                        </a>
+                    </li>
+
+                    <!-- Question Management Section -->
+                    <li class="nav-item">
+                        <div class="nav-section-header px-3 py-2 text-uppercase small fw-bold text-muted mt-4">
+                            Question Management
+                        </div>
+                    </li>
+
+                    <!-- 1. Create New Question -->
+                    <li class="nav-item">
+                        <a href="/Question/CreateQuestion" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-plus-circle fs-5"></i>
+                            <span class="nav-link-text ms-3">Create New Question</span>
+                            <span class="tooltip">Create New Question</span>
+                        </a>
+                    </li>
+
+                    <!-- 2. Manage Questions (Consolidated Listing & Search) -->
+                    <li class="nav-item">
+                        <a href="/Question/QuestionList" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-search fs-5"></i>
+                            <span class="nav-link-text ms-3">Manage Questions</span>
+                            <span class="tooltip">View, search, and filter all questions</span>
+                        </a>
+                    </li>
+
+                    <!-- Applications Section -->
+                    <li class="nav-item">
+                        <div class="nav-section-header px-3 py-2 text-uppercase small fw-bold text-muted mt-4">
+                            Applications
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a asp-controller="Application" asp-action="CheckApplications" class="nav-link px-3 py-3 rounded">
+                            <i class="bi bi-file-earmark-text fs-5"></i>
+                            <span class="nav-link-text ms-3">Check Applications</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a asp-controller="Application" asp-action="InterviewCalendar" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-calendar-event fs-5"></i>
+                            <span class="nav-link-text ms-3">Interview Calendar</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Enhanced User Profile Footer -->
+            <div class="user-profile-footer mt-auto pt-4 border-top">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <div class="dropdown">
+                        <!-- Clickable Avatar -->
+                        <div class="user-profile-dropdown d-flex align-items-center px-2 py-2 dropdown-toggle"
+                             data-bs-toggle="dropdown"
+                             aria-expanded="false"
+                             style="cursor: pointer">
+
+                            <!-- Avatar with conditional rendering -->
+                            @if (!string.IsNullOrEmpty(ViewBag.ProfilePhotoFileName as string))
+                            {
+                                <img src="/uploads/profilepics/@ViewBag.ProfilePhotoFileName" alt="Profile" class="avatar">
+                            }
+                            else
+                            {
+                                <div class="avatar">
+                                    @if (User.IsInRole("JobSeeker"))
+                                    {
+                                        <i class="bi bi-person fs-5"></i>
+                                    }
+                                    else if (User.IsInRole("Employer"))
+                                    {
+                                        <i class="bi bi-building fs-5"></i>
+                                    }
+                                    else if (User.IsInRole("Admin"))
+                                    {
+                                        <i class="bi bi-shield-check fs-5"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-person fs-5"></i>
+                                    }
+                                </div>
+                            }
+
+                            <!-- User Info (hidden when collapsed) -->
+                            <div class="user-info ms-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="fw-medium">@ViewBag.EmployerName</div>
+                                    @if (User.IsInRole("JobSeeker"))
+                                    {
+                                        <span class="role-badge jobseeker">Job Seeker</span>
+                                    }
+                                    else if (User.IsInRole("Employer"))
+                                    {
+                                        <span class="role-badge employer">Employer</span>
+                                    }
+                                    else if (User.IsInRole("Admin"))
+                                    {
+                                        <span class="role-badge admin">Admin</span>
+                                    }
+                                </div>
+                                <small class="text-muted d-block text-truncate" style="max-width: 150px;">@ViewBag.EmployerEmail</small>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Dropdown Menu -->
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="width: 250px">
+                            <!-- Profile Header -->
+                            <li class="p-3 text-center border-bottom">
+                                <div class="avatar-lg mb-2">
+                                    @if (!string.IsNullOrEmpty(ViewBag.ProfilePhotoFileName as string))
+                                    {
+                                        <img src="/uploads/profilepics/@ViewBag.ProfilePhotoFileName" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                                    }
+                                    else
+                                    {
+                                        @if (User.IsInRole("JobSeeker"))
+                                        {
+                                            <i class="bi bi-person-circle fs-1"></i>
+                                        }
+                                        else if (User.IsInRole("Employer"))
+                                        {
+                                            <i class="bi bi-building-fill fs-1"></i>
+                                        }
+                                        else if (User.IsInRole("Admin"))
+                                        {
+                                            <i class="bi bi-shield-check fs-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-person-circle fs-1"></i>
+                                        }
+                                    }
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                    <h6 class="mb-0">@ViewBag.EmployerName</h6>
+                                    @if (User.IsInRole("JobSeeker"))
+                                    {
+                                        <span class="role-badge jobseeker">Job Seeker</span>
+                                    }
+                                    else if (User.IsInRole("Employer"))
+                                    {
+                                        <span class="role-badge employer">Employer</span>
+                                    }
+                                    else if (User.IsInRole("Admin"))
+                                    {
+                                        <span class="role-badge admin">Admin</span>
+                                    }
+                                </div>
+                                <small class="text-muted">@ViewBag.EmployerEmail</small>
+                            </li>
+
+                            <li><a class="dropdown-item" href="/Job/EmployeeProfile"><i class="bi bi-building me-2"></i>Company Profile</a></li>
+
+                            <!-- Common Items -->
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/Account/ChangePassword"><i class="bi bi-key me-2"></i>Change Password</a></li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" onclick="openHelpModal()">
+                                    <i class="bi bi-question-circle me-2"></i>Help & Support
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline w-100">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <!-- Guest User Section -->
+                    <div class="guest-user-section">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="avatar">
+                                <i class="bi bi-person-x fs-5"></i>
+                            </div>
+                            <div class="ms-3 text-start">
+                                <div class="fw-medium">Guest User</div>
+                                <small class="text-muted">Please login to continue</small>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="/Account/Login" class="btn btn-primary btn-sm">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                            </a>
+                            <a href="/Account/Register" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-person-plus me-2"></i>Sign Up
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content flex-grow-1 d-flex flex-column">
+            <!-- Topbar with only Chatbot Button -->
+            <header class="topbar">
+                <div class="d-flex justify-content-end w-100">
+                    <!-- AI Assistant Button -->
+                    <button class="chatbot-btn me-2" id="chatbotBtn" onclick="openChatWindow()">
+                        <i class="bi bi-robot"></i>
+                        <span class="btn-text">AI Assistant</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-grow-1 p-4 bg-gray-50">
+                <div class="container-fluid">
+                    <!-- Alerts Section -->
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (TempData["Info"] != null)
+                    {
+                        <div class="alert alert-info alert-dismissible fade show" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>@TempData["Info"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark m-0">@ViewBag.Title</h1>
+                            @if (User.Identity.IsAuthenticated && !string.IsNullOrEmpty(ViewBag.UserRole as string))
+                            {
+                                <small class="text-muted">Welcome back, @ViewBag.UserRole!</small>
+                            }
+                        </div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">@ViewBag.Title</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    @RenderBody()
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="text-center text-muted py-3 border-top small bg-white">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <span>© @DateTime.Today.Year HireRightPro. All rights reserved. Developed by MEALY Team</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div>
+                <h5><i class="bi bi-robot me-2"></i>AI Assistant</h5>
+                <small>Ask me anything about HireRightPro</small>
+            </div>
+            <button class="chat-close-btn" onclick="closeChatWindow()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatWindowMessages">
+            <div class="chat-message">
+                <div class="chat-avatar bot">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="chat-bubble bot">
+                    Hi! I'm your AI assistant. I can help you with questions about using HireRightPro, our policies, or general guidance. What would you like to know?
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-action" onclick="sendChatQuickMessage('How do I apply for a job?')">
+                How to apply for jobs?
+            </button>
+            <button class="quick-action" onclick="sendChatQuickMessage('How do I post a job?')">
+                How to post jobs?
+            </button>
+            <button class="quick-action" onclick="sendChatQuickMessage('What are your privacy policies?')">
+                Privacy policies
+            </button>
+            <button class="quick-action" onclick="sendChatQuickMessage('How do I delete my account?')">
+                Account management
+            </button>
+        </div>
+
+        <div class="typing-indicator" id="chatWindowTyping">
+            AI Assistant is typing...
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-group">
+                <textarea class="chat-input"
+                          id="chatWindowInput"
+                          placeholder="Ask me anything about HireRightPro..."
+                          rows="1"
+                          onkeypress="handleChatWindowKeypress(event)"
+                          oninput="autoResizeChatInput(this)"></textarea>
+                <button class="chat-send-btn" id="chatWindowSendBtn" onclick="sendChatWindowMessage()">
+                    <i class="bi bi-send"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    @await Html.PartialAsync("_HelpModal")
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Chat Window Functions
+        let chatWindowHistory = [];
+
+        function openChatWindow() {
+            document.getElementById('chatWindow').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('chatWindowInput').focus();
+            }, 300);
+        }
+
+        function closeChatWindow() {
+            document.getElementById('chatWindow').classList.remove('show');
+        }
+
+        function handleChatWindowKeypress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatWindowMessage();
+            }
+        }
+
+        function autoResizeChatInput(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 80) + 'px';
+        }
+
+        function sendChatQuickMessage(message) {
+            document.getElementById('chatWindowInput').value = message;
+            sendChatWindowMessage();
+        }
+
+        async function sendChatWindowMessage() {
+            const input = document.getElementById('chatWindowInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addChatWindowMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            showChatWindowTyping();
+
+            try {
+                const response = await getChatWindowResponse(message);
+                hideChatWindowTyping();
+                addChatWindowMessage(response, 'bot');
+            } catch (error) {
+                hideChatWindowTyping();
+                addChatWindowMessage('I apologize, but I\'m having trouble connecting right now. Please try again or contact our support team at support@hirerightpro.com', 'bot');
+            }
+        }
+
+        function addChatWindowMessage(message, sender) {
+            const chatMessages = document.getElementById('chatWindowMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `chat-avatar ${sender}`;
+            avatar.innerHTML = sender === 'bot' ? '<i class="bi bi-robot"></i>' : '<i class="bi bi-person"></i>';
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${sender}`;
+            bubble.textContent = message;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatMessages.appendChild(messageDiv);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatWindowHistory.push({ role: sender === 'user' ? 'user' : 'assistant', content: message });
+        }
+
+        function showChatWindowTyping() {
+            document.getElementById('chatWindowTyping').classList.add('show');
+            document.getElementById('chatWindowSendBtn').disabled = true;
+        }
+
+        function hideChatWindowTyping() {
+            document.getElementById('chatWindowTyping').classList.remove('show');
+            document.getElementById('chatWindowSendBtn').disabled = false;
+        }
+
+        function getAntiForgeryToken() {
+            let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            if (!token) {
+                const forms = document.querySelectorAll('form');
+                for (let form of forms) {
+                    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenInput) {
+                        token = tokenInput.value;
+                        break;
+                    }
+                }
+            }
+
+            return token;
+        }
+
+        async function getChatWindowResponse(userMessage) {
+            try {
+                const antiForgeryToken = getAntiForgeryToken();
+
+                const response = await fetch('/Help/SendChatMessage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken || ''
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    return data.response;
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            } catch (error) {
+                console.error('Chat API Error:', error);
+                return getChatFallbackResponse(userMessage);
+            }
+        }
+
+        function getChatFallbackResponse(message) {
+            const lowerMessage = message.toLowerCase();
+
+            if (lowerMessage.includes('apply') || lowerMessage.includes('job application')) {
+                return "To apply for a job: 1) Search for jobs using our search function, 2) Click on a job that interests you, 3) Click 'Apply Now', 4) Upload your resume and write a cover letter, 5) Submit your application. You can track all applications in 'My Applications'.";
+            } else if (lowerMessage.includes('post') && lowerMessage.includes('job')) {
+                return "To post a job: 1) Go to 'Post a Job' in the navigation, 2) Fill out the job details form including title, description, and requirements, 3) Set salary range and job type, 4) Review and publish. Your job will be live within 24 hours after review.";
+            } else if (lowerMessage.includes('profile') || lowerMessage.includes('account')) {
+                return "To manage your profile: Click on your avatar in the sidebar and select 'My Profile' or 'Company Profile'. You can update personal information, upload photos, add skills, and manage your settings there.";
+            } else if (lowerMessage.includes('password')) {
+                return "To change your password: Go to Settings > Security, click 'Change Password', enter your current password and new password, then click 'Update Password'. Make sure to use a strong, unique password.";
+            } else if (lowerMessage.includes('privacy') || lowerMessage.includes('policy')) {
+                return "Our privacy policy covers how we collect, use, and protect your data. We never sell your information to third parties. You can read the full policy in the Help & Support section or contact support@hirerightpro.com for specific questions.";
+            } else if (lowerMessage.includes('delete') || lowerMessage.includes('cancel')) {
+                return "To delete your account: Go to Settings > Account and look for the 'Delete Account' option. Note that this action is permanent and cannot be undone. All your data will be removed within 30 days.";
+            } else {
+                return "I'm here to help with questions about using HireRightPro! You can ask me about applying for jobs, posting jobs, managing your profile, or our policies. For specific account issues, please contact our support team at support@hirerightpro.com.";
+            }
+        }
+
+        // Help Modal Functions
+        function openHelpModal() {
+            if (typeof bootstrap === 'undefined') {
+                alert('Bootstrap JS is not loaded. Please check your script includes.');
+                return;
+            }
+
+            const modalElement = document.getElementById('helpModal');
+            if (!modalElement) {
+                alert('Help modal element not found. Please check if _HelpModal partial is included.');
+                return;
+            }
+
+            try {
+                const helpModal = new bootstrap.Modal(modalElement);
+                helpModal.show();
+            } catch (error) {
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        // Initialize Bootstrap dropdowns
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all Bootstrap dropdowns
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl)
+            });
+        });
+    </script>
+
+</body>
+</html>    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jquery.unobtrusive-ajax.min.js"></script>
+    <script src="/js/jquery.validate.min.js"></script>
+    <script src="/js/jquery.validate.unobtrusive.min.js"></script>
+    <script src="/js/app.js" asp-append-version="true"></script>
+    @RenderSection("foot", false)
+    @RenderSection("Scripts", required: false)
+    @RenderSection("Head", required: false)
+    @RenderSection("Styles", required: false)

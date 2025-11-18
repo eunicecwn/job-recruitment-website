@@ -1,0 +1,60 @@
+﻿@model List<JobRecruitment.Models.Payment>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Payment ID</th>
+            <th>User</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr><td colspan="7" class="text-center">No payment records found</td></tr>
+        }
+        else
+        {
+            foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.User?.FullName</td>
+                    <td>@p.Amount.ToString("C")</td>
+                    <td>@p.PaymentMethod</td>
+                    <td>
+                        <span class="badge @(p.Status == "Completed" ? "bg-success" :
+                                                                           p.Status == "Pending" ? "bg-warning" :
+                                                                           p.Status == "Failed" ? "bg-danger" : "bg-secondary")">
+                    @p.Status
+                </span>
+            </td>
+            <td>@p.PaymentDate.ToString("yyyy-MM-dd HH:mm")</td>
+            <td>
+                <a href="@Url.Action("PaymentDetail", "Admin", new { id = p.Id })"
+                   class="btn btn-sm btn-info">View</a>
+            </td>
+        </tr>
+                }
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+@if (ViewBag.TotalPages > 1)
+{
+    <nav>
+        <ul class="pagination">
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

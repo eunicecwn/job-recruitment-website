@@ -1,0 +1,14 @@
+﻿@model JobRecruitment.Models.Job
+<div class="modal-header">
+    <h5 class="modal-title">Apply – @Model?.Title</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+    <div class="alert alert-info mb-0">
+        You’ve already applied to this job.
+    </div>
+</div>
+<div class="modal-footer">
+    <a class="btn btn-primary" href="@Url.Action("MyApplications", "Applications")">My Applications</a>
+    <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+</div>

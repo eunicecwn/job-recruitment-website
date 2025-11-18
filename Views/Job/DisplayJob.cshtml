@@ -1,0 +1,149 @@
+﻿@model JobRecruitment.Models.Job
+
+<link rel="stylesheet" href="~/css/jobForm.css">
+
+@{
+	ViewData["Title"] = "Job Details";
+	Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+@{
+	var isClosed = Model.ClosingDate.HasValue && Model.ClosingDate.Value < DateTime.UtcNow;
+	var statusClass = Model.Status == JobStatus.Open ? "badge bg-success" :
+					 Model.Status == JobStatus.Closed ? "badge bg-danger" : "badge bg-secondary";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+	<link rel="stylesheet" href="~/css/MessageBoxes.css">
+	<div class="success-toast">
+		<div class="success-card">
+			<div class="icon">🥳</div>
+			<h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+			<p>@TempData["SuccessMessage"]</p>
+		</div>
+	</div>
+
+	<script>
+		// Close modal if it exists
+		document.addEventListener("DOMContentLoaded", function() {
+			const modal = document.querySelector(".modal");
+			if (modal) {
+				modal.style.display = "none";
+			}
+		});
+	</script>
+}
+
+
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-8">
+			<div class="card mb-4">
+				<div class="card-header">
+					<div class="d-flex justify-content-between align-items-center">
+						<h4 class="mb-2 job-title-display" title="@Model.Title">@Model.Title</h4>
+						<span class="@statusClass">@Model.Status</span>
+					</div>
+				</div>
+				<div class="card-body">
+					<div class="row mb-4">
+						<div class="col-md-6">
+							<h6 class="text-muted">Company</h6>
+							<p class="text-overflow-handle" title="@(Model.Employer?.CompanyName ?? "N/A")">@(Model.Employer?.CompanyName ?? "N/A")</p>
+						</div>
+						<div class="col-md-6">
+							<h6 class="text-muted">Location</h6>
+							<p class="text-overflow-handle" title="@Model.Location">@Model.Location</p>
+						</div>
+					</div>
+
+					<div class="row mb-4">
+						<div class="col-md-6">
+							<h6 class="text-muted">Job Type</h6>
+							<p>@Model.JobType</p>
+						</div>
+						<div class="col-md-6">
+							<h6 class="text-muted">Category</h6>
+							<p class="text-overflow-handle" title="@(Model.Category?.Name ?? "N/A")">@(Model.Category?.Name ?? "N/A")</p>
+						</div>
+					</div>
+
+					<div class="row mb-4">
+						<div class="col-md-6">
+							<h6 class="text-muted">Salary Range</h6>
+							<p>RM @Model.MinSalary.ToString("N0") - RM @Model.MaxSalary.ToString("N0")</p>
+						</div>
+						<div class="col-md-6">
+							<h6 class="text-muted">Posted Date</h6>
+							<p>@Model.PostedDate.ToString("yyyy-MM-dd")</p>
+						</div>
+					</div>
+
+					@if (Model.ClosingDate.HasValue)
+					{
+						<div class="row mb-4">
+							<div class="col-md-6">
+								<h6 class="text-muted">Closing Date</h6>
+								<p>@Model.ClosingDate.Value.ToString("yyyy-MM-dd")</p>
+							</div>
+						</div>
+					}
+
+					<div class="mb-4">
+						<h6 class="text-muted">Job Description</h6>
+						<div class="border p-3 bg-light rounded multi-line-ellipsis" title="@Model.Description">
+							@Html.Raw(Model.Description.Replace("\n", "<br>"))
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-4">
+			<div class="card mb-4">
+				<div class="card-header">
+					<h5 class="mb-0">Actions</h5>
+				</div>
+				<div class="card-body">
+					<div class="d-grid gap-2">
+						<a asp-controller="Job" asp-action="UpdateJob" asp-route-id="@Model.Id" class="btn btn-primary">
+							<i class="fas fa-edit me-1"></i>Edit Job
+						</a>
+						<a asp-controller="Job" asp-action="JobList" class="btn btn-outline-secondary">
+							<i class="fas fa-arrow-left me-1"></i>Back to List
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="card">
+				<div class="card-header">
+					<h5 class="mb-0">Job Statistics</h5>
+				</div>
+				<div class="card-body">
+					<div class="mb-3">
+						<small class="text-muted">Job ID</small>
+						<p class="mb-0 text-overflow-handle" title="@Model.Id">@Model.Id</p>
+					</div>
+					<div class="mb-3">
+						<small class="text-muted">Status</small>
+						<p class="mb-0"><span class="@statusClass">@Model.Status</span></p>
+					</div>
+					<div class="mb-3">
+						<small class="text-muted">Days Posted</small>
+						<p class="mb-0">@((DateTime.UtcNow - Model.PostedDate).Days) days ago</p>
+					</div>
+					@if (Model.ClosingDate.HasValue)
+					{
+						<div class="mb-3">
+							<small class="text-muted">Days Remaining</small>
+							<p class="mb-0">@((Model.ClosingDate.Value - DateTime.UtcNow).Days) days left</p>
+						</div>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

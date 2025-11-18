@@ -1,0 +1,1926 @@
+﻿@model JobRecruitment.Models.InterviewCalendarPageViewModel
+@{
+    ViewBag.Title = "Schedule Interview";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    var application = Model.Application;
+    var formModel = Model.Form;
+
+    // Always initialize calendarEvents safely
+    var calendarEvents = new List<object>();
+
+    if (Model?.Calendar != null && Model.Calendar.Any())
+    {
+        foreach (var date in Model.Calendar.Keys)
+        {
+            var apps = Model.Calendar[date];
+            if (apps == null) continue;
+
+            foreach (var app in apps)
+            {
+                calendarEvents.Add(new
+                {
+                    InterviewStartDate = app.InterviewDate?.ToString("yyyy-MM-dd") ?? "",
+                    StartTime = app.InterviewDate?.ToString("HH:mm") ?? "09:00",
+                    EndTime = app.InterviewDate?.AddHours(1).ToString("HH:mm") ?? "10:00",
+                    Title = app.Job?.Title ?? "Interview",
+                    JobSeekerName = app.JobSeeker?.FullName ?? "Applicant",
+                    JobTitle = app.Job?.Title ?? "Position"
+                });
+            }
+        }
+    }
+}
+
+<div class="container-fluid">
+    <div class="mb-3">
+        <a href="@Url.Action("CheckApplications", "Application")" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Applications
+        </a>
+    </div>
+    <div class="row">
+        <!-- Calendar Section -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="calendar-navigation">
+                        <div class="d-flex align-items-center justify-content-between w-100">
+                            <!-- Left side: Today button and navigation -->
+                            <div class="d-flex align-items-center">
+                                <button class="today-button me-2" id="today-button">Today</button>
+                                <button class="nav-button me-2" id="prev-period">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                            </div>
+
+                            <!-- Center: Calendar title -->
+                            <h4 class="calendar-title mb-0 mx-2 flex-grow-1 text-center" id="calendar-period"></h4>
+
+                            <!-- Right side: Navigation button and view buttons -->
+                            <div class="d-flex align-items-center">
+                                <button class="nav-button me-3" id="next-period">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+
+                                <div class="view-buttons">
+                                    <button class="view-button" data-view="day">Day</button>
+                                    <button class="view-button" data-view="week">Week</button>
+                                    <button class="view-button active" data-view="month">Month</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Calendar Container -->
+                    <div id="calendar-container">
+                        <div id="month-view" class="calendar-view">
+                            <div class="calendar-header">
+                                <div class="day-header">Sun</div>
+                                <div class="day-header">Mon</div>
+                                <div class="day-header">Tue</div>
+                                <div class="day-header">Wed</div>
+                                <div class="day-header">Thu</div>
+                                <div class="day-header">Fri</div>
+                                <div class="day-header">Sat</div>
+                            </div>
+                            <div class="calendar-body" id="month-calendar-body">
+                                <!-- Calendar days will be generated here by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div id="week-view" class="calendar-view d-none">
+                            <div class="calendar-header d-flex">
+                                <div class="day-header" style="width: 60px;">Time</div>
+                                <div class="day-header">Sun</div>
+                                <div class="day-header">Mon</div>
+                                <div class="day-header">Tue</div>
+                                <div class="day-header">Wed</div>
+                                <div class="day-header">Thu</div>
+                                <div class="day-header">Fri</div>
+                                <div class="day-header">Sat</div>
+                            </div>
+                            <div class="calendar-body d-flex" id="week-calendar-body"></div>
+                        </div>
+
+                        <div id="day-view" class="calendar-view d-none">
+                            <div class="calendar-header d-flex">
+                                <div class="day-header" style="width: 60px;">Time</div>
+                                <div class="day-header" id="day-view-date"></div>
+                            </div>
+                            <div class="calendar-body d-flex" id="day-calendar-body"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="col-md-4">
+            <div class="card sticky-form-card" style="max-height: calc(100vh - 80px); overflow: hidden;">
+                <div class="card-header d-flex justify-content-between align-items-center" style="position: sticky; top: 0; z-index: 102; background: white;">
+                    <h5 class="mb-0">Schedule Interview</h5>
+                </div>
+                <div class="card-body" style="overflow-y: auto; max-height: calc(100vh - 160px);">
+                    <!-- Applicant Info -->
+                    <div class="mb-4">
+                        <h6>Applicant Information</h6>
+                        <div class="border rounded p-3 bg-light">
+                            <div class="mb-2">
+                                <strong>Name:</strong> @(application.JobSeeker?.FullName ?? "N/A")
+                            </div>
+                            <div class="mb-2">
+                                <strong>Email:</strong> @(application.JobSeeker?.Email ?? "N/A")
+                            </div>
+                            <div class="mb-2">
+                                <strong>Phone:</strong> @(application.JobSeeker?.Phone ?? "N/A")
+                            </div>
+                            <div class="mb-2">
+                                <strong>Position:</strong> @(application.Job?.Title ?? "N/A")
+                            </div>
+                            <div>
+                                <strong>Applied:</strong> @application.AppliedDate.ToString("dd MMM yyyy")
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interview Form -->
+                    <form asp-action="ScheduleInterview" asp-controller="Application" method="post">
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            var filteredErrors = ViewData.ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Where(error => !error.ErrorMessage.Contains("jobId") && !error.ErrorMessage.Contains("status"));
+
+                            @if (filteredErrors.Any())
+                            {
+                                <div class="alert alert-danger">
+                                    <ul>
+                                        @foreach (var error in filteredErrors)
+                                        {
+                                            <li>@error.ErrorMessage</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        }
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Form.ApplicationId" value="@Model.Form.ApplicationId" />
+                        <input type="hidden" name="status" value="@ViewBag.SelectedStatus" />
+                        <input type="hidden" name="jobId" value="@ViewBag.SelectedJobId" />
+
+                        <div class="mb-3">
+                            <label for="interviewDate" class="form-label">Interview Date</label>
+                            <input type="date" asp-for="Form.InterviewStartDate"
+                                   class="form-control"
+                                   id="interviewDate"
+                                   value="@Model.Form.InterviewStartDate.ToString("yyyy-MM-dd")"
+                                   min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="Form.InterviewStartDate" class="text-danger"></span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="startTime" class="form-label">Start Time</label>
+                                <input type="time" asp-for="Form.StartTime" class="form-control" id="startTime"
+                                       value="@Model.Form.StartTime.ToString(@"hh\:mm")" readonly />
+                                <span asp-validation-for="Form.StartTime" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endTime" class="form-label">End Time</label>
+                                <input type="time" asp-for="Form.EndTime" class="form-control" id="endTime"
+                                       value="@Model.Form.EndTime.ToString(@"hh\:mm")" readonly />
+                                <span asp-validation-for="Form.EndTime" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="locationField">
+                            <label asp-for="Form.InterviewLocation" class="form-label">Location</label>
+                            <input type="text" asp-for="Form.InterviewLocation" class="form-control"
+                                   placeholder="Enter interview location" />
+                            <span asp-validation-for="Form.InterviewLocation" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Form.InterviewerInfo" class="form-label">Interviewer(s)</label>
+                            <input type="text" asp-for="Form.InterviewerInfo" class="form-control"
+                                   placeholder="Name(s) of interviewer(s)" />
+                            <span asp-validation-for="Form.InterviewerInfo" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Form.InterviewNotes" class="form-label">Additional Notes</label>
+                            <textarea asp-for="Form.InterviewNotes" class="form-control" rows="3"
+                                      placeholder="Any special instructions for the candidate"></textarea>
+                            <span asp-validation-for="Form.InterviewNotes" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-calendar-plus"></i>
+                                @(ViewBag.IsEdit ? "Update Interview" : "Schedule Interview")
+                            </button>
+                            <a href="@Url.Action("CheckApplications", "Application")" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Applications
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Google Calendar-like styling - Enhanced */
+        .calendar-view {
+            min-height: 400px;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        /* Month View - Compact Grid Layout */
+        #month-view .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e0e0e0;
+            width: 100%; /* Ensure full width */
+        }
+
+        #month-view .day-header {
+            text-align: center;
+            padding: 8px 4px;
+            background-color: white;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        #month-view .calendar-body {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: minmax(80px, 1fr);
+            gap: 1px;
+            background-color: #e0e0e0;
+            width: 100%; /* Ensure full width */
+        }
+
+        /* Ensure calendar days take full width of their grid cell */
+        .calendar-day {
+            min-height: 80px;
+            max-height: 120px;
+            border: none;
+            padding: 4px;
+            position: relative;
+            background-color: white;
+            transition: background-color 0.2s;
+            aspect-ratio: 1/1;
+            overflow: hidden;
+            width: 100%; /* Ensure full width */
+            box-sizing: border-box; /* Include padding in width calculation */
+            overflow-y: auto;
+        }
+
+            .calendar-day:not(.out-of-month):hover {
+                background-color: #f1f3f4;
+                cursor: pointer;
+            }
+
+            .calendar-day.out-of-month {
+                background-color: #f8f9fa;
+                color: #dadce0;
+            }
+
+            .calendar-day.today {
+                background-color: #e8f0fe;
+            }
+
+                .calendar-day.today .date-number {
+                    color: #1a73e8;
+                    font-weight: bold;
+                }
+
+            .calendar-day.selected {
+                background-color: #e8f0fe;
+                border: 2px solid #1a73e8;
+            }
+
+            .calendar-day .date-number {
+                font-weight: 400;
+                margin-bottom: 2px;
+                font-size: 12px;
+                color: #3c4043;
+            }
+
+        .calendar-event {
+            background-color: #e8f5e9;
+            border-left: 2px solid #34a853;
+            padding: 1px 3px;
+            margin-bottom: 1px;
+            border-radius: 2px;
+            font-size: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #3c4043;
+            line-height: 1.2;
+        }
+
+            .calendar-event:hover {
+                background-color: #d2e6d4;
+            }
+
+        /* Calendar header adjustments */
+        .calendar-header {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #f8f9fa;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .day-header {
+            padding: 8px 4px;
+            text-align: center;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 10px;
+            text-transform: uppercase;
+            background-color: white;
+        }
+
+        /* Calendar container adjustments */
+        #calendar-container {
+            max-height: 600px;
+            overflow: hidden;
+        }
+
+        /* Week View - Fixed Layout */
+        #week-view .calendar-header {
+            display: flex;
+            width: 100%;
+        }
+
+        #week-view .day-header {
+            flex: 1;
+            min-width: 0; /* Allow flex items to shrink below their content size */
+            text-align: center;
+            padding: 8px 4px;
+            background-color: white;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 10px;
+            text-transform: uppercase;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+            #week-view .day-header:first-child {
+                flex: 0 0 60px; /* Fixed width for time column header */
+            }
+
+        #week-view .calendar-body {
+            display: flex;
+            width: 100%;
+        }
+
+        #week-view .time-column {
+            flex: 0 0 60px; /* Fixed width for time column */
+        }
+
+        #week-view .week-grid {
+            display: flex;
+            flex: 1;
+        }
+
+        #week-view .week-day {
+            flex: 1;
+            min-width: 0; /* Allow days to shrink evenly */
+            border-right: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        #week-view .week-hour {
+            height: 48px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        /* Day View - Fixed Layout */
+        #day-view .calendar-header {
+            display: flex;
+            width: 100%;
+        }
+
+        #day-view .day-header {
+            flex: 1;
+            text-align: center;
+            padding: 8px 4px;
+            background-color: white;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+            #day-view .day-header:first-child {
+                flex: 0 0 60px; /* Fixed width for time column header */
+            }
+
+        #day-view .calendar-body {
+            display: flex;
+            width: 100%;
+        }
+
+        #day-view .time-column {
+            flex: 0 0 60px; /* Fixed width for time column */
+        }
+
+        #day-view .day-grid {
+            display: flex;
+            flex: 1;
+        }
+
+        #day-view .day-column {
+            flex: 1;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        #day-view .day-hour {
+            height: 48px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .time-label {
+            height: 48px;
+            position: relative;
+            font-size: 10px;
+            color: #70757a;
+            text-align: right;
+            padding-right: 8px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+            .time-label span {
+                position: relative;
+                top: -6px;
+            }
+
+        .calendar-event-block {
+            position: absolute;
+            background-color: #e8f5e9;
+            border-left: 3px solid #34a853;
+            border-radius: 3px;
+            padding: 4px;
+            font-size: 11px;
+            overflow: hidden;
+            z-index: 4;
+            cursor: pointer;
+            max-width: calc(100% - 8px);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .calendar-navigation {
+            margin-bottom: 16px;
+        }
+
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 400;
+            color: #3c4043;
+            margin: 0;
+        }
+
+        .view-buttons {
+            display: flex;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .view-button {
+            padding: 6px 12px;
+            background: white;
+            border: none;
+            font-size: 14px;
+            color: #5f6368;
+            cursor: pointer;
+        }
+
+            .view-button.active {
+                background: #f1f3f4;
+                color: #1a73e8;
+                font-weight: 500;
+            }
+
+            .view-button:not(:last-child) {
+                border-right: 1px solid #dadce0;
+            }
+
+        .nav-button {
+            background: white;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #5f6368;
+        }
+
+            .nav-button:hover {
+                background: #f8f9fa;
+            }
+
+        .today-button {
+            background: white;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            color: #3c4043;
+            cursor: pointer;
+        }
+
+            .today-button:hover {
+                background: #f8f9fa;
+            }
+
+        /* Enhanced hover effects to prevent overlapping */
+        #week-view .week-hour:hover,
+        #day-view .day-hour:hover {
+            background-color: #f0f7ff;
+            cursor: pointer;
+            z-index: 10; /* Higher z-index to prevent overlapping */
+            position: relative;
+        }
+
+            /* Improved hover tooltip positioning */
+            #week-view .week-hour:hover::after,
+            #day-view .day-hour:hover::after {
+                content: "Click to schedule";
+                position: absolute;
+                bottom: 2px;
+                right: 2px;
+                font-size: 8px;
+                color: #1a73e8;
+                background: rgba(255, 255, 255, 0.95);
+                padding: 2px 4px;
+                border-radius: 3px;
+                z-index: 11; /* Higher than the hour slot */
+                pointer-events: none;
+                white-space: nowrap;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+                border: 1px solid #dadce0;
+            }
+
+        /* Selected time slot styling - make it more visible */
+        #week-view .week-hour.selected-time-slot,
+        #day-view .day-hour.selected-time-slot {
+            background-color: #e3f2fd !important;
+            border: 2px solid #1a73e8 !important;
+            z-index: 12; /* Higher than hover state */
+        }
+
+            /* Make sure the selection is visible even when hovering */
+            #week-view .week-hour.selected-time-slot:hover,
+            #day-view .day-hour.selected-time-slot:hover {
+                background-color: #d0e4ff !important;
+                border: 2px solid #0d47a1 !important;
+            }
+
+        /* Time slot transition for smooth hover effect */
+        #week-view .week-hour,
+        #day-view .day-hour {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        /* Visual indicator for current hovered time range */
+        .time-slot-preview {
+            position: absolute;
+            background-color: rgba(26, 115, 232, 0.1);
+            border: 1px dashed #1a73e8;
+            pointer-events: none;
+            z-index: 9; /* Lower than hover tooltip */
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border-radius: 2px;
+        }
+
+            .time-slot-preview div {
+                position: absolute;
+                bottom: 2px;
+                right: 2px;
+                font-size: 9px;
+                color: #1a73e8;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 1px 4px;
+                border-radius: 2px;
+                z-index: 10;
+                pointer-events: none;
+            }
+
+        .sticky-form-card {
+            position: sticky;
+            z-index: 100;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+            top: 20px;
+        }
+
+        #startTime[readonly],
+        #endTime[readonly] {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+            opacity: 1; /* Ensure it's not transparent */
+        }
+
+        /* Event tooltip styling to prevent overlapping */
+        .calendar-event {
+            position: relative;
+        }
+
+            .calendar-event:hover::after {
+                content: attr(title);
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 10px;
+                white-space: nowrap;
+                z-index: 20;
+                pointer-events: none;
+            }
+
+        .calendar-event-more {
+            background-color: #f1f3f4;
+            border-left: 2px solid #5f6368;
+            padding: 1px 3px;
+            margin-bottom: 1px;
+            border-radius: 2px;
+            font-size: 9px;
+            cursor: pointer;
+            color: #5f6368;
+            font-style: italic;
+        }
+
+            .calendar-event-more:hover {
+                background-color: #e8eaed;
+            }
+
+        /* Custom scrollbar for calendar days */
+        .calendar-day::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .calendar-day::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .calendar-day::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+
+            .calendar-day::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+
+        /* Add this to your Styles section */
+        .calendar-day.past-date {
+            background-color: #f8f9fa;
+            color: #dadce0;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+            .calendar-day.past-date .date-number {
+                color: #ccc;
+            }
+
+        /* Also add for week and day views */
+        .week-hour.past-date, .day-hour.past-date {
+            background-color: #f8f9fa !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+        /* Conflict styling */
+        .week-hour.conflict, .day-hour.conflict {
+            background-color: #fff3cd !important;
+            border: 2px solid #ffc107 !important;
+        }
+
+        .conflict-indicator {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 12px;
+            color: #dc3545;
+            z-index: 15;
+        }
+
+        /* Tooltip for conflicts */
+        .week-hour[title*="conflict"], .day-hour[title*="conflict"],
+        .week-hour[title*="Conflict"], .day-hour[title*="Conflict"] {
+            cursor: not-allowed;
+        }
+
+            .week-hour[title*="conflict"]:hover::after,
+            .day-hour[title*="conflict"]:hover::after,
+            .week-hour[title*="Conflict"]:hover::after,
+            .day-hour[title*="Conflict"]:hover::after {
+                content: attr(title);
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #dc3545;
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 12px;
+                white-space: normal;
+                width: 200px;
+                z-index: 20;
+            }
+
+        .conflict-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        /* Enhanced past date styling for all views */
+        #month-view .calendar-day.past-date {
+            background-color: #f8f9fa !important;
+            color: #dadce0 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+            #month-view .calendar-day.past-date .date-number {
+                color: #ccc !important;
+            }
+
+        /* Week view past date styling */
+        #week-view .week-hour.past-date {
+            background-color: #f8f9fa !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+        /* Day view past date styling */
+        #day-view .day-hour.past-date {
+            background-color: #f8f9fa !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+        /* Past event styling for week and day views */
+        .week-hour.past-date .calendar-event-block,
+        .day-hour.past-date .calendar-event-block {
+            background-color: #f8f9fa !important;
+            border-left: 3px solid #dadce0 !important;
+            opacity: 0.8;
+        }
+
+            .week-hour.past-date .calendar-event-block:hover,
+            .day-hour.past-date .calendar-event-block:hover {
+                background-color: #e8eaed !important;
+            }
+
+        #week-view .week-hour.past-date,
+        #day-view .day-hour.past-date {
+            background-color: #f8f9fa !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
+        /* Add these to ensure past dates are properly styled */
+        #month-view .calendar-day.past-date,
+        #month-view .calendar-day.past-date.out-of-month,
+        #month-view .calendar-day.past-date.today,
+        #month-view .calendar-day.past-date.selected {
+            background-color: #f8f9fa !important;
+            color: #dadce0 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            border: none !important;
+        }
+
+            #month-view .calendar-day.past-date .date-number,
+            #month-view .calendar-day.past-date.out-of-month .date-number,
+            #month-view .calendar-day.past-date.today .date-number,
+            #month-view .calendar-day.past-date.selected .date-number {
+                color: #ccc !important;
+                font-weight: normal !important;
+            }
+
+            #month-view .calendar-day.past-date .calendar-event,
+            #month-view .calendar-day.past-date.out-of-month .calendar-event {
+                background-color: #f8f9fa !important;
+                border-left: 2px solid #dadce0 !important;
+                color: #dadce0 !important;
+                cursor: not-allowed !important;
+            }
+
+        /* Custom scrollbar styling */
+        .modal-body::-webkit-scrollbar,
+        .card-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track,
+        .card-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb,
+        .card-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+            .modal-body::-webkit-scrollbar-thumb:hover,
+            .card-body::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+
+        /* For Firefox */
+        .modal-body,
+        .card-body {
+            scrollbar-width: thin;
+            scrollbar-color: #c1c1c1 #f1f1f1;
+        }
+
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Current view and date tracking
+        let currentView = 'month';
+        let currentDate = new Date();
+        let calendarData = @Html.Raw(Json.Serialize(calendarEvents));
+        let hoverPreviewElement = null;
+        let lastHoveredHour = null;
+        let filteredCalendarData = null;
+        let isFiltered = false;
+
+        // Initialize calendar
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            setupEventListeners();
+
+            // Set initial date if we have one from the model
+            @if (formModel.InterviewStartDate != default(DateTime))
+            {
+                        <text>
+                        const interviewDate = new Date('@formModel.InterviewStartDate.ToString("yyyy-MM-dd")');
+                        currentDate = interviewDate;
+                        document.getElementById('interviewDate').value = '@formModel.InterviewStartDate.ToString("yyyy-MM-dd")';
+                        highlightSelectedDate(interviewDate);
+                        </text>
+            }
+        });
+
+        function initializeCalendar() {
+            renderCalendar();
+            updateCalendarPeriodText();
+        }
+
+        function setupEventListeners() {
+            // View change buttons
+        document.querySelectorAll('.view-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.view-button').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Set current view
+                currentView = this.dataset.view;
+
+                // Hide all calendar views
+                document.querySelectorAll('.calendar-view').forEach(view => {
+                    view.classList.add('d-none');
+                });
+                // Show the selected view
+                document.getElementById(`${currentView}-view`).classList.remove('d-none');
+
+                // Update the calendar period text FIRST
+                updateCalendarPeriodText();
+
+                // Then render the calendar for the new view
+                renderCalendar();
+
+                // Re-setup hover effects after view change (with delay)
+                setTimeout(setupTimeSlotHover, 100);
+                // Reapply any existing time selections
+                setTimeout(reapplySelectionsAfterViewChange, 100);
+            });
+        });
+
+            // Navigation buttons
+            document.getElementById('prev-period').addEventListener('click', function() {
+                navigatePeriod(-1);
+            });
+
+            document.getElementById('next-period').addEventListener('click', function() {
+                navigatePeriod(1);
+            });
+
+            // Today button - FIXED: Now selects today's date
+            document.getElementById('today-button').addEventListener('click', function() {
+                const today = new Date();
+                currentDate = new Date(today); // Create a new date object to avoid reference issues
+
+                // Update the form date field
+                const year = today.getFullYear();
+                const month = (today.getMonth() + 1).toString().padStart(2, '0');
+                const day = today.getDate().toString().padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+
+                document.getElementById('interviewDate').value = dateStr;
+
+                // Clear time selections
+                document.getElementById('startTime').value = '';
+                document.getElementById('endTime').value = '';
+
+                // Remove any time slot selections
+                document.querySelectorAll('.selected-time-slot').forEach(el => {
+                    el.classList.remove('selected-time-slot');
+                    el.style.backgroundColor = '';
+                    el.style.border = '';
+                });
+
+                // Highlight today's date
+                highlightSelectedDate(today);
+
+                // Render calendar and update period text
+                renderCalendar();
+                updateCalendarPeriodText();
+
+            });
+
+            // Date selection from form
+            document.getElementById('interviewDate').addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                highlightSelectedDate(selectedDate);
+
+                // Switch to day view if not already
+                if (currentView !== 'day') {
+                    document.querySelector('[data-view="day"]').click();
+                }
+
+                // Update calendar to show selected date
+                currentDate = selectedDate;
+                renderCalendar();
+                updateCalendarPeriodText();
+            });
+
+            // Form submission with validation only (no AJAX)
+            document.querySelector('form').addEventListener('submit', function(e) {
+                    const validation = validateDateTime();
+
+                    if (!validation.isValid) {
+                        e.preventDefault();
+                        alert(validation.message);
+                        return false;
+                    }
+
+                    // Additional validation for required fields
+                    const interviewLocation = document.querySelector('[name="Form.InterviewLocation"]').value;
+                    const interviewerInfo = document.querySelector('[name="Form.InterviewerInfo"]').value;
+
+                    if (!interviewLocation.trim()) {
+                        e.preventDefault();
+                        alert('Please enter an interview location.');
+                        return false;
+                    }
+
+                    if (!interviewerInfo.trim()) {
+                        e.preventDefault();
+                        alert('Please enter interviewer information.');
+                        return false;
+                    }
+
+                // Let the form submit normally
+            });
+
+            document.getElementById('startTime').addEventListener('change', validateTime);
+            document.getElementById('endTime').addEventListener('change', validateTime);
+
+                    // Real-time validation on input changes
+        document.getElementById('interviewDate').addEventListener('change', function() {
+            const validation = validateDateTime();
+            if (!validation.isValid) {
+                alert(validation.message);
+                this.value = ''; // Clear invalid date
+            }
+        });
+
+        document.getElementById('startTime').addEventListener('change', function() {
+            const validation = validateDateTime();
+            if (!validation.isValid) {
+                alert(validation.message);
+                this.value = ''; // Clear invalid time
+            }
+        });
+
+        document.getElementById('endTime').addEventListener('change', function() {
+            const validation = validateDateTime();
+            if (!validation.isValid) {
+                alert(validation.message);
+                this.value = ''; // Clear invalid time
+            }
+        });
+
+            function validateTime() {
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+
+                if (startTime && endTime && startTime >= endTime) {
+                    alert('End time must be after start time.');
+                    document.getElementById('endTime').value = '';
+                }
+            }
+        }
+
+                function validateDateTime() {
+            const interviewDateInput = document.getElementById('interviewDate');
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+
+            // Get current date and time
+            const now = new Date();
+            const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+
+            // Validate date
+            if (!interviewDateInput.value) {
+                return { isValid: false, message: 'Please select an interview date.' };
+            }
+
+            const selectedDate = new Date(interviewDateInput.value);
+            selectedDate.setHours(0, 0, 0, 0);
+
+            // Check if date is in the past
+            if (selectedDate < currentDate) {
+                return { isValid: false, message: 'Interview date cannot be in the past.' };
+            }
+
+            // Validate time (only required if date is today)
+            if (selectedDate.getTime() === currentDate.getTime()) {
+                if (!startTimeInput.value || !endTimeInput.value) {
+                    return { isValid: false, message: 'Please select a time slot for today.' };
+                }
+
+                // Parse selected times
+                const [startHours, startMinutes] = startTimeInput.value.split(':').map(Number);
+                const [endHours, endMinutes] = endTimeInput.value.split(':').map(Number);
+
+                const selectedStartTime = startHours * 60 + startMinutes;
+                const selectedEndTime = endHours * 60 + endMinutes;
+
+                // Check if time is in the past for today
+                if (selectedStartTime < currentTime) {
+                    return { isValid: false, message: 'Start time cannot be in the past for today.' };
+                }
+
+                if (selectedEndTime <= currentTime) {
+                    return { isValid: false, message: 'End time cannot be in the past for today.' };
+                }
+
+                // Validate time order
+                if (selectedStartTime >= selectedEndTime) {
+                    return { isValid: false, message: 'End time must be after start time.' };
+                }
+            } else {
+                // For future dates, just validate time order
+                if (startTimeInput.value && endTimeInput.value) {
+                    const [startHours, startMinutes] = startTimeInput.value.split(':').map(Number);
+                    const [endHours, endMinutes] = endTimeInput.value.split(':').map(Number);
+
+                    const selectedStartTime = startHours * 60 + startMinutes;
+                    const selectedEndTime = endHours * 60 + endMinutes;
+
+                    if (selectedStartTime >= selectedEndTime) {
+                        return { isValid: false, message: 'End time must be after start time.' };
+                    }
+                }
+            }
+
+            return { isValid: true, message: '' };
+        }
+
+        function navigatePeriod(direction) {
+            if (currentView === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + direction);
+            } else if (currentView === 'week') {
+                currentDate.setDate(currentDate.getDate() + (direction * 7));
+            } else { // day view
+                currentDate.setDate(currentDate.getDate() + direction);
+            }
+
+            renderCalendar();
+            updateCalendarPeriodText();
+        }
+
+        function updateCalendarPeriodText() {
+            const periodElement = document.getElementById('calendar-period');
+            console.log('Updating calendar period text, element found:', periodElement);
+
+            if (currentView === 'month') {
+                periodElement.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else if (currentView === 'week') {
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+
+                periodElement.textContent =
+                    weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' - ' +
+                    weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                console.log('Week view text set to:', periodElement.textContent);
+            } else { // day view
+                periodElement.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+
+        function applyExistingTimeSelection() {
+            const interviewDate = document.getElementById('interviewDate').value;
+            const startTime = document.getElementById('startTime').value;
+
+            if (interviewDate && startTime) {
+                const date = new Date(interviewDate);
+                const hour = parseInt(startTime.split(':')[0]);
+
+                // Wait a bit for the calendar to render completely
+                setTimeout(() => {
+                    highlightSelectedTimeSlot(date, hour);
+                }, 200);
+            }
+        }
+
+        function renderCalendar() {
+            if (currentView === 'month') {
+                renderMonthView();
+            } else if (currentView === 'week') {
+                renderWeekView();
+                setTimeout(() => {
+                    setupTimeSlotHover();
+                    reapplySelectionsAfterViewChange();
+                    fixPastDateStyling(); // Add this line
+                }, 100);
+            } else { // day view
+                renderDayView();
+                setTimeout(() => {
+                    setupTimeSlotHover();
+                    reapplySelectionsAfterViewChange();
+                    fixPastDateStyling(); // Add this line
+                }, 100);
+            }
+        }
+        document.querySelectorAll('.view-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.view-button').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Set current view
+                currentView = this.dataset.view;
+
+                // Hide all calendar views
+                document.querySelectorAll('.calendar-view').forEach(view => {
+                    view.classList.add('d-none');
+                });
+                // Show the selected view
+                document.getElementById(`${currentView}-view`).classList.remove('d-none');
+
+                // Render the calendar for the new view
+                renderCalendar();
+                updateCalendarPeriodText();
+
+                // Re-setup hover effects after view change (with delay)
+                setTimeout(setupTimeSlotHover, 100);
+                // Reapply any existing time selections
+                setTimeout(reapplySelectionsAfterViewChange, 100);
+            });
+        });
+
+                function applyExistingTimeSelection() {
+            const interviewDate = document.getElementById('interviewDate').value;
+            const startTime = document.getElementById('startTime').value;
+
+            if (interviewDate && startTime) {
+                const date = new Date(interviewDate);
+                const hour = parseInt(startTime.split(':')[0]);
+
+                // Wait a bit for the calendar to render completely
+                setTimeout(() => {
+                    highlightSelectedTimeSlot(date, hour);
+                }, 200);
+            }
+        }
+
+        function renderMonthView() {
+            const calendarBody = document.getElementById('month-calendar-body');
+            calendarBody.innerHTML = '';
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Get first day of month and last day of month
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+
+            // Start from the Sunday of the week that contains the first day
+            const startDate = new Date(firstDay);
+            startDate.setDate(firstDay.getDate() - firstDay.getDay());
+
+            // Generate calendar days - always 42 days (6 weeks)
+            const current = new Date(startDate);
+            for (let i = 0; i < 42; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+
+                // Store the actual date components as data attributes (not ISO string)
+                dayElement.dataset.year = current.getFullYear();
+                dayElement.dataset.month = current.getMonth();
+                dayElement.dataset.day = current.getDate();
+
+                // Check if this is today
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const currentDateOnly = new Date(current);
+                currentDateOnly.setHours(0, 0, 0, 0);
+
+                // Check if date is in the past FIRST
+                if (currentDateOnly.getTime() < today.getTime()) {
+                    dayElement.classList.add('past-date');
+                } else {
+                    // Only add click event for future dates
+                    dayElement.addEventListener('click', function() {
+                        const year = parseInt(this.dataset.year);
+                        const month = parseInt(this.dataset.month);
+                        const day = parseInt(this.dataset.day);
+                        const clickedDate = new Date(year, month, day);
+                        selectDate(clickedDate);
+                    });
+                }
+
+                // Add other classes AFTER past-date
+                if (current.getMonth() !== month) {
+                    dayElement.classList.add('out-of-month');
+                }
+
+                if (currentDateOnly.getTime() === today.getTime()) {
+                    dayElement.classList.add('today');
+                }
+
+                // Check if this date is selected in the form
+                const interviewDateInput = document.getElementById('interviewDate');
+                if (interviewDateInput.value) {
+                    const selectedDate = new Date(interviewDateInput.value);
+                    selectedDate.setHours(0, 0, 0, 0);
+                    if (currentDateOnly.getTime() === selectedDate.getTime()) {
+                        dayElement.classList.add('selected');
+                    }
+                }
+
+                // Add date number
+                const dateNumber = document.createElement('div');
+                dateNumber.className = 'date-number';
+                dateNumber.textContent = current.getDate();
+                dayElement.appendChild(dateNumber);
+
+                // Add events for this day - ENHANCED FOR MULTIPLE EVENTS
+                const events = getEventsForDate(current);
+
+                // Show first 3 events fully
+                const eventsToShow = events.slice(0, 3);
+                const extraEventsCount = events.length - 3;
+
+                eventsToShow.forEach(event => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'calendar-event';
+                    eventElement.textContent = `${formatTime(event.startTime)} ${event.jobSeekerName.substring(0, 8)}${event.jobSeekerName.length > 8 ? '...' : ''}`;
+                    eventElement.title = `${event.jobSeekerName} - ${event.jobTitle} (${formatTime(event.startTime)})`;
+                    dayElement.appendChild(eventElement);
+                });
+
+                // Show "+X more" indicator if there are more events
+                if (extraEventsCount > 0) {
+                    const moreEventsElement = document.createElement('div');
+                    moreEventsElement.className = 'calendar-event-more';
+                    moreEventsElement.textContent = `+${extraEventsCount} more`;
+                    moreEventsElement.title = `${extraEventsCount} more interviews on this day`;
+                    moreEventsElement.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        // Switch to day view for this date
+                        currentDate = new Date(current);
+                        document.querySelector('[data-view="day"]').click();
+                    });
+                    dayElement.appendChild(moreEventsElement);
+                }
+
+                calendarBody.appendChild(dayElement);
+
+                // Move to next day
+                current.setDate(current.getDate() + 1);
+            }
+            setTimeout(fixPastDateStyling, 0);
+        }
+
+        function renderWeekView() {
+            const calendarBody = document.getElementById('week-calendar-body');
+            calendarBody.innerHTML = '';
+
+            // Remove any inline styles
+            calendarBody.style.display = '';
+
+            // Create time column
+            const timeColumn = document.createElement('div');
+            timeColumn.className = 'time-column';
+
+            // Add empty cell for header alignment
+            const headerCell = document.createElement('div');
+            headerCell.className = 'time-label';
+            headerCell.style.height = '24px';
+            timeColumn.appendChild(headerCell);
+
+            // Create time labels (8 AM to 6 PM)
+            for (let hour = 8; hour <= 18; hour++) {
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.innerHTML = `<span>${formatHour(hour)}</span>`;
+                timeColumn.appendChild(timeLabel);
+            }
+
+            calendarBody.appendChild(timeColumn);
+
+            // Create week grid
+            const weekGrid = document.createElement('div');
+            weekGrid.className = 'week-grid';
+
+            // Get start of week (Sunday)
+            const weekStart = new Date(currentDate);
+            weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+
+            // Create day columns
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(weekStart);
+                day.setDate(weekStart.getDate() + i);
+
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'week-day';
+
+                // Add day header
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = day.getDate(); // Only the date number
+                dayHeader.style.textAlign = 'center';
+                dayHeader.style.padding = '4px';
+                dayHeader.style.fontSize = '11px';
+                dayHeader.style.color = '#70757a';
+
+                // Highlight today
+                const today = new Date();
+                if (day.toDateString() === today.toDateString()) {
+                    dayHeader.style.color = '#1a73e8';
+                    dayHeader.style.fontWeight = 'bold';
+                }
+
+                dayColumn.appendChild(dayHeader);
+
+                // Create hour slots
+        for (let hour = 8; hour <= 18; hour++) {
+               const hourSlot = document.createElement('div');
+               hourSlot.className = 'week-hour';
+
+               // Store date and hour as data attributes
+               const dateStr = formatDateToYMD(day);
+               hourSlot.dataset.date = dateStr;
+               hourSlot.dataset.hour = hour;
+               hourSlot.dataset.fullDate = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00`;
+
+               // Check if this date is in the past
+               const slotDate = new Date(day);
+               slotDate.setHours(hour);
+               const now = new Date();
+
+               if (slotDate < now) {
+                   hourSlot.classList.add('past-date');
+               }
+
+               // Check for events at this time (regardless of past/future)
+               const events = getEventsForDateAndHour(day, hour);
+               if (events.length > 0) {
+                   const eventBlock = document.createElement('div');
+                   eventBlock.className = 'calendar-event-block';
+                   eventBlock.style.top = '2px';
+                   eventBlock.style.left = '2px';
+                   eventBlock.style.right = '2px';
+                   eventBlock.style.height = '44px';
+                   eventBlock.textContent = events[0].jobSeekerName;
+                   eventBlock.title = `${events[0].jobSeekerName} - ${events[0].jobTitle} (${formatTime(events[0].startTime)})`;
+                   hourSlot.appendChild(eventBlock);
+               }
+
+               // Only allow clicking on future dates
+               if (slotDate >= now) {
+                   hourSlot.addEventListener('click', function() {
+                       selectDateAndTime(day, hour);
+                   });
+               } else {
+                   hourSlot.style.cursor = 'not-allowed';
+               }
+
+               dayColumn.appendChild(hourSlot);
+           }
+
+                weekGrid.appendChild(dayColumn);
+            }
+
+            calendarBody.appendChild(weekGrid);
+            updateCalendarPeriodText();
+        }
+
+        function renderDayView() {
+            const calendarBody = document.getElementById('day-calendar-body');
+            calendarBody.innerHTML = '';
+
+            // Remove any inline styles
+            calendarBody.style.display = '';
+
+            // Update day header
+            document.getElementById('calendar-period').textContent =
+                currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+            // Create time column
+            const timeColumn = document.createElement('div');
+            timeColumn.className = 'time-column';
+
+            // Add empty cell for header alignment
+            const headerCell = document.createElement('div');
+            headerCell.className = 'time-label';
+            headerCell.style.height = '24px';
+            timeColumn.appendChild(headerCell);
+
+            // Create time labels (8 AM to 6 PM)
+            for (let hour = 8; hour <= 18; hour++) {
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.innerHTML = `<span>${formatHour(hour)}</span>`;
+                timeColumn.appendChild(timeLabel);
+            }
+
+            calendarBody.appendChild(timeColumn);
+
+            // Create day grid
+            const dayGrid = document.createElement('div');
+            dayGrid.className = 'day-grid';
+
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'day-column';
+
+            // Add day header (empty for alignment)
+            const dayHeader = document.createElement('div');
+            dayHeader.style.height = '24px';
+            dayHeader.style.borderBottom = '1px solid #e0e0e0';
+            dayColumn.appendChild(dayHeader);
+
+            // Create hour slots
+            for (let hour = 8; hour <= 18; hour++) {
+                const hourSlot = document.createElement('div');
+                hourSlot.className = 'day-hour';
+
+                // Check if this date is in the past
+                const slotDate = new Date(currentDate);
+                slotDate.setHours(hour);
+                const now = new Date();
+
+                if (slotDate < now) {
+                    hourSlot.classList.add('past-date');
+                }
+
+                // Store date and hour as data attributes (for both past and future dates)
+                const dateStr = formatDateToYMD(currentDate);
+                hourSlot.dataset.date = dateStr;
+                hourSlot.dataset.hour = hour;
+                hourSlot.dataset.fullDate = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00`;
+
+                // Check for events at this time (regardless of past/future)
+                const events = getEventsForDateAndHour(currentDate, hour);
+                if (events.length > 0) {
+                    const eventBlock = document.createElement('div');
+                    eventBlock.className = 'calendar-event-block';
+                    eventBlock.style.top = '2px';
+                    eventBlock.style.left = '2px';
+                    eventBlock.style.right = '2px';
+                    eventBlock.style.height = '44px';
+                    eventBlock.textContent = `${formatTime(events[0].startTime)} ${events[0].jobSeekerName}`;
+                    eventBlock.title = `${events[0].jobSeekerName} - ${events[0].jobTitle} (${formatTime(events[0].startTime)})`;
+                    hourSlot.appendChild(eventBlock);
+                }
+
+                // Only allow clicking on future dates
+                if (slotDate >= now) {
+                    hourSlot.addEventListener('click', function() {
+                        selectDateAndTime(currentDate, hour);
+                    });
+                } else {
+                    hourSlot.style.cursor = 'not-allowed';
+                }
+
+                dayColumn.appendChild(hourSlot);
+            }
+
+            dayGrid.appendChild(dayColumn);
+            calendarBody.appendChild(dayGrid);
+        }
+
+                // Helper function to format date as YYYY-MM-DD in local time
+        function formatDateToYMD(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getEventsForDate(date) {
+            const dataToUse = isFiltered ? filteredCalendarData : calendarData;
+            // Format the date as local YYYY-MM-DD for comparison
+            const dateStr = formatDateToYMD(date);
+            return dataToUse.filter(event => {
+                return event.interviewStartDate === dateStr;
+            });
+        }
+
+        function getEventsForDateAndHour(date, hour) {
+            const dataToUse = isFiltered ? filteredCalendarData : calendarData;
+            const dateStr = formatDateToYMD(date);
+            return dataToUse.filter(event => {
+                if (event.interviewStartDate !== dateStr) return false;
+                const eventHour = parseInt(event.startTime.split(':')[0]);
+                return eventHour === hour;
+            });
+        }
+
+                function formatDateForComparison(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':');
+            const hour = parseInt(hours);
+            return hour > 12 ? `${hour - 12}:${minutes} PM` : `${hour}:${minutes} AM`;
+        }
+
+        function formatHour(hour) {
+            return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+        }
+
+        function selectDate(date) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const selectedDate = new Date(date);
+            selectedDate.setHours(0, 0, 0, 0);
+
+            // Check if date is in the past
+            if (selectedDate < now) {
+                alert('Cannot select dates in the past. Please choose a future date.');
+                return;
+            }
+
+            // Format the date as YYYY-MM-DD for the input field
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            // Update the form date field
+            document.getElementById('interviewDate').value = dateStr;
+
+            // Clear any time slot selections (since only date was selected)
+            document.querySelectorAll('.selected-time-slot').forEach(el => {
+                el.classList.remove('selected-time-slot');
+                el.style.backgroundColor = '';
+            });
+
+            // Highlight the selected date in the calendar
+            highlightSelectedDate(date);
+
+            // If in day view, update the view to show the selected date
+            if (currentView === 'day') {
+                currentDate = date;
+                renderDayView();
+                updateCalendarPeriodText();
+            }
+        }
+
+        function selectDateAndTime(date, hour) {
+            const now = new Date();
+            const selectedDateTime = new Date(date);
+            selectedDateTime.setHours(hour, 0, 0, 0);
+
+            // Check if the selected date/time is in the past
+            if (selectedDateTime < now) {
+                alert('Cannot schedule interviews in the past. Please select a future date and time.');
+                return;
+            }
+
+            // Format the date as YYYY-MM-DD for the input field
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            // Update the form date field
+            document.getElementById('interviewDate').value = dateStr;
+
+            // Update the time fields with 1-hour duration
+            const startHour = hour.toString().padStart(2, '0');
+            const endHour = (hour + 1).toString().padStart(2, '0');
+
+            document.getElementById('startTime').value = `${startHour}:00`;
+            document.getElementById('endTime').value = `${endHour}:00`;
+
+            // Highlight the selected date in the calendar
+            highlightSelectedDate(date);
+
+            // Add visual selection to time slot
+            highlightSelectedTimeSlot(date, hour);
+        }
+
+                                                function highlightSelectedTimeSlot(date, hour) {
+            // Remove previous time slot selections
+            document.querySelectorAll('.selected-time-slot').forEach(el => {
+                el.classList.remove('selected-time-slot');
+                el.style.backgroundColor = '';
+                el.style.border = '';
+            });
+
+            // Format date for comparison (YYYY-MM-DD)
+            const dateStr = formatDateToYMD(date);
+
+            // Find and highlight the selected time slot
+            const allTimeSlots = document.querySelectorAll('.week-hour, .day-hour');
+
+            allTimeSlots.forEach(element => {
+                const elementDate = element.dataset.date;
+                const elementHour = parseInt(element.dataset.hour);
+
+                if (elementDate === dateStr && elementHour === hour) {
+                    element.classList.add('selected-time-slot');
+                    // Apply styles directly to ensure they persist
+                    element.style.backgroundColor = '#e3f2fd';
+                    element.style.border = '2px solid #1a73e8';
+
+                    // Scroll the element into view if needed
+                    element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        }
+
+                        function highlightSelectedDate(date) {
+            // Remove previous selections
+            document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Create a date for comparison (ignoring time)
+            const targetDate = new Date(date);
+            targetDate.setHours(0, 0, 0, 0);
+
+            // Find and select the calendar day with matching date
+            document.querySelectorAll('.calendar-day').forEach(day => {
+                const dayYear = parseInt(day.dataset.year);
+                const dayMonth = parseInt(day.dataset.month);
+                const dayDay = parseInt(day.dataset.day);
+                const dayDate = new Date(dayYear, dayMonth, dayDay);
+                dayDate.setHours(0, 0, 0, 0);
+
+                if (dayDate.getTime() === targetDate.getTime()) {
+                    day.classList.add('selected');
+                }
+            });
+        }
+                function setupTimeSlotHover() {
+            // Week view hover
+            document.querySelectorAll('#week-view .week-hour').forEach(hourSlot => {
+                hourSlot.addEventListener('mouseenter', function() {
+                    showTimeSlotPreview(this);
+                });
+
+                hourSlot.addEventListener('mouseleave', function() {
+                    hideTimeSlotPreview();
+                });
+            });
+
+            // Day view hover
+            document.querySelectorAll('#day-view .day-hour').forEach(hourSlot => {
+                hourSlot.addEventListener('mouseenter', function() {
+                    showTimeSlotPreview(this);
+                });
+
+                hourSlot.addEventListener('mouseleave', function() {
+                    hideTimeSlotPreview();
+                });
+            });
+        }
+
+                                function showTimeSlotPreview(element) {
+            // Don't show preview if this element is already selected
+            if (element.classList.contains('selected-time-slot')) {
+                return;
+            }
+
+            const hour = parseInt(element.dataset.hour);
+            const dateStr = element.dataset.date;
+
+            // Only show preview if it's a different hour than last time
+            if (lastHoveredHour === hour) return;
+            lastHoveredHour = hour;
+
+            // Remove existing preview
+            hideTimeSlotPreview();
+
+            // Create preview element
+            hoverPreviewElement = document.createElement('div');
+            hoverPreviewElement.className = 'time-slot-preview';
+            hoverPreviewElement.innerHTML = `
+                <div style="position: absolute; bottom: 2px; right: 2px; font-size: 9px; color: #1a73e8;">
+                    ${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00
+                </div>
+            `;
+
+            // Position and size the preview
+            hoverPreviewElement.style.top = '2px';
+            hoverPreviewElement.style.left = '2px';
+            hoverPreviewElement.style.right = '2px';
+            hoverPreviewElement.style.bottom = '2px';
+
+            element.appendChild(hoverPreviewElement);
+
+            // Only change background if not selected
+            if (!element.classList.contains('selected-time-slot')) {
+                element.style.backgroundColor = '#f0f7ff';
+            }
+        }
+
+        function hideTimeSlotPreview() {
+            if (hoverPreviewElement && hoverPreviewElement.parentNode) {
+                // Only reset background if not selected
+                if (!hoverPreviewElement.parentNode.classList.contains('selected-time-slot')) {
+                    hoverPreviewElement.parentNode.style.backgroundColor = '';
+                }
+                hoverPreviewElement.remove();
+            }
+            hoverPreviewElement = null;
+            lastHoveredHour = null;
+        }
+
+                function reapplySelectionsAfterViewChange() {
+            const interviewDate = document.getElementById('interviewDate').value;
+            const startTime = document.getElementById('startTime').value;
+
+            if (interviewDate && startTime) {
+                const date = new Date(interviewDate);
+                const hour = parseInt(startTime.split(':')[0]);
+
+                // Wait a bit for the calendar to render completely
+                setTimeout(() => {
+                    highlightSelectedTimeSlot(date, hour);
+                }, 100);
+            }
+        }
+
+        function checkTimeSlotConflict(date, hour) {
+            const startTime = new Date(date);
+            startTime.setHours(hour, 0, 0, 0);
+
+            const endTime = new Date(startTime);
+            endTime.setHours(hour + 1, 0, 0, 0); // 1-hour duration
+
+            fetch(`/Application/CheckInterviewConflict?startTime=${startTime.toISOString()}&endTime=${endTime.toISOString()}&excludeApplicationId=@Model.Form.ApplicationId`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasConflict) {
+                        const slotDateStr = date.toISOString().split('T')[0];
+                        const allSlots = document.querySelectorAll('.week-hour, .day-hour');
+
+                        allSlots.forEach(slot => {
+                            if (slot.dataset.date === slotDateStr && parseInt(slot.dataset.hour) === hour) {
+                                slot.classList.add('conflict');
+                                slot.title = data.message;
+
+                                // Add or update conflict indicator
+                                let indicator = slot.querySelector('.conflict-indicator');
+                                if (!indicator) {
+                                    indicator = document.createElement('div');
+                                    indicator.className = 'conflict-indicator';
+                                    indicator.innerHTML = '⚠️';
+                                    indicator.style.position = 'absolute';
+                                    indicator.style.top = '2px';
+                                    indicator.style.right = '2px';
+                                    indicator.style.fontSize = '12px';
+                                    slot.appendChild(indicator);
+                                }
+
+                                // Also show a notification to the user
+                                showConflictNotification(data.message);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking conflict:', error);
+                });
+        }
+
+        function showConflictNotification(message) {
+            // Remove existing notification
+            const existingNotification = document.getElementById('conflict-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create notification
+            const notification = document.createElement('div');
+            notification.id = 'conflict-notification';
+            notification.className = 'alert alert-warning alert-dismissible fade show';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '1000';
+            notification.style.maxWidth = '400px';
+            notification.innerHTML = `
+                <strong>Interview Conflict!</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 10000);
+        }
+
+                function fixPastDateStyling() {
+            // Fix month view past dates
+            document.querySelectorAll('#month-view .calendar-day.past-date').forEach(day => {
+                day.style.backgroundColor = '#f8f9fa';
+                day.style.color = '#dadce0';
+                day.style.cursor = 'not-allowed';
+                day.style.pointerEvents = 'none';
+            });
+
+            document.querySelectorAll('#month-view .calendar-day.past-date .date-number').forEach(dateNum => {
+                dateNum.style.color = '#ccc';
+            });
+
+            // Fix week view past dates
+            document.querySelectorAll('#week-view .week-hour.past-date').forEach(hour => {
+                hour.style.backgroundColor = '#f8f9fa';
+                hour.style.cursor = 'not-allowed';
+                hour.style.pointerEvents = 'none';
+            });
+
+            // Fix day view past dates
+            document.querySelectorAll('#day-view .day-hour.past-date').forEach(hour => {
+                hour.style.backgroundColor = '#f8f9fa';
+                hour.style.cursor = 'not-allowed';
+                hour.style.pointerEvents = 'none';
+            });
+        }
+    </script>
+}

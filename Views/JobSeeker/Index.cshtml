@@ -1,0 +1,337 @@
+﻿@using X.PagedList
+@using X.PagedList.Mvc.Core
+
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var total = (int)(ViewBag.TotalApplications ?? 0);
+    var pending = (int)(ViewBag.Pending ?? 0);
+    var reviewed = (int)(ViewBag.Reviewed ?? 0);
+    var shortlisted = (int)(ViewBag.Shortlisted ?? 0);
+    var interview = (int)(ViewBag.InterviewScheduled ?? 0);
+    var offer = (int)(ViewBag.OfferSent ?? 0);
+    var hired = (int)(ViewBag.Hired ?? 0);
+    var rejected = (int)(ViewBag.Rejected ?? 0);
+    var withdrawn = (int)(ViewBag.Withdrawn ?? 0);
+
+    var completeness = (int)(ViewBag.ProfileCompleteness ?? 0);
+
+    var recent = ViewBag.RecentApplications as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    // --- pager inputs for "Recent Applications"
+    int rPage = (int)(ViewBag.RecentPage ?? 1);
+    int rSize = (int)(ViewBag.RecentPageSize ?? 5);
+    int rTotal = (int)(ViewBag.RecentTotal ?? 0);
+
+    // counts-only IPagedList for the pager UI
+    var recentPaged = new StaticPagedList<int>(
+        Enumerable.Empty<int>(), rPage, rSize, rTotal
+    );
+    Func<int, string> recentUrl = p => Url.Action("Index", "JobSeeker", new { page = p, pageSize = rSize })!;
+}
+
+<style>
+    /* ===== Admin color skin (NO size/layout changes) ===== */
+    :root {
+        --primary: #4F46E5; /* keep purple as secondary accent */
+        --admin-primary: #DC2626; /* admin red */
+        --admin-primary-10: rgba(220,38,38,.10);
+        --admin-primary-15: rgba(220,38,38,.15);
+        --ink-900: #0f172a;
+        --ink-700: #334155;
+        --surface: #ffffff;
+        --border: #e5e7eb;
+        --muted: #f8fafc;
+    }
+
+    .js-dash {
+        display: grid;
+        gap: 16px;
+        font-size: .92rem;
+    }
+
+        .js-dash .stats {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+        }
+
+        .js-dash .admin-stat-card {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            box-shadow: 0 1px 2px rgba(0,0,0,.06);
+        }
+
+        .js-dash .stat-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .js-dash .stat-number {
+            font-size: 1.25rem;
+            font-weight: 800;
+            line-height: 1.05;
+            color: var(--ink-900);
+        }
+
+        .js-dash .stat-label {
+            font-size: .88rem;
+            color: var(--ink-700);
+        }
+
+        .js-dash .card-like {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,.06);
+        }
+
+        .js-dash .card-hd {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eef2f7;
+            background: linear-gradient(180deg, var(--admin-primary-10), transparent);
+        }
+
+        .js-dash .card-title {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--ink-900);
+        }
+
+        .js-dash .card-bd {
+            padding: 12px;
+        }
+
+        .js-dash .progress-bar-custom {
+            height: 6px;
+            border-radius: 999px;
+            background: #eef2f7;
+            overflow: hidden;
+        }
+
+        .js-dash .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--admin-primary) 0%, var(--primary) 100%);
+            width: 0%;
+            transition: width .5s ease;
+        }
+
+        .js-dash .table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .js-dash table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .92rem;
+        }
+
+        .js-dash th, .js-dash td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .js-dash th {
+            background: var(--muted);
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .js-dash .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+            .js-dash .badge.success {
+                background: #e8f7ef;
+                color: #126e3a;
+            }
+
+            .js-dash .badge.warn {
+                background: #fff1f2;
+                color: #7f1d1d;
+            }
+
+            .js-dash .badge.info {
+                background: #eef2ff;
+                color: #3730a3;
+            }
+
+            .js-dash .badge.gray {
+                background: #f1f5f9;
+                color: #334155;
+            }
+
+        .js-dash a.text-decoration-none {
+            color: var(--primary);
+        }
+
+            .js-dash a.text-decoration-none:hover {
+                color: #4338CA;
+                text-decoration: underline;
+            }
+
+    .pager-rail {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 12px;
+    }
+
+        .pager-rail .pagination {
+            margin-bottom: 0;
+        }
+
+    @@media (max-width:768px) {
+        .js-dash .card-hd {
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .js-dash .stat-number {
+            font-size: 1.15rem;
+        }
+    }
+</style>
+
+<div class="js-dash">
+
+    <!-- STAT TILES -->
+    <section class="stats">
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@((pending + reviewed + shortlisted + interview).ToString("N0"))</div><div class="stat-label">🕒 In Progress</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@total.ToString("N0")</div><div class="stat-label">📄 Total Applications</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@shortlisted.ToString("N0")</div><div class="stat-label">⭐ Shortlisted</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@interview.ToString("N0")</div><div class="stat-label">🗓️ Interviews Scheduled</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@offer.ToString("N0")</div><div class="stat-label">🎯 Offers</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@hired.ToString("N0")</div><div class="stat-label">✅ Hired</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@rejected.ToString("N0")</div><div class="stat-label">❌ Rejected</div></div></div>
+        <div class="admin-stat-card"><div class="stat-meta"><div class="stat-number">@withdrawn.ToString("N0")</div><div class="stat-label">↩️ Withdrawn</div></div></div>
+    </section>
+
+    <!-- PROFILE COMPLETENESS -->
+    <section class="card-like">
+        <div class="card-hd">
+            <h3 class="card-title">🧩 Profile Completeness</h3>
+            @if (completeness < 70)
+            {
+                <span class="badge warn">Improve</span>
+            }
+            else if (completeness < 90)
+            {
+
+                <span class="badge info">Good</span>
+            }
+            else
+            {
+
+                <span class="badge success">Excellent</span>
+            }
+        </div>
+        <div class="card-bd">
+            <div class="d-flex justify-content-between mb-2">
+                <div><strong>@completeness%</strong> complete</div>
+                <a class="text-decoration-none" href="/Profile/JobSeeker">Update Profile</a>
+            </div>
+            <div class="progress-bar-custom"><div class="progress-fill" style="width:@completeness%"></div></div>
+        </div>
+    </section>
+
+    <!-- RECENT APPLICATIONS (with pager) -->
+    <section class="card-like">
+        <div class="card-hd">
+            <h3 class="card-title table-title">📨 Recent Applications</h3>
+            <div class="table-filters">
+                <a class="reset-filters text-decoration-none" href="/JobSeeker/Saved">❤️ Saved Jobs</a>
+            </div>
+        </div>
+
+        <div class="card-bd">
+            <div class="table-wrap">
+                <table aria-label="Recent applications">
+                    <thead>
+                        <tr>
+                            <th>Job</th>
+                            <th>Company</th>
+                            <th>Applied</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!recent.Any())
+                        {
+                            <tr><td colspan="4" class="no-data-message">No recent applications.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var x in recent)
+                            {
+                                var badge = (string)(x.BadgeClass ?? "gray");
+                                <tr data-application-id="@x.Id">
+                                    <td>
+                                        <a class="text-decoration-none"
+                                           asp-controller="Applications"
+                                           asp-action="Details"
+                                           asp-route-id="@x.Id">
+                                            @x.JobTitle
+                                        </a>
+                                    </td>
+                                    <td>@x.CompanyName</td>
+                                    <td>@x.AppliedLocal.ToString("dd MMM yyyy, HH:mm")</td>
+                                    <td>
+                                        <span class="badge status-badge @badge">@x.StatusText</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+            <!-- Pager -->
+            <div class="pager-rail">
+                <nav aria-label="Recent applications pages">
+                    @Html.PagedListPager(
+                    recentPaged,
+                    recentUrl,
+                                        new PagedListRenderOptions
+                                        {
+                                            LiElementClasses = new[] { "page-item" },
+                                            PageClasses = new[] { "page-link" },
+                                            UlElementClasses = new[] { "pagination", "pagination-sm" },
+                                            DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                                            DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                                            DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                                            DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                                            MaximumPageNumbersToDisplay = 7
+                                        })
+                </nav>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // Animate meter once per load (unchanged)
+    (function(){
+      const f = document.querySelector('.js-dash .progress-fill');
+      if (!f) return;
+      const w = f.style.width;
+      f.style.width = '0%';
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ f.style.width = w; }); });
+    })();
+</script>

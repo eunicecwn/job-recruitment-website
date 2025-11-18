@@ -1,0 +1,27 @@
+﻿@{
+    ViewData["Title"] = "Access Denied";
+    Layout = null;
+}
+<link rel="shortcut icon" href="/images/logo.png">
+<link rel="stylesheet" href="~/css/AccDenied.css" />
+
+<div class="access-denied-container">
+    <div class="access-denied-card">
+        <div class="logo-container">
+            <img src="~/images/logo.png" alt="Company Logo" class="company-logo" />
+            <span class="logo-text">HireRight<span class="text-primary">Pro</span></span>
+        </div>
+        <h1 class="error-code">403</h1>
+        <h2 class="error-title">Access Denied</h2>
+        <p class="error-message">
+            Sorry, you don't have permission to access this resource.
+            Your account may not have the required privileges to view this page.
+        </p>
+        <a href="@Url.Action("Index", "Home")" class="home-btn">
+            Return to Home
+        </a>
+        <div class="additional-info">
+            <p>If you believe this is an error, please contact your system administrator.</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,668 @@
+﻿@model IPagedList<JobRecruitment.Models.Job>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+
+<link rel="stylesheet" href="~/css/jobForm.css">
+
+<style>
+    .card-inactive {
+    opacity: 0.8;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.card-inactive .card-title {
+    color: #6c757d;
+}
+
+.card-inactive .job-list-meta-item,
+.card-inactive .job-list-salary,
+.card-inactive .job-list-date {
+    color: #6c757d;
+}
+</style>
+
+@{
+    ViewData["Title"] = "Job Listings";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    var categories = ViewBag.Categories as List<JobCategory> ?? new List<JobCategory>();
+    var employerId = ViewBag.EmployerId as string ?? "";
+    var successMessage = ViewBag.SuccessMessage as string;
+    
+    // Handle null model
+    var totalItemCount = Model?.TotalItemCount ?? 0;
+    var firstItemOnPage = Model?.FirstItemOnPage ?? 0;
+    var lastItemOnPage = Model?.LastItemOnPage ?? 0;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+	<link rel="stylesheet" href="~/css/MessageBoxes.css">
+	<div class="success-toast">
+		<div class="success-card">
+			<div class="icon">🥳</div>
+			<h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+			<p>@TempData["SuccessMessage"]</p>
+		</div>
+	</div>
+
+	<script>
+		// Close modal if it exists
+		document.addEventListener("DOMContentLoaded", function() {
+			const modal = document.querySelector(".modal");
+			if (modal) {
+				modal.style.display = "none";
+			}
+		});
+	</script>
+}
+
+
+<div class="container-fluid">
+    <!-- Search Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Search Filters</h5>
+        </div>
+        <div class="card-body">
+            <form id="search-form">
+                <input type="hidden" id="employerId" name="employerId" value="@employerId" />
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="searchTerm" class="form-label">Search</label>
+                        <input type="text" id="searchTerm" name="searchTerm" class="form-control" placeholder="Job title...">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="jobType" class="form-label">Job Type</label>
+                        <select id="jobType" name="jobType" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="FullTime">Full Time</option>
+                            <option value="PartTime">Part Time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Internship">Internship</option>
+                            <option value="Freelance">Freelance</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="category" class="form-label">Category</label>
+                        <select id="category" name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            @foreach (var cat in categories)
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" id="location" name="location" class="form-control" placeholder="Location">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="minSalary" class="form-label">Min Salary</label>
+                        <input type="number" id="minSalary" name="minSalary" class="form-control" placeholder="0" min="0">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="Open">Open</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Draft">Draft</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-md-2">
+                        <label for="sortBy" class="form-label">Sort By</label>
+                        <select id="sortBy" name="sortBy" class="form-select">
+                            <option value="PostedDate">Posted Date</option>
+                            <option value="Title">Title</option>
+                            <option value="Salary">Salary</option>
+                            <option value="Location">Location</option>
+                            <option value="ClosingDate">Closing Date</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="sortOrder" class="form-label">Sort Order</label>
+                        <select id="sortOrder" name="sortOrder" class="form-select">
+                            <option value="desc">Descending</option>
+                            <option value="asc">Ascending</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">View Mode</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="viewMode" id="viewModeCard" value="card" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="viewModeCard">
+                                <i class="fas fa-th"></i> Cards
+                            </label>
+                            <input type="radio" class="btn-check" name="viewMode" id="viewModeList" value="list" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="viewModeList">
+                                <i class="fas fa-list"></i> List
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="pageSize" class="form-label">Items per page</label>
+                        <select id="pageSize" name="pageSize" class="form-select">
+                            <option value="6">6</option>
+                            <option value="12">12</option>
+                            <option value="24">24</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" id="apply-filters" class="btn btn-primary me-2">
+                            <i class="fas fa-filter me-2"></i>Apply 
+                        </button>
+                        <button type="button" id="reset-filters" class="btn btn-reset">
+                            <i class="fas fa-undo me-2"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Job Listings</h5>
+                <span id="total-jobs-info" class="text-muted">
+                    @totalItemCount job@(totalItemCount != 1 ? "s" : "") found
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="search-results">
+                @if (Model != null && Model.Any())
+                {
+                    @await Html.PartialAsync("_JobListCardPV", Model)
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No jobs found</h4>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination Container -->
+            @if (Model != null && Model.Any())
+            {
+                <div id="pagination-container" class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted" id="showing-info">
+                        Showing @firstItemOnPage to @lastItemOnPage of @totalItemCount jobs
+                    </div>
+                    
+                    @Html.PagedListPager(Model, page => Url.Action("JobList", new { page }),
+                        new PagedListRenderOptions {
+                            LiElementClasses = new[] { "page-item" },
+                            PageClasses = new[] { "page-link" },
+                            DisplayLinkToFirstPage = PagedListDisplayMode.IfNeeded,
+                            DisplayLinkToLastPage = PagedListDisplayMode.IfNeeded,
+                            DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                            DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                            MaximumPageNumbersToDisplay = 5
+                        })
+                </div>
+            }
+            else
+            {
+                <div id="pagination-container"></div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('search-form');
+            const resultsContainer = document.getElementById('search-results');
+            const resetButton = document.getElementById('reset-filters');
+            const applyButton = document.getElementById('apply-filters');
+            const totalJobsInfo = document.getElementById('total-jobs-info');
+            const showingInfo = document.getElementById('showing-info');
+            const paginationContainer = document.getElementById('pagination-container');
+            let currentPage = 1;
+
+            // Check if we have initial data
+            const hasInitialData = @((Model != null && Model.Any()) ? "true" : "false");
+
+            // View mode radio buttons
+            const viewModeRadios = document.querySelectorAll('input[name="viewMode"]');
+            viewModeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    currentPage = 1;
+                    performSearch();
+                });
+            });
+
+            // Page size dropdown
+            const pageSizeSelect = document.getElementById('pageSize');
+            if (pageSizeSelect) {
+                pageSizeSelect.addEventListener('change', function() {
+                    currentPage = 1;
+                    performSearch();
+                });
+            }
+
+            // Apply filters button click
+            if (applyButton) {
+                applyButton.addEventListener('click', function() {
+                    currentPage = 1;
+                    performSearch();
+                });
+            }
+
+            // Reset filters button click
+            if (resetButton) {
+                resetButton.addEventListener('click', function() {
+                    searchForm.reset();
+                    currentPage = 1;
+                    performSearch();
+                });
+            }
+
+            const performSearch = () => {
+                const formData = new FormData(searchForm);
+                const params = new URLSearchParams();
+
+                for (let [key, value] of formData.entries()) {
+                    if (value) params.append(key, value);
+                }
+                
+                params.append('page', currentPage);
+                
+                const selectedViewMode = document.querySelector('input[name="viewMode"]:checked');
+                if (selectedViewMode) {
+                    params.append('viewMode', selectedViewMode.value);
+                }
+
+                // Show loading only if we're doing AJAX search
+                if (currentPage !== 1 || !hasInitialData) {
+                    resultsContainer.innerHTML = `
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Searching jobs...</p>
+                        </div>
+                    `;
+                }
+
+                fetch('/Job/Search?' + params.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('API Response:', data);
+                    if (data.success) {
+                        updateResults(data);
+                        updatePagination(data);
+                        updateTotalJobsInfo(data.totalCount);
+                        updateShowingInfo(data.currentPage, data.pageSize, data.totalCount);
+                    } else {
+                        resultsContainer.innerHTML = '<div class="alert alert-danger">Error: ' + data.error + '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    resultsContainer.innerHTML = '<div class="alert alert-danger">Error loading jobs. Please try again.</div>';
+                });
+            };
+
+            function updateResults(data) {
+                const viewMode = data.viewMode || 'card';
+                let html = '';
+
+                if (data.jobs && data.jobs.length > 0) {
+                    if (viewMode === 'card') {
+                        html = renderCardView(data.jobs);
+                    } else {
+                        html = renderListView(data.jobs);
+                    }
+                } else {
+                    html = `
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No jobs found</h4>
+                            <p>Try adjusting your search criteria</p>
+                        </div>
+                    `;
+                }
+
+                resultsContainer.innerHTML = html;
+            }
+
+            function updatePagination(data) {
+                if (data.totalCount > 0) {
+                    const paginationHtml = generatePaginationHtml(data);
+                    paginationContainer.innerHTML = paginationHtml;
+                    
+                    // Add event listeners to pagination links
+                    document.querySelectorAll('.pagination-link').forEach(link => {
+                        link.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            currentPage = parseInt(this.getAttribute('data-page'));
+                            performSearch();
+                        });
+                    });
+                } else {
+                    paginationContainer.innerHTML = '';
+                }
+            }
+
+            function generatePaginationHtml(data) {
+                const totalPages = data.totalPages;
+                const currentPage = data.currentPage;
+                const pageSize = data.pageSize;
+                const totalCount = data.totalCount;
+    
+                const startItem = ((currentPage - 1) * pageSize) + 1;
+                const endItem = Math.min(currentPage * pageSize, totalCount);
+
+                let paginationHtml = `
+                    <div class="text-muted">
+                        Showing ${startItem} to ${endItem} of ${totalCount} jobs
+                    </div>
+                    <nav>
+                        <ul class="pagination">
+                `;
+
+                // First page
+                if (currentPage > 1) {
+                    paginationHtml += `
+                        <li class="page-item">
+                            <a class="page-link pagination-link" href="#" data-page="1" title="First Page"><<</a>
+                        </li>
+                    `;
+                } else {
+                    paginationHtml += `
+                        <li class="page-item disabled">
+                            <span class="page-link"><<</span>
+                        </li>
+                    `;
+                }
+
+                // Previous page
+                if (currentPage > 1) {
+                    paginationHtml += `
+                        <li class="page-item">
+                            <a class="page-link pagination-link" href="#" data-page="${currentPage - 1}" title="Previous Page"><</a>
+                        </li>
+                    `;
+                } else {
+                    paginationHtml += `
+                        <li class="page-item disabled">
+                            <span class="page-link"><</span>
+                        </li>
+                    `;
+                }
+
+                // Page numbers
+                const maxPagesToShow = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+                if (endPage - startPage + 1 < maxPagesToShow) {
+                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    if (i === currentPage) {
+                        paginationHtml += `
+                            <li class="page-item active">
+                                <span class="page-link">${i}</span>
+                            </li>
+                        `;
+                    } else {
+                        paginationHtml += `
+                            <li class="page-item">
+                                <a class="page-link pagination-link" href="#" data-page="${i}">${i}</a>
+                            </li>
+                        `;
+                    }
+                }
+
+                // Next page
+                if (currentPage < totalPages) {
+                    paginationHtml += `
+                        <li class="page-item">
+                            <a class="page-link pagination-link" href="#" data-page="${currentPage + 1}" title="Next Page">></a>
+                        </li>
+                    `;
+                } else {
+                    paginationHtml += `
+                        <li class="page-item disabled">
+                            <span class="page-link">></span>
+                        </li>
+                    `;
+                }
+
+                // Last page
+                if (currentPage < totalPages) {
+                    paginationHtml += `
+                        <li class="page-item">
+                            <a class="page-link pagination-link" href="#" data-page="${totalPages}" title="Last Page">>></a>
+                        </li>
+                    `;
+                } else {
+                    paginationHtml += `
+                        <li class="page-item disabled">
+                            <span class="page-link">>></span>
+                        </li>
+                    `;
+                }
+
+                paginationHtml += `
+                        </ul>
+                    </nav>
+                `;
+
+                return paginationHtml;
+            }
+
+            function updateTotalJobsInfo(totalCount) {
+                if (totalJobsInfo) {
+                    totalJobsInfo.textContent = `${totalCount} job${totalCount !== 1 ? 's' : ''} found`;
+                }
+            }
+
+            function updateShowingInfo(currentPage, pageSize, totalCount) {
+                if (showingInfo) {
+                    const startItem = ((currentPage - 1) * pageSize) + 1;
+                    const endItem = Math.min(currentPage * pageSize, totalCount);
+                    showingInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalCount} jobs`;
+                }
+            }
+
+function renderCardView(jobs) {
+    let html = '<div class="row">';
+    
+    jobs.forEach(job => {
+        // Debug the job object to see actual property names
+        console.log('Job object:', job);
+        
+        // Get properties with fallbacks for different naming conventions
+        const status = job.status || job.Status || '';
+        const statusClass = status === 'Open' ? 'badge bg-success' :
+                          status === 'Closed' ? 'badge bg-danger' : 'badge bg-secondary';
+        
+        const title = job.title || job.Title || '';
+        const location = job.location || job.Location || '';
+        const jobType = job.jobType || job.JobType || '';
+        const minSalary = job.minSalary || job.MinSalary || 0;
+        const maxSalary = job.maxSalary || job.MaxSalary || 0;
+        const postedDate = job.postedDate || job.PostedDate || '';
+        const closingDate = job.closingDate || job.ClosingDate || '';
+        const id = job.id || job.Id || '';
+        
+        // Handle both camelCase and PascalCase property names for IsActive
+        const isActive = (job.isActive !== undefined ? job.isActive : 
+                         job.IsActive !== undefined ? job.IsActive : true) !== false;
+
+        const closingDateText = closingDate ? `Closes: ${closingDate}` : 'No closing date';
+
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 job-list-card ${!isActive ? 'card-inactive' : ''}">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title" title="${escapeHtml(title)}">${escapeHtml(title)}</h5>
+                            <span class="${statusClass}">${status}</span>
+                        </div>
+                        ${!isActive ? `
+                        <div class="alert alert-warning mb-2 py-2">
+                            <small>
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Please contact the Hired Right Pro admin
+                            </small>
+                        </div>
+                        ` : ''}
+                        <div class="job-list-meta-item" title="${escapeHtml(location)}">
+                            <i class="fas fa-map-marker-alt"></i>${escapeHtml(location)}
+                        </div>
+                        <div class="job-list-meta-item" title="${jobType}">
+                            <i class="fas fa-briefcase"></i>${jobType}
+                        </div>
+                        <div class="job-list-salary">
+                            <i class="fas fa-money-bill-wave me-2"></i>RM ${parseFloat(minSalary).toLocaleString()} - RM ${parseFloat(maxSalary).toLocaleString()}
+                        </div>
+                        <div class="job-list-date">
+                            <small>
+                                Posted: ${postedDate}<br>
+                                ${closingDateText}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-grid gap-2">
+                            ${isActive ? `
+                                <a href="/Job/DisplayJob/${id}" class="btn btn-outline-primary btn-sm">View Details</a>
+                            ` : `
+                                <button class="btn btn-outline-secondary btn-sm" disabled title="Job is blocked. Please contact admin.">
+                                    <i class="fas fa-ban me-1"></i>Blocked
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function renderListView(jobs) {
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Location</th>
+                        <th>Type</th>
+                        <th>Salary Range</th>
+                        <th>Posted Date</th>
+                        <th>Closing Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    jobs.forEach(job => {
+        // Get properties with fallbacks for different naming conventions
+        const status = job.status || job.Status || '';
+        const statusClass = status === 'Open' ? 'badge bg-success' :
+                          status === 'Closed' ? 'badge bg-danger' : 'badge bg-secondary';
+
+        const title = job.title || job.Title || '';
+        const location = job.location || job.Location || '';
+        const jobType = job.jobType || job.JobType || '';
+        const minSalary = job.minSalary || job.MinSalary || 0;
+        const maxSalary = job.maxSalary || job.MaxSalary || 0;
+        const postedDate = job.postedDate || job.PostedDate || '';
+        const closingDateValue = job.closingDate || job.ClosingDate || '';
+        const id = job.id || job.Id || '';
+        
+        // Handle both camelCase and PascalCase property names for IsActive
+        const isActive = (job.isActive !== undefined ? job.isActive : 
+                         job.IsActive !== undefined ? job.IsActive : true) !== false;
+
+        const closingDate = closingDateValue || 'Empty';
+
+        html += `
+            <tr class="${!isActive ? 'table-secondary' : ''}">
+                <td>
+                    <span class="text-ellipsis" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+                    ${!isActive ? `
+                    <div class="text-warning small mt-1">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Please contact the Hired Right Pro admin
+                    </div>
+                    ` : ''}
+                </td>
+                <td><span class="text-ellipsis" title="${escapeHtml(location)}">${escapeHtml(location)}</span></td>
+                <td>${jobType}</td>
+                <td>RM ${parseFloat(minSalary).toLocaleString()} - RM ${parseFloat(maxSalary).toLocaleString()}</td>
+                <td>${postedDate}</td>
+                <td>${closingDate}</td>
+                <td><span class="${statusClass}">${status}</span></td>
+                <td>
+                    ${isActive ? `
+                        <a href="/Job/DisplayJob/${id}" class="btn btn-sm btn-outline-primary">View</a>
+                    ` : `
+                        <button class="btn btn-sm btn-outline-secondary" disabled title="Job is blocked. Please contact admin.">
+                            Blocked
+                        </button>
+                    `}
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    return html;
+}
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Initial search if no data
+            if (!hasInitialData) {
+                performSearch();
+            }
+        });
+    </script>
+}
+

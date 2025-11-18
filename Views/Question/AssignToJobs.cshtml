@@ -1,0 +1,657 @@
+﻿@model JobRecruitment.Models.AssignQuestionSetViewModel
+
+@{
+    ViewData["Title"] = "Assign Question Set to Jobs";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+
+<link rel="stylesheet" href="~/css/jobForm.css">
+<link rel="stylesheet" href="~/css/AssignToJobTableView.css">
+
+<style>
+    .question-assignment-container .card-body {
+        padding: 2rem;
+        background-color: var(--light);
+        border-radius: 0 0 1rem 1rem;
+    }
+
+        /* Alerts */
+        .question-assignment-container .card-body .alert-info {
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            background: var(--primary-light);
+            color: #fff;
+        }
+
+        .question-assignment-container .card-body .alert-danger {
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+
+    /* Search container */
+    .question-assignment-container .search-container {
+        margin-bottom: 1.5rem;
+        background: var(--bg-light);
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        width: 100%; /* take full available space */
+        max-width: 100%; /* prevent overflow */
+    }
+
+        /* Input group */
+        .question-assignment-container .search-container .input-group {
+            border: 1px solid var(--light-gray);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #fff;
+        }
+
+    .search-container input {
+        box-shadow: none !important;
+        color: var(--dark);
+    }
+
+    /* Filter section */
+    .search-container .filter-section {
+        margin-top: 1rem;
+        width: 100%;
+    }
+
+    /* Badges */
+    .filter-badges .filter-badge {
+        cursor: pointer;
+        padding: 0.45rem 0.9rem;
+        border-radius: 50px;
+        background-color: var(--light);
+        color: var(--gray);
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid var(--light-gray);
+    }
+
+        .filter-badges .filter-badge:hover {
+            background-color: var(--primary-light);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .filter-badges .filter-badge.active {
+            background-color: var(--primary);
+            color: #fff;
+            border-color: var(--primary-dark);
+        }
+</style>
+
+<div class="container-fluid question-assignment-container">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Assign Question Set: @Model.QuestionSetName</h4>
+            <a asp-action="Details" asp-route-id="@Model.QuestionSetId" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back to Details
+            </a>
+        </div>
+
+        <!-- Search and Filter Section-->
+        <div class="card-body">
+            <form asp-action="AssignToJobs" method="post" id="assignForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="QuestionSetId" />
+                <input type="hidden" asp-for="QuestionSetName" />
+                <input type="hidden" id="jobsToUnassign" name="JobsToUnassign" value="" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> Assigning this question set will replace any existing question set on selected jobs.
+                    Unchecking jobs with current set will remove the question set from those jobs.
+                </div>
+
+                <!-- Search + Filter Inline -->
+                <div class="search-container">
+                    <div class="row align-items-center">
+                        <!-- Search box -->
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-0">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text" id="jobSearch" class="form-control border-0" placeholder="Search jobs by title..." />
+                                <button type="button" class="btn btn-light border-0" id="clearSearch">
+                                    <i class="fas fa-times text-muted"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Job counters -->
+                        <div class="col-md-6 text-end">
+                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                <span class="badge bg-info" id="totalJobs">Total: @Model.AvailableJobs.Count jobs</span>
+                                <span class="badge bg-success" id="visibleJobs">Showing: @Model.AvailableJobs.Count</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inline filter badges -->
+                    <div class="filter-section mt-3">
+                        <div class="d-flex align-items-center flex-wrap">
+                            <small class="text-muted me-2">Filter by:</small>
+                            <div class="filter-badges d-flex flex-wrap gap-2">
+                                <span class="badge filter-badge active" data-filter="all">
+                                    <i class="fas fa-layer-group me-1"></i>All Jobs
+                                </span>
+                                <span class="badge filter-badge" data-filter="has-set">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>With Existing Sets
+                                </span>
+                                <span class="badge filter-badge" data-filter="no-set">
+                                    <i class="fas fa-ban me-1"></i>No Set Assigned
+                                </span>
+                                <span class="badge filter-badge" data-filter="current-set">
+                                    <i class="fas fa-check-circle me-1"></i>Has Current Set
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Search + Filter -->
+
+                <div class="mb-4">
+                    <h5>Select Jobs to Assign This Question Set</h5>
+                    <p class="text-muted">Selected jobs will use this question set for applications. Uncheck jobs to remove the question set.</p>
+                </div>
+
+                @if (Model.AvailableJobs.Any())
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span class="badge bg-primary" id="selectedCount">0 selected</span>
+                            <span class="badge bg-warning ms-2" id="hasExistingCount">0 with existing sets</span>
+                            <span class="badge bg-success ms-2" id="hasCurrentCount">0 with current set</span>
+                            <span class="badge bg-danger ms-2" id="toBeUnassignedCount">0 to be unassigned</span>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="select-all" class="form-check-input me-2" />
+                            <label for="select-all" class="form-check-label">Select All Visible</label>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover job-assignment-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 10px;"></th>
+                                    <th>Job Title</th>
+                                    <th>Current Question Set</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobsTableBody">
+                                @for (int i = 0; i < Model.AvailableJobs.Count; i++)
+                                {
+                                    var job = Model.AvailableJobs[i];
+                                    var hasCurrentSet = job.CurrentQuestionSetId == Model.QuestionSetId;
+                                    var rowClass = hasCurrentSet ? "has-current-set" : (job.HasQuestionSet ? "has-existing-set" : "");
+
+                                    <tr class="job-row @rowClass"
+                                        data-job-title="@job.Title.ToLower()"
+                                        data-has-set="@job.HasQuestionSet.ToString().ToLower()"
+                                        data-has-current-set="@hasCurrentSet.ToString().ToLower()"
+                                        data-initially-selected="@hasCurrentSet.ToString().ToLower()">
+                                        <td>
+                                            @{
+                                                var isChecked = hasCurrentSet;
+                                            }
+                                            <input type="checkbox"
+                                                   name="AvailableJobs[@i].Selected"
+                                                   value="true"
+                                                   class="form-check-input job-checkbox"
+                                                   data-job-id="@job.Id"
+                                                   data-has-set="@job.HasQuestionSet.ToString().ToLower()"
+                                                   data-has-current-set="@hasCurrentSet.ToString().ToLower()"
+                                                   data-initially-selected="@hasCurrentSet.ToString().ToLower()"
+                                                   @(isChecked ? "checked" : "") />
+                                            <input type="hidden"
+                                                   name="AvailableJobs[@i].Selected"
+                                                   value="false" />
+                                            <input type="hidden" name="AvailableJobs[@i].Id" value="@job.Id" />
+                                            <input type="hidden" name="AvailableJobs[@i].Title" value="@job.Title" />
+                                            <input type="hidden" name="AvailableJobs[@i].HasQuestionSet" value="@job.HasQuestionSet.ToString()" />
+                                            <input type="hidden" name="AvailableJobs[@i].CurrentQuestionSetId" value="@(job.CurrentQuestionSetId ?? "")" />
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <strong>@job.Title</strong>
+                                                <small class="text-muted">ID: @job.Id</small>
+                                            </div>
+                                            @if (job.HasQuestionSet)
+                                            {
+                                                <div class="existing-set-info">
+                                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                    <small class="text-muted">Has existing question set</small>
+                                                </div>
+                                            }
+                                            @if (hasCurrentSet)
+                                            {
+                                                <div class="current-set-indicator">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    <span>Currently assigned</span>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (hasCurrentSet)
+                                            {
+                                                <span class="badge bg-success status-badge">Current Set</span>
+                                            }
+                                            else if (job.HasQuestionSet)
+                                            {
+                                                <span class="badge bg-warning status-badge">Different Set</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary status-badge">No Set</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success status-badge">Active</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="pagination-container">
+                        <div class="pagination-info">
+                            Showing <span id="currentPageItems">0</span> of <span id="totalItems">@Model.AvailableJobs.Count</span> jobs
+                        </div>
+                        <nav aria-label="Job pagination">
+                            <ul class="pagination mb-0" id="paginationControls">
+                                <!-- Pagination will be generated by JavaScript -->
+                            </ul>
+                        </nav>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="assignButton">
+                            <i class="fas fa-save me-1"></i>Update Assignments
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No open jobs available</h4>
+                        <p>Create some jobs first before assigning question sets</p>
+                        <a asp-controller="Job" asp-action="JobPost" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-1"></i>Create Job
+                        </a>
+                    </div>
+                }
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("🔍 AssignToJobs page loaded");
+
+            // Constants and variables
+            const JOBS_PER_PAGE = 9;
+            const selectAll = document.getElementById('select-all');
+            const jobCheckboxes = document.querySelectorAll('.job-checkbox');
+            const jobRows = document.querySelectorAll('.job-row');
+            const selectedCount = document.getElementById('selectedCount');
+            const hasExistingCount = document.getElementById('hasExistingCount');
+            const hasCurrentCount = document.getElementById('hasCurrentCount');
+            const toBeUnassignedCount = document.getElementById('toBeUnassignedCount');
+            const assignButton = document.getElementById('assignButton');
+            const form = document.getElementById('assignForm');
+            const jobSearch = document.getElementById('jobSearch');
+            const clearSearch = document.getElementById('clearSearch');
+            const totalJobs = document.getElementById('totalJobs');
+            const visibleJobs = document.getElementById('visibleJobs');
+            const currentPageItems = document.getElementById('currentPageItems');
+            const totalItems = document.getElementById('totalItems');
+            const paginationControls = document.getElementById('paginationControls');
+            const filterBadges = document.querySelectorAll('.filter-badge');
+            const jobsToUnassignInput = document.getElementById('jobsToUnassign');
+
+            let currentPage = 1;
+            let currentFilter = 'all';
+            let currentSearchTerm = '';
+
+            // Initialize pagination
+            initPagination();
+
+            // Update counts
+            updateCounts();
+            updateVisibleJobsCount();
+
+            // Search functionality
+            jobSearch.addEventListener('input', function() {
+                currentSearchTerm = this.value.toLowerCase().trim();
+                currentPage = 1;
+                filterJobs();
+            });
+
+            // Clear search
+            clearSearch.addEventListener('click', function() {
+                jobSearch.value = '';
+                currentSearchTerm = '';
+                currentPage = 1;
+                filterJobs();
+            });
+
+            // Filter badges
+            filterBadges.forEach(badge => {
+                badge.addEventListener('click', function() {
+                    currentFilter = this.dataset.filter;
+                    currentPage = 1;
+
+                    // Update active state
+                    filterBadges.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    filterJobs();
+                });
+            });
+
+            // Select all functionality (only visible jobs)
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    const visibleCheckboxes = getVisibleCheckboxes();
+                    visibleCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateCounts();
+                });
+            }
+
+            // Update counts when individual checkboxes change
+            jobCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateCounts();
+                    updateSelectAllState();
+                });
+            });
+
+            // Form submission - collect jobs to unassign
+            form.addEventListener('submit', function(e) {
+                // Always ensure the jobsToUnassign field is set, even if empty
+                const jobsToUnassign = [];
+
+                jobCheckboxes.forEach(checkbox => {
+                    const initiallySelected = checkbox.dataset.initiallySelected === 'true';
+                    const currentlySelected = checkbox.checked;
+
+                    if (initiallySelected && !currentlySelected) {
+                        jobsToUnassign.push(checkbox.dataset.jobId);
+                    }
+                });
+
+                // Set the value of the hidden field (even if empty)
+                jobsToUnassignInput.value = jobsToUnassign.join(',');
+
+                // Rest of your confirmation logic...
+                
+                const selectedJobs = Array.from(jobCheckboxes).filter(cb => cb.checked);
+                const jobsWithExistingSets = selectedJobs.filter(cb => cb.dataset.hasSet === 'true');
+                const jobsWithCurrentSet = selectedJobs.filter(cb => cb.dataset.hasCurrentSet === 'true');
+
+                if (jobsWithExistingSets.length > 0 || jobsWithCurrentSet.length > 0 || jobsToUnassign.length > 0) {
+                    let message = "You are about to update question set assignments:\n\n";
+
+                    if (jobsWithCurrentSet.length > 0) {
+                        message += `- ${jobsWithCurrentSet.length} job(s) will keep this question set\n`;
+                    }
+
+                    if (jobsWithExistingSets.length > 0) {
+                        message += `- ${jobsWithExistingSets.length} job(s) have different question sets that will be replaced\n`;
+                    }
+                    
+                    if (jobsToUnassign.length > 0) {
+                        message += `- ${jobsToUnassign.length} job(s) will have their question set removed\n`;
+                    }
+
+                    message += "\nDo you want to continue?";
+
+                    const confirmed = confirm(message);
+
+                    if (!confirmed) {
+                        e.preventDefault();
+                    }
+                }
+            });
+
+            // Initialize pagination
+            function initPagination() {
+                const totalPages = Math.ceil(jobRows.length / JOBS_PER_PAGE);
+                renderPaginationControls(totalPages);
+                showPage(1);
+            }
+
+            // Render pagination controls
+            function renderPaginationControls(totalPages) {
+                let paginationHTML = '';
+
+                // Previous button
+                paginationHTML += `
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage - 1}"><</a>
+                    </li>
+                `;
+
+                // Page numbers
+                const maxVisiblePages = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // Adjust if we're at the beginning
+                if (endPage - startPage + 1 < maxVisiblePages) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // First page and ellipsis if needed
+                if (startPage > 1) {
+                    paginationHTML += `
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="1">1</a>
+                        </li>
+                    `;
+                    if (startPage > 2) {
+                        paginationHTML += `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                    }
+                }
+
+                // Page numbers
+                for (let i = startPage; i <= endPage; i++) {
+                    paginationHTML += `
+                        <li class="page-item ${currentPage === i ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `;
+                }
+
+                // Last page and ellipsis if needed
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        paginationHTML += `
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        `;
+                    }
+                    paginationHTML += `
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>
+                        </li>
+                    `;
+                }
+
+                // Next button
+                paginationHTML += `
+                    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage + 1}">></a>
+                    </li>
+                `;
+
+                paginationControls.innerHTML = paginationHTML;
+
+                // Add event listeners to pagination controls
+                document.querySelectorAll('.page-link').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const page = parseInt(this.dataset.page);
+                        if (!isNaN(page)) {
+                            showPage(page);
+                        }
+                    });
+                });
+            }
+
+            // Show specific page
+            function showPage(page) {
+                currentPage = page;
+
+                // Hide all jobs first
+                jobRows.forEach(row => {
+                    row.style.display = 'none';
+                });
+
+                // Get filtered jobs
+                const filteredJobs = getFilteredJobs();
+
+                // Calculate start and end index
+                const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
+                const endIndex = Math.min(startIndex + JOBS_PER_PAGE, filteredJobs.length);
+
+                // Show jobs for current page
+                for (let i = startIndex; i < endIndex; i++) {
+                    if (filteredJobs[i]) {
+                        filteredJobs[i].style.display = '';
+                    }
+                }
+
+                // Update pagination info
+                currentPageItems.textContent = `${startIndex + 1}-${endIndex}`;
+
+                // Update pagination controls
+                const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
+                renderPaginationControls(totalPages);
+
+                // Update counts
+                updateCounts();
+                updateSelectAllState();
+                updateVisibleJobsCount();
+            }
+
+            // Filter jobs based on search term and filter
+            function filterJobs() {
+                const filteredJobs = getFilteredJobs();
+                const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
+
+                // Reset to first page if current page is beyond new page count
+                if (currentPage > totalPages && totalPages > 0) {
+                    currentPage = totalPages;
+                } else if (totalPages === 0) {
+                    currentPage = 1;
+                }
+
+                renderPaginationControls(totalPages);
+                showPage(currentPage);
+            }
+
+            // Get filtered jobs based on current search and filter
+            function getFilteredJobs() {
+                return Array.from(jobRows).filter(row => {
+                    const jobTitle = row.dataset.jobTitle;
+                    const hasSet = row.dataset.hasSet;
+                    const hasCurrentSet = row.dataset.hasCurrentSet;
+
+                    // Apply search filter
+                    const matchesSearch = currentSearchTerm === '' || jobTitle.includes(currentSearchTerm);
+
+                    // Apply type filter
+                    let matchesFilter = true;
+                    if (currentFilter === 'has-set') {
+                        matchesFilter = hasSet === 'true';
+                    } else if (currentFilter === 'no-set') {
+                        matchesFilter = hasSet === 'false';
+                    } else if (currentFilter === 'current-set') {
+                        matchesFilter = hasCurrentSet === 'true';
+                    }
+
+                    return matchesSearch && matchesFilter;
+                });
+            }
+
+            // Get visible checkboxes
+            function getVisibleCheckboxes() {
+                return Array.from(jobCheckboxes).filter(checkbox => {
+                    const row = checkbox.closest('.job-row');
+                    return row && row.style.display !== 'none';
+                });
+            }
+
+            // Update counts
+            function updateCounts() {
+                const selected = Array.from(jobCheckboxes).filter(cb => cb.checked);
+                const hasExisting = selected.filter(cb => cb.dataset.hasSet === 'true');
+                const hasCurrent = selected.filter(cb => cb.dataset.hasCurrentSet === 'true');
+                
+                // Count jobs to be unassigned (initially selected but now unchecked)
+                const toBeUnassigned = Array.from(jobCheckboxes).filter(cb => {
+                    return cb.dataset.initiallySelected === 'true' && !cb.checked;
+                });
+
+                selectedCount.textContent = `${selected.length} selected`;
+                hasExistingCount.textContent = `${hasExisting.length} with existing sets`;
+                hasCurrentCount.textContent = `${hasCurrent.length} with current set`;
+                toBeUnassignedCount.textContent = `${toBeUnassigned.length} to be unassigned`;
+
+                // Show/hide counts
+                hasExistingCount.style.display = hasExisting.length > 0 ? 'inline-block' : 'none';
+                hasCurrentCount.style.display = hasCurrent.length > 0 ? 'inline-block' : 'none';
+                toBeUnassignedCount.style.display = toBeUnassigned.length > 0 ? 'inline-block' : 'none';
+            }
+
+            // Update select all checkbox state
+            function updateSelectAllState() {
+                if (!selectAll) return;
+
+                const visibleCheckboxes = getVisibleCheckboxes();
+                const allVisibleChecked = visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked);
+                const someVisibleChecked = visibleCheckboxes.some(cb => cb.checked);
+
+                selectAll.checked = allVisibleChecked;
+                selectAll.indeterminate = someVisibleChecked && !allVisibleChecked;
+            }
+
+            // Update visible jobs count
+            function updateVisibleJobsCount() {
+                const filteredJobs = getFilteredJobs();
+                visibleJobs.textContent = `Showing: ${filteredJobs.length}`;
+            }
+        });
+    </script>
+}

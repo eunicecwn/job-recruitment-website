@@ -1,0 +1,34 @@
+﻿@model List<JobRecruitment.Models.Employer>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<h2>Manage Employers</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Company</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model)
+        {
+            <tr>
+                <td>@e.Username</td>
+                <td>@e.CompanyName</td>
+                <td>@e.ApprovalStatus</td>
+                <td>
+                    @if (e.ApprovalStatus != "Approved")
+                    {
+                        <a asp-action="ApproveEmployer" asp-route-id="@e.Id" class="btn btn-success btn-sm">Approve</a>
+                    }
+                    <a asp-action="BlockUser" asp-route-id="@e.Id" class="btn btn-warning btn-sm">Block</a>
+                    <a asp-action="UnblockUser" asp-route-id="@e.Id" class="btn btn-info btn-sm">Unblock</a>
+                    <a asp-action="DeleteUser" asp-route-id="@e.Id" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

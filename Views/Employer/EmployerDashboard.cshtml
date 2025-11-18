@@ -1,0 +1,288 @@
+﻿@model JobRecruitment.Models.Employer
+@using Demo;
+
+@{
+    ViewBag.Title = "Employer Dashboard";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    var jobs = ViewBag.Jobs as List<JobRecruitment.Models.Job> ?? new List<JobRecruitment.Models.Job>();
+    var applications = ViewBag.Applications as List<JobRecruitment.Models.Application> ?? new List<JobRecruitment.Models.Application>();
+    var recentApplications = applications.OrderByDescending(a => a.AppliedDate).Take(5).ToList();
+
+    // Calculate statistics
+    var totalJobs = jobs.Count;
+    var totalApplications = applications.Count;
+    var interviewScheduled = applications.Count(a => a.Status == JobRecruitment.Models.ApplicationStatusEnum.InterviewScheduled);
+    var hired = applications.Count(a => a.Status == JobRecruitment.Models.ApplicationStatusEnum.Hired);
+}
+
+<style>
+    /* Status badge improvements */
+    .status-badge {
+        padding: 0.5rem 0.8rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        height: 30px;
+        line-height: 1;
+    }
+
+    /* Status-specific colors */
+    .status-pending {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        border: 1px solid #e5e7eb;
+    }
+
+    .status-shortlisted {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .status-interview {
+        background-color: #e0e7ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+    }
+
+    .status-offer {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-hired {
+        background-color: #166534;
+        color: white;
+        border: 1px solid #15803d;
+    }
+
+    .status-rejected {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .stat-card {
+        border-top: 4px solid transparent;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        background: #fff;
+    }
+
+    .stat-jobs {
+        border-top-color: #0d6efd; /* primary */
+    }
+
+    .stat-applications {
+        border-top-color: #198754; /* success */
+    }
+
+    .stat-interviews {
+        border-top-color: #ffc107; /* warning */
+    }
+
+    .stat-reports {
+        border-top-color: #0dcaf0; /* info */
+    }
+
+    .stat-card .card-title {
+        font-size: 1rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card h2 {
+        font-weight: bold;
+    }
+
+</style>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("JobPost", "Job")" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Post New Job
+            </a>
+            <a href="@Url.Action("JobList", "Job")" class="btn btn-outline-primary">
+                <i class="bi bi-briefcase"></i> Manage Jobs
+            </a>
+        </div>
+        <a href="@Url.Action("EmployerReports", "Employer")" class="btn btn-secondary">
+            <i class="bi bi-bar-chart"></i> View Reports
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card stat-jobs">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Total Jobs</h5>
+                        <h2 class="text-primary">@totalJobs</h2>
+                    </div>
+                    <i class="bi bi-briefcase fs-1 text-primary"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-applications">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Applications</h5>
+                        <h2 class="text-success">@totalApplications</h2>
+                    </div>
+                    <i class="bi bi-people fs-1 text-success"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-interviews">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Interviews</h5>
+                        <h2 class="text-warning">@interviewScheduled</h2>
+                    </div>
+                    <i class="bi bi-calendar-event fs-1 text-warning"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-reports clickable-card" onclick="location.href='@Url.Action("EmployerReports", "Employer")'">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Reports</h5>
+                        <h2 class="text-info"><i class="bi bi-bar-chart"></i></h2>
+                    </div>
+                    <i class="bi bi-graph-up fs-1 text-info"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Applications -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Applications</h5>
+                    <a href="@Url.Action("CheckApplications", "Application")" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (recentApplications.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var app in recentApplications)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">@app.JobSeeker.FullName</h6>
+                                            <p class="mb-1 text-muted">Applied for: @app.Job.Title</p>
+                                            <small class="text-muted">@app.AppliedDate.ToString("MMM dd, yyyy")</small>
+                                        </div>
+                                        <span class="badge @Helper.GetStatusBadgeClass((ApplicationStatusEnum)app.Status)">
+                                            @app.Status
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No recent applications</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Jobs -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Active Jobs</h5>
+                    <a href="@Url.Action("JobList", "Job")" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (jobs.Any(j => j.Status == JobRecruitment.Models.JobStatus.Open))
+                    {
+                        <div class="list-group">
+                            @foreach (var job in jobs.Where(j => j.Status == JobRecruitment.Models.JobStatus.Open).Take(5))
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">@job.Title</h6>
+                                            <p class="mb-1 text-muted">@job.Location • @job.JobType</p>
+                                            <small class="text-muted">@job.Applications.Count applications</small>
+                                        </div>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No active jobs</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Interviews -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Upcoming Interviews</h5>
+                    <a href="@Url.Action("InterviewCalendar", "Application")" class="btn btn-sm btn-outline-primary">View Calendar</a>
+                </div>
+                <div class="card-body">
+                    @{
+                        var upcomingInterviews = applications
+                        .Where(a => a.InterviewDate.HasValue && a.InterviewDate.Value >= DateTime.Now)
+                        .OrderBy(a => a.InterviewDate)
+                        .Take(5)
+                        .ToList();
+                    }
+
+                    @if (upcomingInterviews.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var interview in upcomingInterviews)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">@interview.JobSeeker.FullName</h6>
+                                            <p class="mb-1">@interview.Job.Title</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock"></i>
+                                                @interview.InterviewDate.Value.ToString("MMM dd, yyyy hh:mm tt")
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <a href="@Url.Action("ScheduleInterview", "Application", new { applicationId = interview.Id })"
+                                               class="btn btn-sm btn-outline-primary ms-2">Details</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No upcoming interviews</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

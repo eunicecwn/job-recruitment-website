@@ -1,0 +1,145 @@
+﻿@{
+    ViewData["Title"] = "Payment Records";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Summary cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h4>@ViewBag.TotalPayments</h4>
+                    <p>Total Payments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h4>@ViewBag.CompletedPayments</h4>
+                    <p>Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h4>@ViewBag.PendingPayments</h4>
+                    <p>Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h4>@ViewBag.FailedPayments</h4>
+                    <p>Failed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form id="filterForm" class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Search</label>
+            <input type="text" id="searchTerm" name="searchTerm" value="@ViewBag.SearchTerm"
+                   class="form-control" placeholder="Search payments..." />
+        </div>
+
+       
+        <div class="col-md-5 d-flex align-items-end">
+            <button type="button" id="filterBtn" class="btn btn-primary me-2">
+                <i class="bi bi-search"></i> Filter
+            </button>
+            <button type="button" id="clearBtn" class="btn btn-secondary me-2">
+                <i class="bi bi-x"></i> Clear
+            </button>
+            <a href="@Url.Action("ExportPaymentsPdf", "Admin", new { searchTerm = ViewBag.SearchTerm, status = ViewBag.FilterStatus })"
+               class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </a>
+        </div>
+    </form>
+
+
+    <!-- Table container -->
+    <div id="paymentsContainer">
+        <div class="text-center p-3">Loading payments...</div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    var currentPage = @ViewBag.CurrentPage;
+
+    function showLoading() {
+        $('#paymentsContainer').html('<div class="text-center p-3"><div class="spinner-border text-primary"></div></div>');
+    }
+
+    function updateUrlParameter(url, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = url.indexOf('?') !== -1 ? "&" : "?";
+        if (value === null || value === "") {
+            return url.replace(re, '$1').replace(/(&|\?)$/, '');
+        }
+        if (url.match(re)) {
+            return url.replace(re, '$1' + key + "=" + value + '$2');
+        } else {
+            return url + separator + key + "=" + value;
+        }
+    }
+
+    function loadPayments(page = currentPage) {
+        showLoading();
+
+        var searchTerm = $('#searchTerm').val();
+        var filterStatus = $('#filterStatus').val();
+
+        $.ajax({
+            url: '@Url.Action("LoadPayments", "Admin")',
+            type: 'GET',
+            data: {
+                searchTerm: searchTerm,
+                status: filterStatus,
+                page: page,
+                pageSize: 10
+            },
+            success: function (data) {
+                $('#paymentsContainer').html(data);
+                currentPage = page;
+
+                // Update URL without reload
+                var newUrl = updateUrlParameter(window.location.href, 'page', page);
+                newUrl = updateUrlParameter(newUrl, 'searchTerm', searchTerm);
+                newUrl = updateUrlParameter(newUrl, 'status', filterStatus);
+                history.replaceState(null, null, newUrl);
+            },
+            error: function () {
+                $('#paymentsContainer').html('<div class="alert alert-danger">Error loading payments. Please try again.</div>');
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        // Initial load
+        loadPayments(currentPage);
+
+        $('#filterBtn').click(function () {
+            loadPayments(1);
+        });
+
+        $('#clearBtn').click(function () {
+            $('#searchTerm').val('');
+            $('#filterStatus').val('');
+            loadPayments(1);
+        });
+
+        $(document).on('click', '.pagination .page-link', function (e) {
+            e.preventDefault();
+            loadPayments($(this).data('page'));
+        });
+    });
+</script>
+}

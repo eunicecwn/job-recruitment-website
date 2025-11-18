@@ -1,0 +1,175 @@
+﻿@model JobRecruitment.Models.Application
+@using System.IO
+@using JobRecruitment.Models
+
+@{
+    // Extract questions and responses from the application
+    var questions = Model.Job?.QuestionSet?.Questions?
+        .OrderBy(q => q.Order)
+        .ToList() ?? new List<Question>();
+
+    var responses = Model.QuestionResponses?
+        .ToDictionary(qr => qr.QuestionId, qr => qr)
+        ?? new Dictionary<string, QuestionResponse>();
+
+    // Base URL for file downloads
+    var baseFileUrl = "/";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-question-circle"></i> Application Questions & Answers
+        </h5>
+    </div>
+    <div class="card-body">
+        @if (questions.Any())
+        {
+            @foreach (var question in questions)
+            {
+                responses.TryGetValue(question.Id, out var response);
+                var isAnswered = response != null && !string.IsNullOrEmpty(response.Answer) && response.Answer.Trim() != "";
+                var answer = response?.Answer ?? "";
+
+                <div class="question-item mb-4 p-3 border rounded @(!isAnswered ? "bg-light" : "")">
+                    <!-- Question Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">
+                                @if (question.IsRequired)
+                                {
+                                    <span class="text-danger me-1" title="Required">*</span>
+                                }
+                                @question.Text
+                            </h6>
+                            <div class="question-meta">
+                                <small class="text-muted">
+                                    <span class="badge bg-secondary me-2">@question.Type</span>
+                                    <span class="badge @(question.IsRequired ? "bg-danger" : "bg-secondary")">
+                                        @(question.IsRequired ? "Required" : "Optional")
+                                    </span>
+                                </small>
+                            </div>
+                        </div>
+                        <span class="badge @(isAnswered ? "bg-success" : "bg-warning") ms-2">
+                            @(isAnswered ? "Answered" : "Pending")
+                        </span>
+                    </div>
+
+                    <!-- Answer Section -->
+                    <div class="answer-section mt-3">
+                        @if (!isAnswered)
+                        {
+                            <div class="text-center py-3">
+                                <i class="bi bi-chat-dash text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted fst-italic mb-0 mt-2">No response provided</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="answer-content">
+                                <strong class="text-muted d-block mb-2">Answer:</strong>
+
+                                @switch (question.Type)
+                                {
+                                    case QuestionType.Text:
+                                        <p class="mb-0 p-2 bg-white border rounded" style="white-space: pre-wrap;">@answer</p>
+                                        break;
+
+                                    case QuestionType.TextArea:
+                                        <div class="p-3 bg-light border rounded">
+                                            <p class="mb-0" style="white-space: pre-wrap;">@answer</p>
+                                        </div>
+                                        break;
+
+                                    case QuestionType.MultipleChoice:
+                                    case QuestionType.Dropdown:
+                                        <div class="p-2">
+                                            <span class="badge bg-primary px-3 py-2">
+                                                <i class="bi bi-check-circle me-1"></i>@answer.Trim()
+                                            </span>
+                                        </div>
+                                        break;
+
+                                    case QuestionType.Checkbox:
+                                        <div class="selected-options">
+                                            @foreach (var option in answer.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                            {
+                                                <span class="badge bg-primary me-1 mb-1 px-2 py-1">
+                                                    <i class="bi bi-check-square me-1"></i>@option.Trim()
+                                                </span>
+                                            }
+                                        </div>
+                                        break;
+
+                                    case QuestionType.Date:
+                                        @if (DateTime.TryParse(answer, out var dateValue))
+                                        {
+                                            <div class="p-2">
+                                                <span class="badge bg-info text-dark px-3 py-2">
+                                                    <i class="bi bi-calendar me-1"></i>@dateValue.ToString("yyyy-MM-dd")
+                                                </span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <p class="mb-0 p-2 bg-white border rounded">@answer</p>
+                                        }
+                                        break;
+
+                                    case QuestionType.FileUpload:
+                                        <div class="p-2">
+                                            @if (!string.IsNullOrEmpty(answer))
+                                            {
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <a href="@(baseFileUrl + answer)" target="_blank" class="btn btn-outline-primary">
+                                                            <i class="bi bi-file-earmark-pdf me-2"></i>View Uploaded File
+                                                        </a>
+                                                        <div class="mt-1">
+                                                            <small class="text-muted">File: @answer</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No file uploaded</span>
+                                            }
+                                        </div>
+                                        break;
+
+                                    default:
+                                        <p class="mb-0 p-2 bg-white border rounded">@answer</p>
+                                        break;
+                                }
+                            </div>
+
+                            <!-- Response Metadata -->
+                            <div class="response-meta mt-2 text-end">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    Answered on: @response.ResponseDate.ToString("MMM dd, yyyy 'at' h:mm tt")
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Separator -->
+                @if (question != questions.Last())
+                {
+                    <hr class="my-3" />
+                }
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-question-circle text-muted" style="font-size: 3rem;"></i>
+                <h5 class="text-muted mt-3">No Questions Required</h5>
+                <p class="text-muted">This application didn't require any specific questions.</p>
+            </div>
+        }
+    </div>
+</div>

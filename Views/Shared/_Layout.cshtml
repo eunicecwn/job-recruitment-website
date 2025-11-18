@@ -1,0 +1,1366 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewBag.Title - HireRightPro</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/layout.css" >
+	<link rel="stylesheet" href="/css/otp.css">
+    <link rel="shortcut icon" href="/images/logo.png"> 
+    
+</head>
+<style>
+    :root {
+        --primary: #4F46E5;
+        --primary-dark: #4338CA;
+        --light-gray: #E5E7EB;
+        --bg-light: #F3F4F6;
+        --sidebar-width: 280px;
+        --sidebar-collapsed-width: 80px;
+        --bs-primary: var(--primary);
+        --bs-primary-rgb: 79,70,229;
+        --bs-link-color: var(--primary);
+        --bs-link-hover-color: var(--primary-dark);
+    }
+
+    /* Buttons recolor only */
+    .btn-primary {
+        --bs-btn-bg: var(--primary);
+        --bs-btn-border-color: var(--primary);
+        --bs-btn-hover-bg: var(--primary-dark);
+        --bs-btn-hover-border-color: var(--primary-dark);
+        --bs-btn-active-bg: var(--primary-dark);
+        --bs-btn-active-border-color: var(--primary-dark);
+    }
+
+    body {
+        font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--bg-light);
+        color: #111827;
+        overflow-x: hidden;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+        width: var(--sidebar-width);
+        min-height: 100vh;
+        transition: all .3s ease;
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: #fff;
+        border-right: 1px solid var(--light-gray);
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+    .sidebar-collapsed {
+        width: var(--sidebar-collapsed-width);
+    }
+
+        .sidebar-collapsed .nav-link-text,
+        .sidebar-collapsed .logo-text,
+        .sidebar-collapsed .user-info,
+        .sidebar-collapsed .nav-section-header {
+            display: none !important;
+        }
+
+        .sidebar-collapsed .nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+            margin: .25rem 0;
+        }
+
+        .sidebar-collapsed .logo {
+            justify-content: center;
+        }
+
+        .sidebar-collapsed .avatar {
+            margin: 0 auto;
+        }
+
+    .sidebar .logo {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+        .sidebar .logo img {
+            width: 36px;
+            height: 36px;
+        }
+
+    .nav-section-header {
+        font-size: .75rem;
+        letter-spacing: .08em;
+        color: #6B7280;
+        margin: .5rem 0 .25rem .5rem;
+    }
+
+    .sidebar .nav-link {
+        color: #374151;
+        padding: .9rem .9rem;
+        border-radius: 10px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: all .2s ease;
+    }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: var(--primary);
+            background: rgba(79,70,229,.1);
+        }
+
+    /* Avatar / dropdown */
+    .avatar {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: var(--primary);
+        color: #fff;
+    }
+
+    .avatar-lg {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .dropdown-menu {
+        border: 1px solid var(--light-gray);
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,.15);
+    }
+
+    .dropdown-toggle::after {
+        display: none !important;
+    }
+
+    .user-profile-dropdown:hover {
+        background: rgba(79,70,229,.1);
+        border-radius: 8px;
+    }
+
+    .dropdown-item:hover {
+        background: rgba(79,70,229,.1);
+        color: var(--primary);
+    }
+
+    .dropdown-item i {
+        width: 20px;
+        text-align: center;
+    }
+
+    /* ===== CONTENT ===== */
+    .main-content {
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        transition: margin-left .25s ease;
+    }
+
+    .sidebar-collapsed ~ .main-content {
+        margin-left: var(--sidebar-collapsed-width);
+    }
+
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        padding: .75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        height: 64px;
+    }
+    /* --- Unread ping dot on the bell --- */
+    #notifBtn {
+        position: relative;
+    }
+
+        #notifBtn.notif-has-unread::after {
+            content: "";
+            position: absolute;
+            top: 2px; /* adjust to your bell icon */
+            right: 2px; /* adjust to your bell icon */
+            width: 10px;
+            height: 10px;
+            background: #0d6efd; /* Bootstrap primary blue */
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(13,110,253,.7);
+            animation: notif-ping 1.5s infinite;
+        }
+
+    @@keyframes notif-ping {
+        0% {
+            box-shadow: 0 0 0 0 rgba(13,110,253,.7);
+            transform: scale(1);
+        }
+
+        70% {
+            box-shadow: 0 0 0 8px rgba(13,110,253,0);
+            transform: scale(1.1);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(13,110,253,0);
+            transform: scale(1);
+        }
+    }
+
+
+    .search-container {
+        max-width: 900px;
+        flex: 1;
+    }
+
+    .search-input {
+        border-radius: 8px 0 0 8px !important;
+        min-length: 800px;
+    }
+
+    .search-btn {
+        border-radius: 0 8px 8px 0 !important;
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
+        .search-btn:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+    .sidebar-collapse-btn {
+        color: #6B7280;
+    }
+
+    /* Mobile drawer */
+    @@media (max-width: 992px) {
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+            .sidebar.show {
+                transform: none;
+            }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+    }
+
+    /* Admin “skin” accents (cards look) */
+    .admin-skin .card, .admin-skin .panel, .admin-skin .section {
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 2px rgba(16,24,40,.06);
+        background: #fff;
+    }
+
+    .admin-skin .strip-primary::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: #4F46E5;
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 76px;
+        right: 20px;
+        z-index: 1090;
+    }
+
+    /* ===== AI assistant ===== */
+    .ai-assistant-section {
+        margin-top: 1rem;
+        border-top: 1px solid var(--light-gray);
+        padding-top: .75rem;
+    }
+
+    .ai-assistant-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: .5rem .5rem;
+        border-radius: 8px;
+    }
+
+    .ai-assistant-title {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-weight: 600;
+    }
+
+    .ai-assistant-content {
+        max-height: 420px;
+        overflow: hidden;
+        transition: max-height .25s ease, opacity .25s ease;
+        opacity: 1;
+    }
+
+        .ai-assistant-content.collapsed {
+            max-height: 0;
+            opacity: .0;
+        }
+
+    /* Collapsed-only robot button */
+    .ai-fab {
+        display: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--light-gray);
+        box-shadow: 0 4px 12px rgba(0,0,0,.08);
+        background: #fff;
+    }
+
+        .ai-fab i {
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+    .sidebar-collapsed .ai-assistant-section {
+        border: 0;
+        padding-top: 0;
+        margin-top: .25rem;
+    }
+
+    .sidebar-collapsed .ai-assistant-header,
+    .sidebar-collapsed #aiAssistantContent {
+        display: none !important;
+    }
+
+    .sidebar-collapsed .ai-fab {
+        display: flex;
+        margin: 8px auto;
+    }
+
+    /* Chat window */
+    .chat-window {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 360px;
+        max-width: 90vw;
+        background: #fff;
+        border: 1px solid var(--light-gray);
+        box-shadow: 0 10px 25px rgba(0,0,0,.15);
+        border-radius: 12px;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 1100;
+    }
+
+        .chat-window.show {
+            display: flex;
+        }
+
+    .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--light-gray);
+        background: #fff;
+    }
+
+    .chat-messages {
+        height: 320px;
+        overflow: auto;
+        padding: 1rem;
+        background: #FAFAFA;
+    }
+
+    .chat-message {
+        display: flex;
+        gap: .5rem;
+        margin-bottom: .75rem;
+    }
+
+    .chat-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #EEF2FF;
+        color: #4F46E5;
+    }
+
+    .chat-bubble {
+        background: #fff;
+        border: 1px solid var(--light-gray);
+        border-radius: 10px;
+        padding: .5rem .75rem;
+        max-width: 80%;
+    }
+
+        .chat-bubble.bot {
+            background: #F8FAFF;
+        }
+
+    .quick-actions {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        padding: .5rem 1rem;
+        border-top: 1px solid var(--light-gray);
+        background: #fff;
+    }
+
+    .typing-indicator {
+        display: none;
+        padding: .25rem 1rem;
+        color: #6B7280;
+        font-size: .85rem;
+    }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+    .chat-input-container {
+        border-top: 1px solid var(--light-gray);
+        padding: .5rem;
+        background: #fff;
+    }
+
+    .chat-input-group {
+        display: flex;
+        gap: .5rem;
+        align-items: center;
+    }
+
+    .chat-input {
+        flex: 1;
+        resize: none;
+        border: 1px solid var(--light-gray);
+        border-radius: 8px;
+        padding: .5rem .75rem;
+    }
+
+    .chat-send-btn {
+        border: 1px solid var(--primary);
+        background: var(--primary);
+        color: #fff;
+        border-radius: 8px;
+        padding: .45rem .8rem;
+    }
+
+</style>
+<body class="bg-gray-50">
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <aside class="sidebar d-flex flex-column p-3">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a href="/" class="logo d-flex align-items-center text-decoration-none">
+                    <img src="/images/logo.png" alt="Logo" width="36" height="36">
+                    <span class="logo-text fs-4 fw-bold text-dark ms-2">HireRight<span class="text-primary">Pro</span></span>
+                </a>
+                <button class="sidebar-collapse-btn btn btn-link p-0 d-none d-lg-block">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <nav class="flex-grow-1">
+                <ul class="nav flex-column gap-1">
+                    <li class="nav-item">
+                        <div class="nav-section-header px-3 py-2 text-uppercase small fw-bold text-muted mt-4">
+                            Main
+                        </div>
+                    </li>
+
+                    @if (User.IsInRole("JobSeeker"))
+                    {
+                        <li class="nav-item">
+                            <a href="/JobSeeker/Index" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                                <i class="bi bi-speedometer2 fs-5"></i><span class="nav-link-text ms-3">Dashboard</span>
+                            </a>
+                        </li>
+                    }else
+                    {
+                        <li class="nav-item">
+                            <a href="/" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                                <i class="bi bi-speedometer2 fs-5"></i><span class="nav-link-text ms-3">Dashboard</span>
+                            </a>
+                        </li>
+                    }
+
+
+                    <li class="nav-item">
+                        <a href="/JobSearch/Search" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-search fs-5"></i><span class="nav-link-text ms-3">Find Jobs</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="/JobSeeker/Saved" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-bookmark fs-5"></i><span class="nav-link-text ms-3">Saved Jobs</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="/Applications/MyApplications" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-file-earmark-text fs-5"></i><span class="nav-link-text ms-3">My Applications</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <div class="nav-section-header px-3 py-2 text-uppercase small fw-bold text-muted mt-4">
+                            Account
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="/Profile/JobSeeker" class="nav-link d-flex align-items-center px-3 py-3 rounded">
+                            <i class="bi bi-person-circle fs-5"></i><span class="nav-link-text ms-3">Profile</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- Enhanced AI Assistant Section -->
+                <div class="ai-assistant-section" id="aiAssistantSection">
+                    <div class="ai-assistant-header" onclick="toggleAIAssistant()">
+                        <div class="ai-assistant-title">
+                            <i class="bi bi-robot"></i>
+                            <span>AI Assistant</span>
+                        </div>
+                        <button class="ai-assistant-toggle" id="aiToggleBtn" onclick="toggleAIAssistant()">
+
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
+                    </div>
+
+                    <div class="ai-assistant-content" id="aiAssistantContent">
+                        <div class="ai-assistant-content-inner">
+                            <div class="ai-stats">
+                                <div class="ai-stat">
+                                    <span class="ai-stat-number">24/7</span>
+                                    <span>Available</span>
+                                </div>
+                            </div>
+                            <button class="chatbot-btn" id="chatbotBtn" onclick="openChatWindow()">
+                                <i class="bi bi-robot"></i>
+                                <span class="btn-text">AI Assistant</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Enhanced User Profile Footer -->
+            <div class="user-profile-footer mt-auto pt-4 border-top">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <div class="dropdown">
+                        <!-- Clickable Avatar -->
+                        <div class="user-profile-dropdown d-flex align-items-center px-2 py-2 dropdown-toggle"
+                             data-bs-toggle="dropdown"
+                             aria-expanded="false"
+                             style="cursor: pointer">
+
+                            <!-- Avatar with conditional rendering -->
+                            @if (!string.IsNullOrEmpty(ViewBag.ProfilePhotoFileName as string))
+                            {
+                                <img src="/uploads/profilepics/@ViewBag.ProfilePhotoFileName" alt="Profile" class="avatar">
+                            }
+                            else
+                            {
+                                <div class="avatar">
+                                    @if (User.IsInRole("JobSeeker"))
+                                    {
+                                        <i class="bi bi-person fs-5"></i>
+                                    }
+                                    else if (User.IsInRole("Employer"))
+                                    {
+                                        <i class="bi bi-building fs-5"></i>
+                                    }
+                                    else if (User.IsInRole("Admin"))
+                                    {
+                                        <i class="bi bi-shield-check fs-5"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-person fs-5"></i>
+                                    }
+                                </div>
+                            }
+
+                            <!-- User Info (hidden when collapsed) -->
+                            <div class="user-info ms-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="fw-medium">@ViewBag.UserName</div>
+                                    @if (User.IsInRole("JobSeeker"))
+                                    {
+                                        <span class="role-badge jobseeker">Job Seeker</span>
+                                    }
+                                    else if (User.IsInRole("Employer"))
+                                    {
+                                        <span class="role-badge employer">Employer</span>
+                                    }
+                                    else if (User.IsInRole("Admin"))
+                                    {
+                                        <span class="role-badge admin">Admin</span>
+                                    }
+                                </div>
+                                <small class="text-muted d-block text-truncate" style="max-width: 150px;">@ViewBag.UserEmail</small>
+                            </div>
+                        </div>
+
+                        <!-- Enhanced Dropdown Menu -->
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="width: 250px">
+                            <!-- Profile Header -->
+                            <li class="p-3 text-center border-bottom">
+                                <div class="avatar-lg mb-2">
+                                    @if (!string.IsNullOrEmpty(ViewBag.ProfilePhotoFileName as string))
+                                    {
+                                        <img src="/uploads/profilepics/@ViewBag.ProfilePhotoFileName" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                                    }
+                                    else
+                                    {
+                                        @if (User.IsInRole("JobSeeker"))
+                                        {
+                                            <i class="bi bi-person-circle fs-1"></i>
+                                        }
+                                        else if (User.IsInRole("Employer"))
+                                        {
+                                            <i class="bi bi-building-fill fs-1"></i>
+                                        }
+                                        else if (User.IsInRole("Admin"))
+                                        {
+                                            <i class="bi bi-shield-check fs-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-person-circle fs-1"></i>
+                                        }
+                                    }
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                    <h6 class="mb-0">@ViewBag.UserName</h6>
+                                    @if (User.IsInRole("JobSeeker"))
+                                    {
+                                        <span class="role-badge jobseeker">Job Seeker</span>
+                                    }
+                                    else if (User.IsInRole("Employer"))
+                                    {
+                                        <span class="role-badge employer">Employer</span>
+                                    }
+                                    else if (User.IsInRole("Admin"))
+                                    {
+                                        <span class="role-badge admin">Admin</span>
+                                    }
+                                </div>
+                                <small class="text-muted">@ViewBag.UserEmail</small>
+                            </li>
+
+                            <!-- Role-specific Menu Items -->
+                            @if (User.IsInRole("JobSeeker"))
+                            {
+                                <li><a class="dropdown-item" href="/Profile/JobSeeker"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                                <li><a class="dropdown-item" href="/Applications"><i class="bi bi-file-earmark-text me-2"></i>My Applications</a></li>
+                            }
+                            else if (User.IsInRole("Employer"))
+                            {
+                                <li><a class="dropdown-item" href="/Profile/Employer"><i class="bi bi-building me-2"></i>Company Profile</a></li>
+                                <li><a class="dropdown-item" href="/Jobs/MyJobs"><i class="bi bi-briefcase me-2"></i>My Job Posts</a></li>
+                                <li><a class="dropdown-item" href="/Employer/Applications"><i class="bi bi-people me-2"></i>Manage Applications</a></li>
+                            }
+                            else if (User.IsInRole("Admin"))
+                            {
+                                <li><a class="dropdown-item" href="/Admin/AdminProfile"><i class="bi bi-shield-check me-2"></i>Admin Profile</a></li>
+                                <li><a class="dropdown-item" href="/Admin/AdminDashboard"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="/Admin/Reports"><i class="bi bi-graph-up me-2"></i>Reports</a></li>
+                            }
+
+                            <!-- Common Items -->
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/Account/ChangePassword"><i class="bi bi-key me-2"></i>Change Password</a></li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" onclick="openHelpModal()">
+                                    <i class="bi bi-question-circle me-2"></i>Help & Support
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline w-100">
+                                    @Html.AntiForgeryToken() 
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <!-- Guest User Section -->
+                    <div class="guest-user-section">
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div class="avatar">
+                                <i class="bi bi-person-x fs-5"></i>
+                            </div>
+                            <div class="ms-3 text-start">
+                                <div class="fw-medium">Guest User</div>
+                                <small class="text-muted">Please login to continue</small>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="/Account/Login" class="btn btn-primary btn-sm">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                            </a>
+                            <a href="/Account/Register" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-person-plus me-2"></i>Sign Up
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <!-- ===== MAIN ===== -->
+        <div class="main-content flex-grow-1">
+            <header class="topbar">
+                <button class="btn btn-outline-secondary d-lg-none" id="jsMobileBtn" type="button">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <div class="input-group search-container">
+                    <input id="globalSearch"
+                           name="q"
+                           class="form-control search-input"
+                           placeholder="Search jobs by title, company, or location..."
+                           value="@(Context?.Request?.Query["q"].ToString() ?? Context?.Request?.Query["Q"].ToString() ?? "")" />
+                    <button class="btn search-btn" type="button" id="globalSearchBtn">
+                        <i class="bi bi-search"></i> <span class="d-none d-md-inline ms-1">Find Jobs</span>
+                    </button>
+                </div>
+
+                @RenderSection("TopbarRight", required: false)
+
+                <div class="dropdown ms-auto">
+                    <button class="btn btn-link text-muted dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="notifBtn">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="position-absolute translate-middle badge rounded-pill bg-danger" id="notifCount" style="display:none">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-0" style="width:340px">
+                        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                            <strong>Job Application Updates</strong>
+                        </div>
+                        <div id="notifList" class="p-3" style="max-height:320px;overflow:auto">
+                            <div class="text-muted">No notifications yet.</div>
+                        </div>
+                        <div class="border-top p-2 text-center">
+                            <a href="/Applications/MyApplications">View all applications</a>
+                        </div>
+                    </div>
+                </div>
+
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-grow-1 p-4 admin-skin">
+                <div class="container-fluid">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark m-0">@ViewBag.Title</h1>
+                            @if (User.Identity.IsAuthenticated && !string.IsNullOrEmpty(ViewBag.UserRole as string))
+                            {
+                                <small class="text-muted">Welcome back, @ViewBag.UserRole!</small>
+                            }
+                        </div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="/JobSeeker/">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">@ViewBag.Title</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    @RenderBody()
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="text-center text-muted py-3 border-top small bg-white">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <span>© @DateTime.Today.Year HireRightPro. All rights reserved. Developed by MEALY Team</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div>
+                <h5><i class="bi bi-robot me-2"></i>AI Assistant</h5>
+                <small>Ask me anything about HireRightPro</small>
+            </div>
+            <button class="chat-close-btn" onclick="closeChatWindow()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatWindowMessages">
+            <div class="chat-message">
+                <div class="chat-avatar bot">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="chat-bubble bot">
+                    Hi! I'm your AI assistant. I can help you with questions about using HireRightPro, our policies, or general guidance. What would you like to know?
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-action" onclick="sendChatQuickMessage('How do I apply for a job?')">
+                How to apply for jobs?
+            </button>
+            <button class="quick-action" onclick="sendChatQuickMessage('How do I post a job?')">
+                How to post jobs?
+            </button>
+            <button class="quick-action" onclick="sendChatQuickMessage('What are your privacy policies?')">
+                Privacy policies
+            </button>
+            <button class="quick-action" onclick="sendChatQuickMessage('How do I delete my account?')">
+                Account management
+            </button>
+        </div>
+
+        <div class="typing-indicator" id="chatWindowTyping">
+            AI Assistant is typing...
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-group">
+                <textarea class="chat-input"
+                          id="chatWindowInput"
+                          placeholder="Ask me anything about HireRightPro..."
+                          rows="1"
+                          onkeypress="handleChatWindowKeypress(event)"
+                          oninput="autoResizeChatInput(this)"></textarea>
+                <button class="chat-send-btn" id="chatWindowSendBtn" onclick="sendChatWindowMessage()">
+                    <i class="bi bi-send"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    @await Html.PartialAsync("_HelpModal")
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.6/signalr.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (() => {
+          // UI helpers
+          const list = document.getElementById('notifList');
+          const badge = document.getElementById('notifCount');
+          const markAll = document.getElementById('notifMarkAll');
+
+          function prependItem(x){
+            // build a simple row
+            const row = document.createElement('a');
+            row.className = 'd-block text-decoration-none p-2 rounded';
+            row.href = x.link || '#';
+            row.innerHTML = `
+              <div class="d-flex">
+                <div class="me-2"><i class="bi bi-envelope-open text-primary"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">${x.title || '(Job update)'} — ${x.status}</div>
+                  <div class="small text-muted">${x.company || ''} • ${new Date(x.whenUtc || x.when).toLocaleString()}</div>
+                </div>
+              </div>`;
+            row.addEventListener('click', () => setTimeout(()=>setUnread(0), 300));
+            if (list.firstElementChild && list.firstElementChild.classList.contains('text-muted')) {
+              list.innerHTML = '';
+            }
+            list.prepend(row);
+            incUnread();
+          }
+
+          function incUnread(){
+            const v = Number(badge.dataset.count || '0') + 1;
+            setUnread(v);
+          }
+                  function setUnread(v){
+          badge.dataset.count = v;
+          const btn = document.getElementById('notifBtn');
+          if (v > 0) {
+            badge.textContent = v;
+            badge.style.display = '';
+            btn?.classList.add('notif-has-unread');   // turn on blue ping
+          } else {
+            badge.style.display = 'none';
+            btn?.classList.remove('notif-has-unread'); // turn off blue ping
+          }
+        }
+
+
+          markAll?.addEventListener('click', () => setUnread(0));
+
+          // seed recent items on drop-open
+          document.getElementById('notifBtn')?.addEventListener('click', async () => {
+            // only fetch once per page load, if still showing the "No notifications yet."
+            if (list.firstElementChild && list.firstElementChild.classList.contains('text-muted')) {
+              try{
+                const r = await fetch('/Notifications/Recent');
+                const js = await r.json();
+                if (js?.success && Array.isArray(js.items)){
+                  list.innerHTML = '';
+                  js.items.forEach(prependItem);
+                  setUnread(0);
+                }
+              }catch{}
+            }
+          });
+
+
+        })();
+    </script>
+    <script>
+        (() => {
+          const sidebar = document.querySelector('.sidebar');
+const mobileBtn = document.querySelector('.btn-outline-secondary.d-lg-none');
+const collapseBtn = document.querySelector('.sidebar-collapse-btn');
+
+          // restore collapsed state
+          const saved = localStorage.getItem('sidebarCollapsed') === 'true';
+          if (saved) {
+            sidebar?.classList.add('sidebar-collapsed');
+            collapseBtn?.querySelector('i')?.classList.replace('bi-chevron-left','bi-chevron-right');
+          }
+
+          // collapse/expand + AI panel discipline
+          collapseBtn?.addEventListener('click', () => {
+            const content = document.getElementById('aiAssistantContent');
+            const icon = document.getElementById('aiToggleBtn')?.querySelector('i');
+
+            sidebar.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed'));
+
+            const i = collapseBtn.querySelector('i');
+            i.classList.toggle('bi-chevron-left'); i.classList.toggle('bi-chevron-right');
+
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+              // ensure AI panel is closed when collapsing
+              aiAssistantCollapsed = true;
+              content?.classList.add('collapsed');
+              icon?.classList.replace('bi-chevron-up','bi-chevron-down');
+              localStorage.setItem('aiAssistantCollapsed','true');
+            } else {
+              // restore previously saved AI state
+              const savedAi = localStorage.getItem('aiAssistantCollapsed') === 'true';
+              aiAssistantCollapsed = !!savedAi;
+              if (savedAi) {
+                content?.classList.add('collapsed');
+                icon?.classList.replace('bi-chevron-up','bi-chevron-down');
+              } else {
+                content?.classList.remove('collapsed');
+                icon?.classList.replace('bi-chevron-down','bi-chevron-up');
+              }
+            }
+          });
+
+          // mobile drawer
+          mobileBtn?.addEventListener('click', ()=> sidebar.classList.toggle('show'));
+          document.addEventListener('click', (e)=>{
+            if (window.innerWidth > 992) return;
+            if (sidebar.classList.contains('show') && !sidebar.contains(e.target) && e.target!==mobileBtn && !mobileBtn.contains(e.target)) {
+              sidebar.classList.remove('show');
+            }
+          });
+
+          // active link
+          const path = location.pathname.toLowerCase();
+          document.querySelectorAll('.sidebar .nav-link').forEach(a=>{
+            const href=(a.getAttribute('href')||'').toLowerCase();
+            if (href && (path===href || (href!=='/' && path.startsWith(href)))) a.classList.add('active');
+          });
+
+          // global search
+          const go = () => {
+            const q = document.getElementById('globalSearch').value.trim();
+            if (q) location.href='/JobSearch/Search?q='+encodeURIComponent(q);
+          };
+          document.getElementById('globalSearchBtn')?.addEventListener('click', go);
+          document.getElementById('globalSearch')?.addEventListener('keypress',(e)=>{ if(e.key==='Enter') go(); });
+
+          // collapsed-only AI button
+          document.getElementById('aiFabBtn')?.addEventListener('click', openChatWindow);
+        })();
+    </script>
+
+    <script>
+        // AI Assistant Toggle Functionality
+        let aiAssistantCollapsed = false;
+
+        function toggleAIAssistant() {
+            const content = document.getElementById('aiAssistantContent');
+            const toggleBtn = document.getElementById('aiToggleBtn');
+            const icon = toggleBtn.querySelector('i');
+
+            aiAssistantCollapsed = !aiAssistantCollapsed;
+
+            if (aiAssistantCollapsed) {
+                content.classList.add('collapsed');
+                icon.classList.remove('bi-chevron-up');
+                icon.classList.add('bi-chevron-down');
+                toggleBtn.classList.add('collapsed');
+            } else {
+                content.classList.remove('collapsed');
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up');
+                toggleBtn.classList.remove('collapsed');
+            }
+
+            // Save state
+            localStorage.setItem('aiAssistantCollapsed', aiAssistantCollapsed);
+        }
+
+        // Help Modal Functions
+        function openHelpModal() {
+            console.log('openHelpModal called');
+
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap is not loaded!');
+                alert('Bootstrap JS is not loaded. Please check your script includes.');
+                return;
+            }
+
+            const modalElement = document.getElementById('helpModal');
+            if (!modalElement) {
+                console.error('Help modal element not found!');
+                alert('Help modal element not found. Please check if _HelpModal partial is included.');
+                return;
+            }
+
+            console.log('Creating Bootstrap modal...');
+
+            try {
+                const helpModal = new bootstrap.Modal(modalElement);
+                helpModal.show();
+                console.log('Modal should be visible now');
+            } catch (error) {
+                console.error('Error creating modal:', error);
+                alert('Error opening modal: ' + error.message);
+            }
+        }
+
+        // Chat Window Functions
+        let chatWindowHistory = [];
+
+        function openChatWindow() {
+            document.getElementById('chatWindow').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('chatWindowInput').focus();
+            }, 300);
+        }
+
+        function closeChatWindow() {
+            document.getElementById('chatWindow').classList.remove('show');
+        }
+
+        function handleChatWindowKeypress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatWindowMessage();
+            }
+        }
+
+        function autoResizeChatInput(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 80) + 'px';
+        }
+
+        function sendChatQuickMessage(message) {
+            document.getElementById('chatWindowInput').value = message;
+            sendChatWindowMessage();
+        }
+
+        async function sendChatWindowMessage() {
+            const input = document.getElementById('chatWindowInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addChatWindowMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            showChatWindowTyping();
+
+            try {
+                const response = await getChatWindowResponse(message);
+                hideChatWindowTyping();
+                addChatWindowMessage(response, 'bot');
+            } catch (error) {
+                hideChatWindowTyping();
+                addChatWindowMessage('I apologize, but I\'m having trouble connecting right now. Please try again or contact our support team at support@hirerightpro.com', 'bot');
+            }
+        }
+
+        function addChatWindowMessage(message, sender) {
+            const chatMessages = document.getElementById('chatWindowMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `chat-avatar ${sender}`;
+            avatar.innerHTML = sender === 'bot' ? '<i class="bi bi-robot"></i>' : '<i class="bi bi-person"></i>';
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${sender}`;
+            bubble.textContent = message;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatMessages.appendChild(messageDiv);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatWindowHistory.push({ role: sender === 'user' ? 'user' : 'assistant', content: message });
+        }
+
+        function showChatWindowTyping() {
+            document.getElementById('chatWindowTyping').classList.add('show');
+            document.getElementById('chatWindowSendBtn').disabled = true;
+        }
+
+        function hideChatWindowTyping() {
+            document.getElementById('chatWindowTyping').classList.remove('show');
+            document.getElementById('chatWindowSendBtn').disabled = false;
+        }
+
+        function getAntiForgeryToken() {
+            let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            if (!token) {
+                const forms = document.querySelectorAll('form');
+                for (let form of forms) {
+                    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenInput) {
+                        token = tokenInput.value;
+                        break;
+                    }
+                }
+            }
+
+            return token;
+        }
+
+        async function getChatWindowResponse(userMessage) {
+            try {
+                const antiForgeryToken = getAntiForgeryToken();
+
+                const response = await fetch('/Help/SendChatMessage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken || ''
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    return data.response;
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            } catch (error) {
+                console.error('Chat API Error:', error);
+                return getChatFallbackResponse(userMessage);
+            }
+        }
+
+        function getChatFallbackResponse(message) {
+            const lowerMessage = message.toLowerCase();
+
+            if (lowerMessage.includes('apply') || lowerMessage.includes('job application')) {
+                return "To apply for a job: 1) Search for jobs using our search function, 2) Click on a job that interests you, 3) Click 'Apply Now', 4) Upload your resume and write a cover letter, 5) Submit your application. You can track all applications in 'My Applications'.";
+            } else if (lowerMessage.includes('post') && lowerMessage.includes('job')) {
+                return "To post a job: 1) Go to 'Post a Job' in the navigation, 2) Fill out the job details form including title, description, and requirements, 3) Set salary range and job type, 4) Review and publish. Your job will be live within 24 hours after review.";
+            } else if (lowerMessage.includes('profile') || lowerMessage.includes('account')) {
+                return "To manage your profile: Click on your avatar in the sidebar and select 'My Profile' or 'Company Profile'. You can update personal information, upload photos, add skills, and manage your settings there.";
+            } else if (lowerMessage.includes('password')) {
+                return "To change your password: Go to Settings > Security, click 'Change Password', enter your current password and new password, then click 'Update Password'. Make sure to use a strong, unique password.";
+            } else if (lowerMessage.includes('privacy') || lowerMessage.includes('policy')) {
+                return "Our privacy policy covers how we collect, use, and protect your data. We never sell your information to third parties. You can read the full policy in the Help & Support section or contact support@hirerightpro.com for specific questions.";
+            } else if (lowerMessage.includes('delete') || lowerMessage.includes('cancel')) {
+                return "To delete your account: Go to Settings > Account and look for the 'Delete Account' option. Note that this action is permanent and cannot be undone. All your data will be removed within 30 days.";
+            } else {
+                return "I'm here to help with questions about using HireRightPro! You can ask me about applying for jobs, posting jobs, managing your profile, or our policies. For specific account issues, please contact our support team at support@hirerightpro.com.";
+            }
+        }
+
+        // Sidebar Functions
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const collapseBtn = document.querySelector('.sidebar-collapse-btn');
+
+        // Mobile toggle
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+        }
+
+        // Desktop collapse/expand
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('sidebar-collapsed');
+                const icon = this.querySelector('i');
+                icon.classList.toggle('bi-chevron-left');
+                icon.classList.toggle('bi-chevron-right');
+            });
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 992 &&
+                sidebar.classList.contains('show') &&
+                !sidebar.contains(event.target) &&
+                event.target !== sidebarToggle &&
+                !sidebarToggle.contains(event.target)) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Close chat window when clicking outside
+        document.addEventListener('click', function(event) {
+            const chatWindow = document.getElementById('chatWindow');
+            if (chatWindow.classList.contains('show') && !chatWindow.contains(event.target)) {
+                const chatBtn = document.getElementById('chatbotBtn');
+                if (chatBtn && !chatBtn.contains(event.target)) {
+                    closeChatWindow();
+                }
+            }
+        });
+
+        // Set active state for navigation links
+        function setActiveNavLink() {
+            const currentPath = window.location.pathname.toLowerCase();
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href').toLowerCase();
+                link.classList.remove('active');
+
+                if (currentPath === linkPath ||
+                    (currentPath.startsWith(linkPath) && linkPath !== '/')) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== HELP MODAL DEBUG ===');
+            console.log('Bootstrap loaded:', typeof bootstrap !== 'undefined');
+            console.log('Help modal element exists:', document.getElementById('helpModal') !== null);
+            console.log('Chat window element exists:', document.getElementById('chatWindow') !== null);
+
+            setActiveNavLink();
+
+            // Load sidebar state from localStorage
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed && collapseBtn) {
+                sidebar.classList.add('sidebar-collapsed');
+                const icon = collapseBtn.querySelector('i');
+                icon.classList.remove('bi-chevron-left');
+                icon.classList.add('bi-chevron-right');
+            }
+
+            // Load AI Assistant state from localStorage only if sidebar is not collapsed
+            if (!isCollapsed) {
+                const savedAiState = localStorage.getItem('aiAssistantCollapsed');
+                if (savedAiState === 'true') {
+                    toggleAIAssistant();
+                }
+            }
+
+            // Save state to localStorage when collapsing - remove the duplicate event listener
+            // (This is now handled in the collapse button click handler above)
+        });
+
+        // Global search functionality
+        function performSearch() {
+            const query = document.getElementById('globalSearch').value.trim();
+            if (query) {
+                window.location.href = `/Jobs/Search?q=${encodeURIComponent(query)}`;
+            }
+        }
+
+        // Enter key search
+        document.getElementById('globalSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                if (bootstrap && bootstrap.Alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+    </script>
+    @RenderSection("Scripts", required: false)
+    @RenderSection("Styles", required: false)
+</body>
+</html>

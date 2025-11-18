@@ -1,0 +1,466 @@
+﻿@model JobRecruitment.Controllers.PaymentReceiptViewModel
+@{
+    ViewBag.Title = "Payment Receipt";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+ 
+}
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+<div class="receipt-container">
+    <div class="receipt-header">
+        <div class="company-info">
+            <img src="/images/logo.png" alt="HireRightPro" class="company-logo">
+            <div class="company-details">
+                <h1>HireRightPro</h1>
+                <p>Professional Job Recruitment Platform</p>
+                <p>support@hirerightpro.com</p>
+            </div>
+        </div>
+        <div class="receipt-status">
+            <div class="status-badge success">
+                <i class="bi bi-check-circle"></i>
+                PAYMENT SUCCESSFUL
+            </div>
+        </div>
+    </div>
+
+    <div class="receipt-content">
+        <div class="receipt-title">
+            <h2>Payment Receipt</h2>
+            <div class="receipt-number">Receipt #@Model.PaymentIntentId</div>
+        </div>
+
+        <div class="receipt-details">
+            <div class="detail-section">
+                <h3>Transaction Details</h3>
+                <div class="detail-grid">
+                    <div class="detail-row">
+                        <span class="label">Payment Date:</span>
+                        <span class="value">@Model.PaymentDate.ToString("MMMM dd, yyyy 'at' hh:mm tt")</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Transaction ID:</span>
+                        <span class="value">@Model.PaymentIntentId</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">@Model.PaymentMethod</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value status-completed">@Model.Status</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h3>Customer Information</h3>
+                <div class="detail-grid">
+                    <div class="detail-row">
+                        <span class="label">Name:</span>
+                        <span class="value">@Model.CustomerName</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Email:</span>
+                        <span class="value">@Model.CustomerEmail</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h3>Plan Details</h3>
+                <div class="plan-summary">
+                    <div class="plan-item">
+                        <div class="plan-name">@Model.PlanName Plan</div>
+                        <div class="plan-price">@Model.Currency @Model.Amount.ToString("F2")</div>
+                    </div>
+                    <div class="plan-features">
+                        @switch (Model.PlanName)
+                        {
+                            case "Basic":
+                                <ul>
+                                    <li>10 job posts per month</li>
+                                    <li>Priority support</li>
+                                    <li>Enhanced job visibility</li>
+                                    <li>Application analytics</li>
+                                </ul>
+                                break;
+                            case "Premium":
+                                <ul>
+                                    <li>Unlimited job posts</li>
+                                    <li>24/7 premium support</li>
+                                    <li>Featured job listings</li>
+                                    <li>Advanced analytics</li>
+                                    <li>Priority candidate matching</li>
+                                </ul>
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="total-section">
+                <div class="total-row">
+                    <span class="total-label">Total Paid:</span>
+                    <span class="total-amount">@Model.Currency @Model.Amount.ToString("F2")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="receipt-footer">
+            <div class="success-message">
+                <i class="bi bi-check-circle-fill"></i>
+                <h3>Welcome to @Model.PlanName Plan!</h3>
+                <p>Your account has been successfully upgraded. You can now enjoy all the premium features.</p>
+            </div>
+
+            <div class="action-buttons">
+                <a href="/Premium/Status" class="btn btn-primary">
+                    <i class="bi bi-speedometer2"></i>
+                    View Dashboard
+                </a>
+                <button onclick="window.print()" class="btn btn-secondary">
+                    <i class="bi bi-printer"></i>
+                    Print Receipt
+                </button>
+                <a href="/Job/JobPost" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i>
+                    Post Your First Job
+                </a>
+            </div>
+
+            <div class="support-info">
+                <p><strong>Need Help?</strong></p>
+                <p>Contact our support team at <a href="mailto:support@hirerightpro.com">support@hirerightpro.com</a></p>
+                <p>or call us at +60-123-456-789</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .receipt-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .receipt-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .company-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .company-logo {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        background: white;
+        padding: 8px;
+    }
+
+    .company-details h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .company-details p {
+        margin: 0.25rem 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+
+    .receipt-status {
+        text-align: right;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+        .status-badge.success {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+    .receipt-content {
+        padding: 2rem;
+    }
+
+    .receipt-title {
+        text-align: center;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 1rem;
+    }
+
+        .receipt-title h2 {
+            margin: 0;
+            color: #333;
+            font-size: 2rem;
+        }
+
+    .receipt-number {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .receipt-details {
+        margin-bottom: 2rem;
+    }
+
+    .detail-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9ff;
+        border-radius: 10px;
+    }
+
+        .detail-section h3 {
+            margin: 0 0 1rem 0;
+            color: #4F46E5;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #4F46E5;
+            padding-bottom: 0.5rem;
+        }
+
+    .detail-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+    .label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .value {
+        color: #666;
+        text-align: right;
+    }
+
+    .status-completed {
+        color: #28a745 !important;
+        font-weight: bold;
+    }
+
+    .plan-summary {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 4px solid #4F46E5;
+    }
+
+    .plan-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .plan-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .plan-price {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #4F46E5;
+    }
+
+    .plan-features ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        list-style-type: none;
+    }
+
+    .plan-features li {
+        position: relative;
+        padding: 0.25rem 0;
+        color: #666;
+    }
+
+        .plan-features li:before {
+            content: "✓";
+            position: absolute;
+            left: -1.5rem;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+    .total-section {
+        background: #4F46E5;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 2rem 0;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .receipt-footer {
+        background: #f8f9ff;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .success-message {
+        margin-bottom: 2rem;
+    }
+
+        .success-message i {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+
+        .success-message h3 {
+            color: #333;
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .success-message p {
+            color: #666;
+            margin: 0;
+        }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #4F46E5;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #4338CA;
+            transform: translateY(-2px);
+        }
+
+    .btn-secondary {
+        background: #6B7280;
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            background: #4B5563;
+            transform: translateY(-2px);
+        }
+
+    .btn-success {
+        background: #10B981;
+        color: white;
+    }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+    .support-info {
+        border-top: 1px solid #e0e0e0;
+        padding-top: 1.5rem;
+        color: #666;
+    }
+
+        .support-info p {
+            margin: 0.25rem 0;
+        }
+
+        .support-info a {
+            color: #4F46E5;
+            text-decoration: none;
+        }
+
+            .support-info a:hover {
+                text-decoration: underline;
+            }
+
+    /* Print Styles */
+    
+     
+</style>
+
+<script>
+    // Auto-scroll to top on page load
+    window.addEventListener('load', function() {
+        window.scrollTo(0, 0);
+    });
+
+    // Prevent accidental navigation away
+    window.addEventListener('beforeunload', function(e) {
+        if (!document.querySelector('.btn').contains(e.target)) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    </script>
+    </body>
+</html>

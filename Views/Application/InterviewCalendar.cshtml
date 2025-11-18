@@ -1,0 +1,1522 @@
+﻿@model JobRecruitment.Models.InterviewCalendarPageViewModel
+@{
+    ViewBag.Title = "Interview Calendar";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    // Create a simplified data structure for the calendar - handle null case
+    var calendarEvents = new List<object>();
+    if (Model.Calendar != null)
+    {
+        foreach (var date in Model.Calendar.Keys)
+        {
+            foreach (var app in Model.Calendar[date])
+            {
+
+
+                calendarEvents.Add(new
+                {
+                    Id = app.Id,
+                    InterviewStartDate = app.InterviewDate?.ToString("yyyy-MM-dd") ?? "",
+                    StartTime = app.InterviewDate?.ToString("HH:mm") ?? "09:00",
+                    EndTime = app.InterviewEndDate?.ToString("HH:mm") ??
+                             (app.InterviewDate?.AddHours(1).ToString("HH:mm") ?? "10:00"),
+                    Title = app.Job?.Title ?? "Interview",
+                    JobSeekerName = app.JobSeeker?.FullName ?? "Applicant",
+                    JobTitle = app.Job?.Title ?? "Position",
+                    ApplicationId = app.Id,
+                    JobId = app.JobId.ToString()
+                });
+            }
+        }
+    }
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div id="errorBox"
+         style="display: block; background: rgba(0,0,0,0.6);
+                     position: fixed; inset: 0; z-index: 9999;
+                     display: flex; justify-content: center; align-items: center;">
+
+        <div style="background: #f87171; color: white; border-radius: 12px;
+                         padding: 25px 30px; text-align: center; width: 320px;
+                         box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+                         animation: popIn 0.3s ease-out;">
+
+            <div style="font-size: 50px; margin-bottom: 15px;">😟</div>
+            <h2 style="margin: 0 0 10px; font-size: 1.5rem;">
+                @(TempData["ErrorTitle"] ?? "Oops!")
+            </h2>
+            <p style="font-size: 0.95rem; margin-bottom: 20px;">
+                @TempData["ErrorMessage"]
+            </p>
+
+            <button onclick="document.getElementById('errorBox').style.display='none'"
+                    style="background: white; color: #b91c1c; border: none;
+                                padding: 10px 25px; border-radius: 50px;
+                                font-size: 1rem; cursor: pointer;">
+                OK
+            </button>
+        </div>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+
+    <script>
+        // Close modal if it exists
+        document.addEventListener("DOMContentLoaded", function() {
+            const modal = document.querySelector(".modal");
+            if (modal) {
+                modal.style.display = "none";
+            }
+        });
+    </script>
+}
+
+<div class="container-fluid">
+    <div class="card mb-4">
+        <div class="card-header">
+            <!-- Enhanced Filter Section -->
+            <div class="row mb-3">
+                <!-- Search Bar -->
+                <div class="col-md-6">
+                    <label for="filterApplicantName" class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="filterApplicantName" placeholder="Search by applicant name or job title...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearApplicantSearch">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Job Filter and Clear Button -->
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-8">
+                            <label for="filterJobId" class="form-label">Job Position</label>
+                            <select class="form-select" id="filterJobId">
+                                <option value="">All Jobs</option>
+                                @foreach (var job in ViewBag.Jobs ?? new List<Job>())
+                                {
+                                    <option value="@job.Id">@job.Title</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label" style="opacity: 0;">Clear</label>
+                            <button class="btn btn-outline-danger w-100" type="button" id="clearAllFilters">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second row: Navigation and view buttons -->
+            <div class="d-flex justify-content-between align-items-center w-100 mt-3">
+                <!-- Left side: Today button and navigation -->
+                <div class="d-flex align-items-center">
+                    <button class="today-button me-2" id="today-button">Today</button>
+                    <button class="nav-button me-2" id="prev-period">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </div>
+
+                <!-- Center: Calendar title -->
+                <h4 class="calendar-title mb-0 mx-3 text-center" id="calendar-period"></h4>
+
+                <!-- Right side: Navigation and view buttons -->
+                <div class="d-flex align-items-center">
+                    <button class="nav-button me-3" id="next-period">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <div class="view-buttons">
+                        <button class="view-button" data-view="day">Day</button>
+                        <button class="view-button" data-view="week">Week</button>
+                        <button class="view-button active" data-view="month">Month</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Container -->
+        <div class="card-body">
+            <div id="calendar-container">
+                <!-- Calendar views remain the same -->
+                <div id="month-view" class="calendar-view">
+                    <div class="calendar-header">
+                        <div class="day-header">Sun</div>
+                        <div class="day-header">Mon</div>
+                        <div class="day-header">Tue</div>
+                        <div class="day-header">Wed</div>
+                        <div class="day-header">Thu</div>
+                        <div class="day-header">Fri</div>
+                        <div class="day-header">Sat</div>
+                    </div>
+                    <div class="calendar-body" id="month-calendar-body">
+                        <!-- Calendar days will be generated here by JavaScript -->
+                    </div>
+                </div>
+
+                <div id="week-view" class="calendar-view d-none">
+                    <div class="calendar-header d-flex">
+                        <div class="day-header" style="width: 60px;">Time</div>
+                        <div class="day-header">Sun</div>
+                        <div class="day-header">Mon</div>
+                        <div class="day-header">Tue</div>
+                        <div class="day-header">Wed</div>
+                        <div class="day-header">Thu</div>
+                        <div class="day-header">Fri</div>
+                        <div class="day-header">Sat</div>
+                    </div>
+                    <div class="calendar-body d-flex" id="week-calendar-body"></div>
+                </div>
+
+                <div id="day-view" class="calendar-view d-none">
+                    <div class="calendar-header d-flex">
+                        <div class="day-header" style="width: 60px;">Time</div>
+                        <div class="day-header" id="day-view-date"></div>
+                    </div>
+                    <div class="calendar-body d-flex" id="day-calendar-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Application Detail Modal -->
+<div class="modal fade" id="applicationModal" tabindex="-1" aria-labelledby="applicationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="applicationModalLabel">Interview Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="applicationModalBody">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="editInterviewBtn" class="btn btn-primary">Edit Interview</a>
+                <button type="button" class="btn btn-warning" id="cancelInterviewBtn">
+                    <i class="bi bi-x-circle"></i> Cancel Interview
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Interview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this interview?</p>
+                <div class="mb-3">
+                    <label class="form-label">Reason for cancellation (optional):</label>
+                    <textarea id="cancellationReason" class="form-control"
+                              placeholder="Enter reason for cancellation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Interview</button>
+                <button type="button" class="btn btn-warning" id="confirmCancelBtn">Yes, Cancel Interview</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">Filter Interviews</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <div class="mb-3">
+                        <label class="form-label">Job</label>
+                        <select class="form-select" id="filterModalJobId" name="jobId">
+                            <option value="">All Jobs</option>
+                            @foreach (var job in ViewBag.Jobs ?? new List<Job>())
+                            {
+                                <option value="@job.Id">@job.Title</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Applicant Name</label>
+                        <input type="text" class="form-control" id="filterModalApplicantName" name="applicantName">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="applyFilters">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Reuse the calendar styles from ScheduleInterview.cshtml */
+        .calendar-view {
+            min-height: 400px;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        #month-view .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e0e0e0;
+            width: 100%;
+        }
+
+        #month-view .day-header {
+            text-align: center;
+            padding: 8px 4px;
+            background-color: white;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        #month-view .calendar-body {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: minmax(80px, 1fr);
+            gap: 1px;
+            background-color: #e0e0e0;
+            width: 100%;
+        }
+
+        .calendar-day {
+            min-height: 80px;
+            max-height: 120px;
+            border: none;
+            padding: 6px;
+            position: relative;
+            background-color: white;
+            transition: background-color 0.2s;
+            aspect-ratio: 1/1;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+            .calendar-day:not(.out-of-month):hover {
+                background-color: #f1f3f4;
+                cursor: pointer;
+            }
+
+            .calendar-day.out-of-month {
+                background-color: #f8f9fa;
+                color: #dadce0;
+            }
+
+            .calendar-day.today {
+                background-color: #e8f0fe;
+            }
+
+                .calendar-day.today .date-number {
+                    color: #1a73e8;
+                    font-weight: bold;
+                }
+
+            .calendar-day.selected {
+                background-color: #e8f0fe;
+                outline: 2px solid #1a73e8;
+            }
+
+            .calendar-day .date-number {
+                font-weight: 400;
+                margin-bottom: 2px;
+                font-size: 12px;
+                color: #3c4043;
+            }
+
+        .calendar-event {
+            background-color: #e8f5e9;
+            border-left: 2px solid #34a853;
+            padding: 1px 3px;
+            margin-bottom: 1px;
+            border-radius: 2px;
+            font-size: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #3c4043;
+            line-height: 1.2;
+        }
+
+            .calendar-event:hover {
+                background-color: #d2e6d4;
+            }
+
+        .calendar-event-more {
+            background-color: #f1f3f4;
+            border-left: 2px solid #5f6368;
+            padding: 1px 3px;
+            margin-bottom: 1px;
+            border-radius: 2px;
+            font-size: 9px;
+            cursor: pointer;
+            color: #5f6368;
+            font-style: italic;
+        }
+
+            .calendar-event-more:hover {
+                background-color: #e8eaed;
+            }
+
+        /* Additional styles for event details */
+        .event-detail {
+            font-size: 11px;
+            margin-top: 5px;
+            padding: 5px;
+            border-radius: 3px;
+            background-color: #f8f9fa;
+        }
+
+        .event-applicant {
+            font-weight: 500;
+        }
+
+        .event-time {
+            color: #5f6368;
+        }
+
+        .card-header h5 {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        #clearApplicantSearch {
+            border-left: 0;
+        }
+
+        #filterSection {
+            transition: all 0.3s ease;
+        }
+
+        .calendar-navigation {
+            padding: 0.5rem 0;
+        }
+
+        #calendar-period {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #3c4043;
+        }
+
+        .card-header {
+            padding: 1.25rem;
+        }
+
+        .today-button, .nav-button {
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #dee2e6;
+            background-color: white;
+            border-radius: 0.375rem;
+        }
+
+            .today-button:hover, .nav-button:hover {
+                background-color: #f8f9fa;
+            }
+
+        .calendar-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #3c4043;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .view-buttons {
+            display: flex;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+
+        .view-button {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border: none;
+            background-color: white;
+            border-right: 1px solid #dee2e6;
+        }
+
+            .view-button:last-child {
+                border-right: none;
+            }
+
+            .view-button:hover {
+                background-color: #f8f9fa;
+            }
+
+            .view-button.active {
+                background-color: #4F46E5;
+                color: white;
+            }
+
+        /* Form label styling */
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #3c4043;
+        }
+
+        /* Search input styling */
+        .input-group-text {
+            background-color: #f8f9fa;
+        }
+
+        /* Ensure proper spacing for the centered title */
+        .d-flex.justify-content-between.align-items-center.w-100 {
+            position: relative;
+        }
+
+        .no-interviews-found {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+            font-style: italic;
+            grid-column: 1 / -1;
+        }
+
+            .no-interviews-found i {
+                font-size: 2rem;
+                margin-bottom: 1rem;
+                display: block;
+            }
+
+        /* WEEK VIEW STYLES */
+        #week-view .calendar-header {
+            display: flex;
+            background-color: #e0e0e0;
+            width: 100%;
+        }
+
+        #week-view .day-header {
+            text-align: center;
+            padding: 8px 4px;
+            background-color: white;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 14px;
+            text-transform: uppercase;
+            flex: 1;
+        }
+
+        #week-view .calendar-body {
+            display: flex;
+            width: 100%;
+            height: 600px;
+            overflow-y: auto;
+        }
+
+        .time-column {
+            width: 60px;
+            flex-shrink: 0;
+            background-color: #f8f9fa;
+        }
+
+        .time-label {
+            height: 44px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: #70757a;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .week-grid {
+            display: flex;
+            flex: 1;
+        }
+
+        .week-day {
+            flex: 1;
+            border-right: 1px solid #e0e0e0;
+			font-size: 12px;
+        }
+
+        .week-hour {
+            height: 44px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .calendar-event-block {
+            position: absolute;
+            background-color: #e8f5e9;
+            border-left: 2px solid #34a853;
+            border-radius: 3px;
+            padding: 4px;
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            color: #3c4043;
+            z-index: 1;
+        }
+
+            .calendar-event-block:hover {
+                background-color: #d2e6d4;
+            }
+
+        .calendar-event.past-date {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f0f0f0;
+            border-left-color: #ccc;
+        }
+
+            .calendar-event.past-date:hover {
+                background-color: #f0f0f0;
+            }
+
+        /* DAY VIEW STYLES */
+        #day-view .calendar-header {
+            display: flex;
+            background-color: #e0e0e0;
+            width: 100%;
+        }
+
+        #day-view .day-header {
+            text-align: center;
+            padding: 8px 4px;
+            background-color: white;
+            font-weight: 500;
+            color: #70757a;
+            font-size: 14px;
+            text-transform: uppercase;
+            flex: 1;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        #day-view .calendar-body {
+            display: flex;
+            width: 100%;
+            height: 600px;
+            overflow-y: auto;
+        }
+
+        .day-grid {
+            display: flex;
+            flex: 1;
+        }
+
+        .day-column {
+            flex: 1;
+        }
+
+        .day-hour {
+            height: 44px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        #week-view .calendar-header .day-header:first-child {
+            width: 60px;
+            flex: 0 0 60px;
+            background-color: #f8f9fa;
+        }
+
+        #day-view .calendar-header .day-header:first-child {
+            width: 60px;
+            flex: 0 0 60px;
+            background-color: #f8f9fa;
+        }
+
+        .calendar-day.past-date {
+            background-color: #f8f9fa;
+            color: #dadce0;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+            .calendar-day.past-date .date-number {
+                color: #ccc;
+            }
+
+        .week-hour.past-date {
+            background-color: #f8f9fa;
+            color: #dadce0;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .day-hour.past-date {
+            background-color: #f8f9fa;
+            color: #dadce0;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+            .week-hour.past-date .calendar-event-block,
+            .day-hour.past-date .calendar-event-block {
+                opacity: 0.5;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Current view and date tracking
+        let currentView = 'month';
+        let currentDate = new Date();
+        let calendarData = @Html.Raw(Json.Serialize(calendarEvents));
+        let hoverPreviewElement = null;
+        let lastHoveredHour = null;
+        let filters = {
+            jobId: '',
+            applicantName: ''
+        };
+        let filteredCalendarData = null; // Track filtered data separately
+        let isFiltered = false; // Track if filters are active
+        let currentApplicationId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+                console.log('Calendar data structure:', calendarData);
+        if (calendarData && calendarData.length > 0) {
+            console.log('First event:', calendarData[0]);
+        }
+            initializeCalendar();
+            setupEventListeners();
+            setupFilterHandlers();
+
+                // Initialize filter state
+        filteredCalendarData = null;
+        isFiltered = false;
+        });
+
+                function setupFilterHandlers() {
+            // Applicant name AND job title search
+            const applicantInput = document.getElementById('filterApplicantName');
+            applicantInput.addEventListener('input', debounce(function() {
+                filters.applicantName = applicantInput.value;
+                filterCalendarData();
+            }, 300));
+
+            // Clear applicant search
+            document.getElementById('clearApplicantSearch').addEventListener('click', function() {
+                applicantInput.value = '';
+                filters.applicantName = '';
+                filterCalendarData();
+            });
+
+            // Job filter
+            document.getElementById('filterJobId').addEventListener('change', function() {
+                filters.jobId = this.value;
+                filterCalendarData();
+            });
+
+            // Clear all filters button
+            document.getElementById('clearAllFilters').addEventListener('click', function() {
+                // Reset search input
+                document.getElementById('filterApplicantName').value = '';
+                filters.applicantName = '';
+
+                // Reset job filter
+                document.getElementById('filterJobId').value = '';
+                filters.jobId = '';
+
+                // Reset filter state
+                isFiltered = false;
+                filteredCalendarData = null;
+
+                // Re-render calendar with all data
+                renderCalendar();
+            });
+        }
+
+                function filterCalendarData() {
+            // Start with all data
+            let filteredData = calendarData;
+
+            console.log('Original data count:', calendarData.length);
+            console.log('Filters:', filters);
+
+            // Debug: log the first event's properties
+            if (calendarData.length > 0) {
+                console.log('First event properties:', Object.keys(calendarData[0]));
+                console.log('First event values:', calendarData[0]);
+            }
+
+            // Filter by search term (applicant name OR job title)
+            if (filters.applicantName) {
+                const searchTerm = filters.applicantName.toLowerCase();
+                filteredData = filteredData.filter(event => {
+                    const hasMatch = (event.jobSeekerName && event.jobSeekerName.toLowerCase().includes(searchTerm)) ||
+                                   (event.jobTitle && event.jobTitle.toLowerCase().includes(searchTerm));
+                    console.log('Event:', event.jobSeekerName, 'vs search:', searchTerm, 'match:', hasMatch);
+                    return hasMatch;
+                });
+            }
+
+            // Filter by job
+            if (filters.jobId) {
+                filteredData = filteredData.filter(event => {
+                    // Check if jobId exists - if not, this event can't match the filter
+                    if (!event.jobId) {
+                        console.log('Event missing jobId:', event);
+                        return false;
+                    }
+
+                    const hasMatch = event.jobId.toString() === filters.jobId.toString();
+                    console.log('Event jobId:', event.jobId, 'vs filter:', filters.jobId, 'match:', hasMatch);
+                    return hasMatch;
+                });
+            }
+
+            console.log('Filtered data count:', filteredData.length);
+
+            // FIXED: Use lowercase jobId instead of JobId
+            if (filteredData.length > 0) {
+                console.log('First filtered event jobId type:', typeof filteredData[0].jobId, 'value:', filteredData[0].jobId);
+            }
+            console.log('Filter JobId type:', typeof filters.jobId, 'value:', filters.jobId);
+
+            // Store filtered data separately
+            filteredCalendarData = filteredData;
+            isFiltered = filters.applicantName || filters.jobId;
+
+            // Re-render the calendar with filtered data
+            renderCalendarWithData(filteredData);
+
+            // Show message if no results
+            if (filteredData.length === 0) {
+                showNoResultsMessage();
+            }
+        }
+
+        function showNoResultsMessage() {
+            let calendarBody;
+
+            if (currentView === 'month') {
+                calendarBody = document.getElementById('month-calendar-body');
+            } else if (currentView === 'week') {
+                calendarBody = document.getElementById('week-calendar-body');
+            } else { // day view
+                calendarBody = document.getElementById('day-calendar-body');
+            }
+
+            // Clear existing content
+            calendarBody.innerHTML = '';
+
+            // Create and add no results message
+            const noResultsDiv = document.createElement('div');
+            noResultsDiv.className = 'no-interviews-found';
+            noResultsDiv.innerHTML = `
+                <i class="bi bi-calendar-x"></i>
+                <h4>No interviews found</h4>
+                <p>Try adjusting your search criteria or filters</p>
+            `;
+
+            calendarBody.appendChild(noResultsDiv);
+        }
+
+
+        // Debounce function to limit how often the filter is applied during typing
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+
+        function initializeCalendar() {
+            renderCalendar();
+            updateCalendarPeriodText();
+        }
+
+        function setupEventListeners() {
+            // View change buttons
+            document.querySelectorAll('.view-button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.view-button').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    currentView = this.dataset.view;
+                    document.querySelectorAll('.calendar-view').forEach(view => {
+                        view.classList.add('d-none');
+                    });
+                    document.getElementById(`${currentView}-view`).classList.remove('d-none');
+
+                    renderCalendar();
+                    updateCalendarPeriodText();
+                });
+            });
+
+            // Navigation buttons
+            document.getElementById('prev-period').addEventListener('click', function() {
+                navigatePeriod(-1);
+            });
+
+            document.getElementById('next-period').addEventListener('click', function() {
+                navigatePeriod(1);
+            });
+
+            // Today button
+            document.getElementById('today-button').addEventListener('click', function() {
+                const today = new Date();
+                currentDate = new Date(today);
+                renderCalendar();
+                updateCalendarPeriodText();
+            });
+
+            // Cancel interview button
+            document.getElementById('cancelInterviewBtn').addEventListener('click', function() {
+                showCancelConfirmation();
+            });
+
+            // Confirm cancellation button
+            document.getElementById('confirmCancelBtn').addEventListener('click', function() {
+                confirmCancellation();
+            });
+        }
+
+        function showCancelConfirmation() {
+            // Store the ID in the confirmation modal
+            document.getElementById('cancelConfirmModal').dataset.applicationId = currentApplicationId;
+
+            // Close the details modal
+            bootstrap.Modal.getInstance(document.getElementById('applicationModal')).hide();
+
+            // Show cancellation confirmation modal
+            new bootstrap.Modal(document.getElementById('cancelConfirmModal')).show();
+        }
+
+        function confirmCancellation() {
+            // Get the ID from the confirmation modal
+            const applicationId = document.getElementById('cancelConfirmModal').dataset.applicationId;
+            const reason = document.getElementById('cancellationReason').value;
+
+            if (!applicationId) {
+                alert('Error: Application ID not found.');
+                return;
+            }
+
+            fetch('/Application/CancelInterview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    applicationId: applicationId,
+                    cancellationReason: reason
+                })
+            })
+            .then(response => response.json())
+                .then(data => {
+            if (data.success) {
+                // Success - show your success toast and reload
+                bootstrap.Modal.getInstance(document.getElementById('cancelConfirmModal')).hide();
+
+                // Set success message for page reload
+                sessionStorage.setItem('showSuccess', 'true');
+                sessionStorage.setItem('successMessage', 'Interview cancelled successfully');
+                sessionStorage.setItem('successTitle', 'Success!');
+
+                window.location.reload();
+            } else {
+                // Error - show your error modal
+                showErrorModal('Error', data.message || 'Failed to cancel interview');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorModal('Error', 'Error cancelling interview');
+        });
+        }
+
+        function renderCalendarWithData(data) {
+            console.log('Rendering with data count:', data.length);
+            // Use the provided data for rendering
+            const originalData = calendarData;
+            calendarData = data;
+            renderCalendar();
+            calendarData = originalData; // Restore original data
+        }
+
+        function navigatePeriod(direction) {
+            if (currentView === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + direction);
+            } else if (currentView === 'week') {
+                currentDate.setDate(currentDate.getDate() + (direction * 7));
+            } else { // day view
+                currentDate.setDate(currentDate.getDate() + direction);
+            }
+
+            renderCalendar();
+            updateCalendarPeriodText();
+        }
+
+        function updateCalendarPeriodText() {
+            const periodElement = document.getElementById('calendar-period');
+
+            if (currentView === 'month') {
+                periodElement.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else if (currentView === 'week') {
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+
+                periodElement.textContent =
+                    weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' - ' +
+                    weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } else { // day view
+                periodElement.textContent = currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+
+        function renderCalendar() {
+            const dataToUse = isFiltered ? filteredCalendarData : calendarData;
+
+            // Check if there are any events to display FIRST
+            if (dataToUse && dataToUse.length === 0) {
+                showNoResultsMessage();
+                return;
+            }
+
+            // Temporarily swap data for rendering
+            const originalData = calendarData;
+            calendarData = dataToUse;
+
+            if (currentView === 'month') {
+                renderMonthView();
+            } else if (currentView === 'week') {
+                renderWeekView();
+            } else { // day view
+                renderDayView();
+            }
+
+            calendarData = originalData; // Restore original data
+        }
+
+        function renderMonthView() {
+            const calendarBody = document.getElementById('month-calendar-body');
+            calendarBody.innerHTML = '';
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Get first day of month and last day of month
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+
+            // Start from the Sunday of the week that contains the first day
+            const startDate = new Date(firstDay);
+            startDate.setDate(firstDay.getDate() - firstDay.getDay());
+
+            // Generate calendar days - always 42 days (6 weeks)
+            const current = new Date(startDate);
+            for (let i = 0; i < 42; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+
+                // Store the actual date components as data attributes (not ISO string)
+                dayElement.dataset.year = current.getFullYear();
+                dayElement.dataset.month = current.getMonth();
+                dayElement.dataset.day = current.getDate();
+
+                if (current.getMonth() !== month) {
+                    dayElement.classList.add('out-of-month');
+                }
+
+                // Check if this is today
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const currentDateOnly = new Date(current);
+                currentDateOnly.setHours(0, 0, 0, 0);
+                if (currentDateOnly.getTime() < today.getTime()) {
+                    dayElement.classList.add('past-date');
+                }
+                if (currentDateOnly.getTime() === today.getTime()) {
+                    dayElement.classList.add('today');
+                }
+
+                // Add date number
+                const dateNumber = document.createElement('div');
+                dateNumber.className = 'date-number';
+                dateNumber.textContent = current.getDate();
+                dayElement.appendChild(dateNumber);
+
+                // Add events for this day
+                const events = getEventsForDate(current);
+
+                // Show first 3 events fully
+                const eventsToShow = events.slice(0, 3);
+                const extraEventsCount = events.length - 3;
+
+                eventsToShow.forEach(event => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'calendar-event';
+                    eventElement.textContent = `${formatTime(event.startTime)} ${event.jobSeekerName.substring(0, 8)}${event.jobSeekerName.length > 8 ? '...' : ''}`;
+                    eventElement.title = `${event.jobSeekerName} - ${event.jobTitle} (${formatTime(event.startTime)})`;
+
+                    // Check if this specific event is in the past (matching day/week view logic)
+                    const eventDateTime = new Date(`${event.interviewStartDate}T${event.startTime}`);
+                    const now = new Date();
+
+                    if (eventDateTime < now) {
+                        eventElement.style.opacity = '0.5';
+                        eventElement.style.cursor = 'not-allowed';
+                        eventElement.style.pointerEvents = 'none';
+                    } else {
+                        // Add click event to show application details (only for future events)
+                        eventElement.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            showApplicationDetails(event.applicationId);
+                        });
+                    }
+
+                    dayElement.appendChild(eventElement);
+                });
+
+                // Show "+X more" indicator if there are more events
+                if (extraEventsCount > 0) {
+                    const moreEventsElement = document.createElement('div');
+                    moreEventsElement.className = 'calendar-event-more';
+                    moreEventsElement.textContent = `+${extraEventsCount} more`;
+                    moreEventsElement.title = `${extraEventsCount} more interviews on this day`;
+
+                    // Check if there are any future events in the extra events
+                    const extraEvents = events.slice(3);
+                    const hasFutureEvents = extraEvents.some(event => {
+                        const eventDateTime = new Date(`${event.interviewStartDate}T${event.startTime}`);
+                        return eventDateTime >= new Date();
+                    });
+
+                    if (hasFutureEvents) {
+                        moreEventsElement.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            // Switch to day view for this date
+                            currentDate = new Date(current);
+                            document.querySelector('[data-view="day"]').click();
+                        });
+                    } else {
+                        moreEventsElement.style.opacity = '0.5';
+                        moreEventsElement.style.cursor = 'not-allowed';
+                        moreEventsElement.style.pointerEvents = 'none';
+                    }
+
+                    dayElement.appendChild(moreEventsElement);
+                }
+
+                calendarBody.appendChild(dayElement);
+
+                // Move to next day
+                current.setDate(current.getDate() + 1);
+            }
+        }
+
+        function renderWeekView() {
+            const calendarBody = document.getElementById('week-calendar-body');
+            calendarBody.innerHTML = '';
+
+            // Create time column
+            const timeColumn = document.createElement('div');
+            timeColumn.className = 'time-column';
+
+            // Add empty cell for header alignment
+            const headerCell = document.createElement('div');
+            headerCell.className = 'time-label';
+            headerCell.style.height = '24px';
+            timeColumn.appendChild(headerCell);
+
+            // Create time labels (8 AM to 6 PM)
+            for (let hour = 8; hour <= 18; hour++) {
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.innerHTML = `<span>${formatHour(hour)}</span>`;
+                timeColumn.appendChild(timeLabel);
+            }
+
+            calendarBody.appendChild(timeColumn);
+
+            // Create week grid
+            const weekGrid = document.createElement('div');
+            weekGrid.className = 'week-grid';
+
+            // Get start of week (Sunday)
+            const weekStart = new Date(currentDate);
+            weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+
+            // Create day columns
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(weekStart);
+                day.setDate(weekStart.getDate() + i);
+
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'week-day';
+
+                // Add day header
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = day.getDate(); // Only the date number
+                dayHeader.style.textAlign = 'center';
+                dayHeader.style.padding = '4px';
+                dayHeader.style.fontSize = '11px';
+                dayHeader.style.color = '#70757a';
+
+                // Highlight today
+                const today = new Date();
+                if (day.toDateString() === today.toDateString()) {
+                    dayHeader.style.color = '#1a73e8';
+                    dayHeader.style.fontWeight = 'bold';
+                }
+
+                dayColumn.appendChild(dayHeader);
+
+                // Create hour slots
+                for (let hour = 8; hour <= 18; hour++) {
+                    const hourSlot = document.createElement('div');
+                    hourSlot.className = 'week-hour';
+        
+                    // Store date and hour as data attributes
+                    const dateStr = formatDateToYMD(day);
+                    hourSlot.dataset.date = dateStr;
+                    hourSlot.dataset.hour = hour;
+                    hourSlot.dataset.fullDate = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00`;
+        
+                    // Check if this time slot is in the past
+                    const slotDateTime = new Date(day);
+                    slotDateTime.setHours(hour, 0, 0, 0);
+                    const now = new Date();
+        
+                    if (slotDateTime < now) {
+                        hourSlot.classList.add('past-date');
+                    }
+
+                    dayColumn.appendChild(hourSlot);
+                }
+
+                weekGrid.appendChild(dayColumn);
+            }
+
+            calendarBody.appendChild(weekGrid);
+            renderWeekViewEvents();
+
+        }
+
+        function renderWeekViewEvents() {
+            const weekStart = new Date(currentDate);
+            weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+
+            // Process each day of the week
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(weekStart);
+                day.setDate(weekStart.getDate() + i);
+
+                // Get events for this day
+                const dayEvents = getEventsForDate(day);
+
+                // Process each event
+                dayEvents.forEach(event => {
+                    const eventStartTime = event.startTime;
+                    const eventHour = parseInt(eventStartTime.split(':')[0]);
+
+                    // Only show events between 8 AM and 6 PM
+                    if (eventHour >= 8 && eventHour <= 18) {
+                        // Find the hour slot for this event
+                        const hourSlot = document.querySelector(`.week-hour[data-date="${event.interviewStartDate}"][data-hour="${eventHour}"]`);
+
+                        if (hourSlot) {
+                            const eventElement = document.createElement('div');
+                            eventElement.className = 'calendar-event-block';
+                            eventElement.textContent = `${formatTime(event.startTime)} ${event.jobSeekerName}`;
+                            eventElement.title = `${event.jobSeekerName} - ${event.jobTitle} (${formatTime(event.startTime)})`;
+
+                            // Position the event block (adjust height based on duration if needed)
+                            eventElement.style.top = '4px'; // Adjust based on minutes if needed
+                            eventElement.style.height = '36px'; // Default 1 hour
+                            eventElement.style.width = '95%';
+
+                            // Add click event
+                            eventElement.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                showApplicationDetails(event.applicationId);
+                            });
+
+                            hourSlot.appendChild(eventElement);
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderDayView() {
+            const calendarBody = document.getElementById('day-calendar-body');
+            calendarBody.innerHTML = '';
+
+            // Update day header
+            document.getElementById('day-view-date').textContent =
+                currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+            // Create time column
+            const timeColumn = document.createElement('div');
+            timeColumn.className = 'time-column';
+
+            // Add empty cell for header alignment
+            const headerCell = document.createElement('div');
+            headerCell.className = 'time-label';
+            headerCell.style.height = '24px';
+            timeColumn.appendChild(headerCell);
+
+            // Create time labels (8 AM to 6 PM)
+            for (let hour = 8; hour <= 18; hour++) {
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.innerHTML = `<span>${formatHour(hour)}</span>`;
+                timeColumn.appendChild(timeLabel);
+            }
+
+            calendarBody.appendChild(timeColumn);
+
+            // Create day grid
+            const dayGrid = document.createElement('div');
+            dayGrid.className = 'day-grid';
+
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'day-column';
+
+            // Add day header (empty for alignment)
+            const dayHeader = document.createElement('div');
+            dayHeader.style.height = '24px';
+            dayHeader.style.borderBottom = '1px solid #e0e0e0';
+            dayColumn.appendChild(dayHeader);
+
+            // Create hour slots
+            for (let hour = 8; hour <= 18; hour++) {
+        const hourSlot = document.createElement('div');
+        hourSlot.className = 'day-hour';
+
+        // Store date and hour as data attributes
+        const dateStr = formatDateToYMD(currentDate);
+        hourSlot.dataset.date = dateStr;
+        hourSlot.dataset.hour = hour;
+        hourSlot.dataset.fullDate = `${dateStr}T${hour.toString().padStart(2, '0')}:00:00`;
+
+        // Check if this time slot is in the past
+        const slotDateTime = new Date(currentDate);
+        slotDateTime.setHours(hour, 0, 0, 0);
+        const now = new Date();
+
+        if (slotDateTime < now) {
+            hourSlot.classList.add('past-date');
+        }
+
+                dayColumn.appendChild(hourSlot);
+            }
+
+            dayGrid.appendChild(dayColumn);
+            calendarBody.appendChild(dayGrid);
+            renderDayViewEvents();
+        }
+
+                function renderDayViewEvents() {
+            // Get events for the current day
+            const dayEvents = getEventsForDate(currentDate);
+
+            // Process each event
+            dayEvents.forEach(event => {
+                const eventStartTime = event.startTime;
+                const eventHour = parseInt(eventStartTime.split(':')[0]);
+
+                // Only show events between 8 AM and 6 PM
+                if (eventHour >= 8 && eventHour <= 18) {
+                    // Find the hour slot for this event
+                    const hourSlot = document.querySelector(`.day-hour[data-date="${event.interviewStartDate}"][data-hour="${eventHour}"]`);
+
+                    if (hourSlot) {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = 'calendar-event-block';
+                        eventElement.textContent = `${formatTime(event.startTime)} ${event.jobSeekerName}`;
+                        eventElement.title = `${event.jobSeekerName} - ${event.jobTitle} (${formatTime(event.startTime)})`;
+
+                        // Position the event block
+                        eventElement.style.top = '4px';
+                        eventElement.style.height = '36px';
+                        eventElement.style.width = '100%';
+
+                        // Add click event
+                        eventElement.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            showApplicationDetails(event.applicationId);
+                        });
+
+                        hourSlot.appendChild(eventElement);
+                    }
+                }
+            });
+        }
+
+        function getEventsForDate(date) {
+            const dataToUse = isFiltered ? filteredCalendarData : calendarData;
+            // Format the date as local YYYY-MM-DD for comparison
+            const dateStr = formatDateToYMD(date);
+            return dataToUse.filter(event => {
+                return event.interviewStartDate === dateStr;
+            });
+        }
+
+        function getEventsForDateAndHour(date, hour) {
+            const dataToUse = isFiltered ? filteredCalendarData : calendarData;
+            const dateStr = formatDateToYMD(date);
+            return dataToUse.filter(event => {
+                if (event.interviewStartDate !== dateStr) return false;
+                const eventHour = parseInt(event.startTime.split(':')[0]);
+                return eventHour === hour;
+            });
+        }
+
+        // Helper function to format date as YYYY-MM-DD in local time
+        function formatDateToYMD(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':');
+            const hour = parseInt(hours);
+            return hour > 12 ? `${hour - 12}:${minutes} PM` : `${hour}:${minutes} AM`;
+        }
+
+        function formatHour(hour) {
+            return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+        }
+
+        // Update your showApplicationDetails function
+        function showApplicationDetails(applicationId) {
+            currentApplicationId = applicationId; // Store for cancellation
+
+            // Make AJAX call to get application details
+            fetch(`/Application/GetApplicationDetails?id=${applicationId}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('applicationModalBody').innerHTML = html;
+
+                    // Set the edit link
+                    document.getElementById('editInterviewBtn').href =
+                        `/Application/ScheduleInterview?applicationId=${applicationId}`;
+
+                    // Show the modal
+                    const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error loading application details:', error);
+                    document.getElementById('applicationModalBody').innerHTML =
+                        '<div class="alert alert-danger">Error loading application details</div>';
+
+                    const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+                    modal.show();
+                });
+        }
+
+                // Helper function to show error modal (matching your existing style)
+        function showErrorModal(title, message) {
+            const errorBox = document.createElement('div');
+            errorBox.id = 'dynamicErrorBox';
+            errorBox.innerHTML = `
+                <div style="display: block; background: rgba(0,0,0,0.6);
+                            position: fixed; inset: 0; z-index: 9999;
+                            display: flex; justify-content: center; align-items: center;">
+                    <div style="background: #f87171; color: white; border-radius: 12px;
+                                padding: 25px 30px; text-align: center; width: 320px;
+                                box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+                                animation: popIn 0.3s ease-out;">
+                        <div style="font-size: 50px; margin-bottom: 15px;">😟</div>
+                        <h2 style="margin: 0 0 10px; font-size: 1.5rem;">${title}</h2>
+                        <p style="font-size: 0.95rem; margin-bottom: 20px;">${message}</p>
+                        <button onclick="document.getElementById('dynamicErrorBox').remove()"
+                                style="background: white; color: #b91c1c; border: none;
+                                       padding: 10px 25px; border-radius: 50px;
+                                       font-size: 1rem; cursor: pointer;">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(errorBox);
+        }
+
+        // Helper function to show success message on page load
+        function checkForStoredMessages() {
+            if (sessionStorage.getItem('showSuccess') === 'true') {
+                // Create success toast
+                const successToast = document.createElement('div');
+                successToast.className = 'success-toast';
+                successToast.innerHTML = `
+                    <div class="success-card">
+                        <div class="icon">🥳</div>
+                        <h2>${sessionStorage.getItem('successTitle') || 'Success!'}</h2>
+                        <p>${sessionStorage.getItem('successMessage') || ''}</p>
+                    </div>
+                `;
+                document.body.appendChild(successToast);
+
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    if (successToast.parentNode) {
+                        successToast.remove();
+                    }
+                }, 5000);
+
+                // Clear storage
+                sessionStorage.removeItem('showSuccess');
+                sessionStorage.removeItem('successMessage');
+                sessionStorage.removeItem('successTitle');
+            }
+        }
+
+        // Call this on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkForStoredMessages();
+            // ... your other initialization code ...
+        });
+    </script>
+}

@@ -1,0 +1,430 @@
+﻿@model List<JobRecruitment.Models.ViewModels.UnifiedReportViewModel>
+@{
+    ViewData["Title"] = "User and Employer Report Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="@Url.Action("ExportReports")" class="btn btn-primary">
+                            <i class="bi bi-download"></i> Export Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@ViewBag.TotalReports</h4>
+                            <p class="card-text">TOTAL REPORTS</p>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-flag fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@ViewBag.UserReportCount</h4>
+                            <p class="card-text">USER REPORTS</p>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-person-x fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@ViewBag.EmployerReportCount</h4>
+                            <p class="card-text">EMPLOYER REPORTS</p>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-building fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">@ViewBag.RecentReports</h4>
+                            <p class="card-text">RECENT (7 DAYS)</p>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-clock fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="searchTerm" id="searchTerm"
+                                   value="@ViewBag.SearchTerm" placeholder="Search reports...">
+                        </div>
+                        <!-- Alternative cleaner approach using SelectList -->
+                        <div class="col-md-3">
+                            <label class="form-label">Report Type</label>
+                            @Html.DropDownList("filterType", new SelectList(new List<object>
+                            {
+                                new { Value = "", Text = "All Types" },
+                                                        new { Value = "UserReport", Text = "User Reports" },
+                                                        new { Value = "EmployerReport", Text = "Employer Reports" }
+                                                        }, "Value", "Text", ViewBag.FilterType), new { @class = "form-select", id = "filterType" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            @Html.DropDownList("filterStatus", new SelectList(new List<object>
+                                                        {
+                                new { Value = "", Text = "All Status" },
+                                                        new { Value = "Active", Text = "Active" },
+                                                        new { Value = "Blocked", Text = "Blocked" }
+                                                        }, "Value", "Text", ViewBag.FilterStatus), new { @class = "form-select", id = "filterStatus" })
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" id="filterBtn" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Filter
+                            </button>
+                            <button type="button" id="clearBtn" class="btn btn-secondary">
+                                <i class="bi bi-x"></i> Clear
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center py-3" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading reports...</p>
+    </div>
+
+    <!-- Reports Table Container -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div id="reportsContainer">
+                        @Html.Partial("_ReportsTable", Model)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script>
+        var currentPage = 1;
+
+        $(document).ready(function() {
+            // Initialize event handlers
+            initializeEventHandlers();
+
+            // Set current page from ViewBag
+            currentPage = @ViewBag.CurrentPage;
+        });
+
+        function initializeEventHandlers() {
+            // Filter button click
+            $('#filterBtn').on('click', function(e) {
+                e.preventDefault();
+                currentPage = 1; // Reset to first page
+                loadReports();
+            });
+
+            // Clear button click
+            $('#clearBtn').on('click', function(e) {
+                e.preventDefault();
+                $('#searchTerm').val('');
+                $('#filterType').val('');
+                $('#filterStatus').val('');
+                currentPage = 1;
+                loadReports();
+            });
+
+            // Enter key on search input
+            $('#searchTerm').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    currentPage = 1;
+                    loadReports();
+                }
+            });
+
+            // Debounce search input
+            let searchTimeout;
+            $('#searchTerm').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    currentPage = 1;
+                    loadReports();
+                }, 500);
+            });
+
+            // Filter dropdowns change
+            $('#filterType, #filterStatus').on('change', function() {
+                currentPage = 1;
+                loadReports();
+            });
+        }
+
+        function loadReports(page = currentPage) {
+            showLoading();
+
+            var searchTerm = $('#searchTerm').val();
+            var filterType = $('#filterType').val();
+            var filterStatus = $('#filterStatus').val();
+
+            $.ajax({
+                url: '@Url.Action("LoadReports", "Admin")',
+                type: 'GET',
+                data: {
+                    searchTerm: searchTerm,
+                    filterType: filterType,
+                    filterStatus: filterStatus,
+                    page: page,
+                    pageSize: 10
+                },
+                success: function(data) {
+                    $('#reportsContainer').html(data);
+                    currentPage = page;
+                    hideLoading();
+
+                    // Update URL without page refresh
+                    var newUrl = updateUrlParameter(window.location.href, 'page', page);
+                    newUrl = updateUrlParameter(newUrl, 'searchTerm', searchTerm);
+                    newUrl = updateUrlParameter(newUrl, 'filterType', filterType);
+                    newUrl = updateUrlParameter(newUrl, 'filterStatus', filterStatus);
+                    history.replaceState(null, null, newUrl);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading reports:', error);
+                    hideLoading();
+                    $('#reportsContainer').html('<div class="alert alert-danger">Error loading reports. Please try again.</div>');
+                }
+            });
+        }
+
+        // Pagination click handler (delegated event)
+        $(document).on('click', '.pagination .page-link', function(e) {
+            e.preventDefault();
+            var page = $(this).data('page');
+            if (page && page !== currentPage) {
+                loadReports(page);
+            }
+        });
+
+        function showLoading() {
+            $('#loadingIndicator').show();
+            $('#reportsContainer').hide();
+        }
+
+        function hideLoading() {
+            $('#loadingIndicator').hide();
+            $('#reportsContainer').show();
+        }
+
+        function updateUrlParameter(url, param, paramVal) {
+            var newAdditionalURL = "";
+            var tempArray = url.split("?");
+            var baseURL = tempArray[0];
+            var additionalURL = tempArray[1];
+            var temp = "";
+            if (additionalURL) {
+                tempArray = additionalURL.split("&");
+                for (var i = 0; i < tempArray.length; i++) {
+                    if (tempArray[i].split('=')[0] != param) {
+                        newAdditionalURL += temp + tempArray[i];
+                        temp = "&";
+                    }
+                }
+            }
+            if (paramVal) {
+                var rows_txt = temp + "" + param + "=" + paramVal;
+                return baseURL + "?" + newAdditionalURL + rows_txt;
+            } else {
+                return baseURL + "?" + newAdditionalURL;
+            }
+        }
+
+        // Entity action functions
+        function blockEntity(entityId, entityType) {
+            if (confirm('Are you sure you want to block this ' + entityType.toLowerCase() + '?')) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+
+             $.ajax({
+            url: '@Url.Action("BlockEntity", "Admin")',
+            type: 'POST',
+            data: {
+                id: entityId,
+                type: entityType,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    alert(data.message || entityType + ' blocked successfully');
+                    loadReports(currentPage);
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to block ' + entityType));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                alert('An error occurred while blocking the ' + entityType.toLowerCase());
+            }
+        });
+            }
+        }
+
+             function unblockEntity(entityId, entityType) {
+            if (confirm('Are you sure you want to unblock this ' + entityType.toLowerCase() + '?')) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: '@Url.Action("UnblockEntity", "Admin")',
+                    type: 'POST',
+                    data: {
+                        id: entityId,
+                        type: entityType,
+                        __RequestVerificationToken: token
+                    },
+                    success: function (data) {
+                        if (data.success) {
+                            alert(data.message || entityType + ' unblocked successfully');
+                            loadReports(currentPage); // Reload current page
+                        } else {
+                            alert('Error: ' + (data.message || 'Failed to unblock ' + entityType));
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while unblocking the ' + entityType.toLowerCase());
+                    }
+                });
+            }
+        }
+
+
+        function deleteReport(reportId) {
+            if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: '@Url.Action("DeleteReport")',
+                    type: 'POST',
+                    data: {
+                        id: reportId,
+                        __RequestVerificationToken: token
+                    },
+                    success: function(data) {
+                        if (data.success) {
+                            alert(data.message);
+                            loadReports(currentPage); // Reload current page
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting the report.');
+                    }
+                });
+            }
+        }
+
+        // Make functions globally available
+        window.blockEntity = blockEntity;
+        window.unblockEntity = unblockEntity;
+        window.deleteReport = deleteReport;
+    </script>
+}
+
+<style>
+    .card-icon {
+        opacity: 0.3;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    .btn-group .btn {
+        margin-right: 0.25rem;
+    }
+
+        .btn-group .btn:last-child {
+            margin-right: 0;
+        }
+
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #loadingIndicator {
+        color: #6c757d;
+    }
+
+    .pagination .page-link {
+        cursor: pointer;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        cursor: not-allowed;
+    }
+</style>

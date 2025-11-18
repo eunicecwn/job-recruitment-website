@@ -1,0 +1,574 @@
+﻿@model JobRecruitment.Models.AdminDashboardViewModel
+
+@{
+    ViewBag.Title = "Admin Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@* Link to external CSS file *@
+<link rel="stylesheet" href="~/css/admin.css" />
+
+@* Add CSRF token for AJAX requests *@
+<input name="__RequestVerificationToken" type="hidden" value="@Html.AntiForgeryToken().ToString()" />
+
+@* Loading Overlay *@
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+@* Error Display *@
+<div class="error-message" id="errorMessage">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <span id="errorText"></span>
+</div>
+
+@* Error Display *@
+@if (Model.HasError)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Error:</strong> @Html.Encode(Model.ErrorMessage)
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* Filter Bar *@
+<div class="filter-bar">
+    <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">Date Range</label>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="date" data-value="7">Last 7 Days</button>
+                    <button class="filter-btn" data-filter="date" data-value="30">Last 30 Days</button>
+                    <button class="filter-btn" data-filter="date" data-value="90">Last 3 Months</button>
+                    <button class="filter-btn" data-filter="date" data-value="180">Last 6 Months</button>
+                </div>
+                <div class="custom-date-range" id="customDateRange">
+                    <div class="date-inputs">
+                        <input type="date" id="startDate" />
+                        <span>to</span>
+                        <input type="date" id="endDate" />
+                        <button class="apply-filters-btn" onclick="applyCustomDate()">Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">User Type</label>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="usertype" data-value="all">All Users</button>
+                    <button class="filter-btn" data-filter="usertype" data-value="jobseekers">Job Seekers</button>
+                    <button class="filter-btn" data-filter="usertype" data-value="employers">Employers</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="status" data-value="all">All Status</button>
+                    <button class="filter-btn" data-filter="status" data-value="active">Active Only</button>
+                    <button class="filter-btn" data-filter="status" data-value="inactive">Inactive Only</button>
+                    <button class="filter-btn" data-filter="status" data-value="pending">Pending</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <button class="apply-filters-btn" id="applyFiltersBtn" onclick="applyAllFilters()">
+                <i class="bi bi-filter me-2"></i>Apply Filters
+            </button>
+            <a href="#" class="reset-filters" onclick="resetAllFilters()">Reset All</a>
+            <span class="text-muted ms-3" id="filterStatus">Showing all data</span>
+        </div>
+    </div>
+</div>
+
+@* Statistics Cards *@
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="admin-stat-card admin-stat-primary">
+            <div class="admin-stat-content">
+                <div>
+                    <div class="admin-stat-number" id="totalUsersCard">@Model.Stats.TotalUsers</div>
+                    <h5 class="admin-stat-title">Total Users</h5>
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="bi bi-people fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="admin-stat-card admin-stat-success">
+            <div class="admin-stat-content">
+                <div>
+                    <div class="admin-stat-number" id="totalEmployersCard">@Model.Stats.TotalEmployers</div>
+                    <h5 class="admin-stat-title">Employers</h5>
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="bi bi-building fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="admin-stat-card admin-stat-info">
+            <div class="admin-stat-content">
+                <div>
+                    <div class="admin-stat-number" id="totalJobSeekersCard">@Model.Stats.TotalJobSeekers</div>
+                    <h5 class="admin-stat-title">Job Seekers</h5>
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="bi bi-person-badge fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="admin-stat-card admin-stat-warning">
+            <div class="admin-stat-content">
+                <div>
+                    <div class="admin-stat-number" id="totalJobsCard">@Model.Stats.TotalJobs</div>
+                    <h5 class="admin-stat-title">Total Jobs</h5>
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="bi bi-briefcase fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6 col-md-6">
+        <div class="admin-stat-card admin-stat-secondary">
+            <div class="admin-stat-content">
+                <div>
+                    <div class="admin-stat-number" id="totalApplicationsCard">@Model.Stats.TotalApplications</div>
+                    <h5 class="admin-stat-title">Total Applications</h5>
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="bi bi-file-earmark-text fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-md-6">
+        <div class="admin-stat-card admin-stat-danger">
+            <div class="admin-stat-content">
+                <div>
+                    <div class="admin-stat-number" id="pendingEmployersCard">@Model.Stats.PendingEmployers</div>
+                    <h5 class="admin-stat-title">Pending Approvals</h5>
+                    @if (Model.Stats.PendingEmployers > 0)
+                    {
+                        <span class="admin-urgent-badge">Needs Attention</span>
+                    }
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="bi bi-clock fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Charts Section - Standard PDF Export Only *@
+<div class="row g-4 mb-4">
+    @* User Registration Trends *@
+    <div class="col-lg-8">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="bi bi-graph-up text-primary me-2"></i>
+                    User Registration Trends
+                    <small class="text-muted" id="chartDateRange">(Last 6 Months)</small>
+                </h3>
+                <div class="d-flex gap-3 align-items-center">
+                    <span class="badge bg-primary">Job Seekers</span>
+                    <span class="badge bg-success">Employers</span>
+                    @* Standard PDF Export Button *@
+                    <button class="pdf-export-btn" onclick="exportUserTrendsChartPdf()" title="Export Chart to PDF">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+            @if (Model.ChartData?.MonthLabels?.Any() == true)
+            {
+                <canvas id="userTrendsChart" style="max-height: 300px;"></canvas>
+            }
+            else
+            {
+                <div class="no-data-message">
+                    <i class="bi bi-graph-up fs-1 d-block mb-3"></i>
+                    <p>Chart data is being prepared...</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* User Distribution *@
+    <div class="col-lg-4">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="bi bi-pie-chart text-info me-2"></i>
+                    User Distribution
+                </h3>
+                @* Standard PDF Export Button *@
+                <button class="pdf-export-btn" onclick="exportUserDistributionChartPdf()" title="Export Chart to PDF">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </button>
+            </div>
+            @if (Model.Stats != null)
+            {
+                <canvas id="userDistributionChart" style="max-height: 300px;"></canvas>
+            }
+            else
+            {
+                <div class="no-data-message">
+                    <i class="bi bi-pie-chart fs-1 d-block mb-3"></i>
+                    <p>Chart data is being prepared...</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    @* Job Status Chart *@
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">
+                    <i class="bi bi-clipboard-data text-secondary me-2"></i>
+                    Job Status Overview
+                </h3>
+                @* Standard PDF Export Button *@
+                <button class="pdf-export-btn" onclick="exportJobStatusChartPdf()" title="Export Chart to PDF">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </button>
+            </div>
+            @if (Model.ChartData?.JobStats != null)
+            {
+                <canvas id="jobStatusChart" style="max-height: 300px;"></canvas>
+            }
+            else
+            {
+                <div class="no-data-message">
+                    <i class="bi bi-clipboard-data fs-1 d-block mb-3"></i>
+                    <p>Chart data is being prepared...</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* Analysis Tables - Standard PDF Export Only *@
+<div class="row g-4 mb-4">
+    @* Top Employers Table *@
+    <div class="col-lg-6">
+        <div class="analysis-table">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="bi bi-trophy text-warning me-2"></i>
+                    Top Performing Employers
+                </h3>
+                <div class="table-filters">
+                    <div class="chart-filter-item">
+                        <label class="chart-filter-label">Show:</label>
+                        <select class="count-selector" id="employersCount" onchange="updateEmployersTable()">
+                            <option value="3">Top 3</option>
+                            <option value="5">Top 5</option>
+                            <option value="10" selected>Top 10</option>
+                            <option value="20">Top 20</option>
+                            <option value="all">Show All</option>
+                        </select>
+                    </div>
+
+                    <div class="chart-filter-item">
+                        <label class="chart-filter-label">Rank by:</label>
+                        <select class="sort-selector" id="employersSort" onchange="updateEmployersTable()">
+                            <option value="success_rate">Success Rate</option>
+                            <option value="total_applications">Total Applications</option>
+                            <option value="jobs_posted">Jobs Posted</option>
+                        </select>
+                    </div>
+
+                    <button class="refresh-btn" onclick="refreshEmployersData()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+
+                    @* Standard PDF Export Button *@
+                    <button class="pdf-export-btn" onclick="exportEmployersPdf()" title="Export to PDF">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Rank</th>
+                            <th>Company</th>
+                            <th>Jobs Posted</th>
+                            <th>Applications</th>
+                            <th>Success Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topEmployersTable">
+                        @if (Model.TopEmployers?.Any() == true)
+                        {
+                            @foreach (var employer in Model.TopEmployers.Take(10))
+                            {
+                                <tr>
+                                    <td><span class="badge bg-primary">#@(Model.TopEmployers.ToList().IndexOf(employer) + 1)</span></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary rounded-circle me-2" style="width: 8px; height: 8px;"></div>
+                                            @Html.Encode(employer.CompanyName ?? "Unknown Company")
+                                        </div>
+                                    </td>
+                                    <td>@employer.JobsPosted</td>
+                                    <td>@employer.TotalApplications</td>
+                                    <td>
+                                        @{
+                                            var successRate = employer.SuccessRate;
+                                            var trendClass = successRate >= 70 ? "trend-up" : successRate >= 50 ? "trend-stable" : "trend-down";
+                                            var trendIcon = successRate >= 70 ? "bi-arrow-up" : successRate >= 50 ? "bi-dash" : "bi-arrow-down";
+                                        }
+                                        <span class="@trendClass">
+                                            <i class="bi @trendIcon"></i> @successRate.ToString("F0")%
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                    No employer data available yet
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Job Seekers Table *@
+<div class="row g-4 mb-4">
+    <div class="col-lg-12">
+        <div class="analysis-table">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="bi bi-person-badge text-primary me-2"></i>
+                    Job Seekers Performance
+                </h3>
+                <div class="table-filters">
+                    <div class="chart-filter-item">
+                        <label class="chart-filter-label">Show:</label>
+                        <select class="count-selector" id="seekersCount" onchange="updateSeekersTable()">
+                            <option value="3">Top 3</option>
+                            <option value="5">Top 5</option>
+                            <option value="10" selected>Top 10</option>
+                            <option value="20">Top 20</option>
+                            <option value="50">Top 50</option>
+                        </select>
+                    </div>
+
+                    <div class="chart-filter-item">
+                        <label class="chart-filter-label">Performance:</label>
+                        <select class="sort-selector" id="seekersSort" onchange="updateSeekersTable()">
+                            <option value="most_active">Most Active</option>
+                            <option value="least_active">Least Active</option>
+                            <option value="highest_success">Highest Success Rate</option>
+                            <option value="most_applications">Most Applications</option>
+                            <option value="recent_joins">Recent Joins</option>
+                        </select>
+                    </div>
+
+                    <button class="refresh-btn" onclick="refreshSeekersData()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+
+                    @* Standard PDF Export Button *@
+                    <button class="pdf-export-btn" onclick="exportJobSeekersPdf()" title="Export to PDF">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Applications Sent</th>
+                            <th>Interview Rate</th>
+                            <th>Last Activity</th>
+                            <th>Profile Completion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="seekersTableBody">
+                        <!-- Data will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split fs-3 d-block mb-2"></i>
+                                Loading job seekers data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Recent Activities *@
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="analysis-table">
+            <div class="table-header">
+                <h3 class="table-title">
+                    <i class="bi bi-activity text-success me-2"></i>
+                    Recent Platform Activity
+                </h3>
+                <div class="table-filters">
+                    @* Standard PDF Export Button *@
+                    <button class="pdf-export-btn" onclick="exportRecentActivitiesPdf()" title="Export to PDF">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Activity Type</th>
+                            <th>User/Company</th>
+                            <th>Description</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentActivitiesTable">
+                        @if (Model.RecentActivities?.Any() == true)
+                        {
+                            @foreach (var activity in Model.RecentActivities)
+                            {
+                                <tr>
+                                    <td>
+                                        @{
+                                            var activityType = activity.ActivityType ?? "";
+                                            var badgeClass = activityType switch
+                                            {
+                                                "Registration" => "bg-primary",
+                                                "JobPosted" => "bg-success",
+                                                "Application" => "bg-info",
+                                                "CompanyUpdate" => "bg-warning",
+                                                "Report" => "bg-secondary",
+                                                _ => "bg-secondary"
+                                            };
+
+                                            var iconClass = activityType switch
+                                            {
+                                                "Registration" => "bi-person-plus",
+                                                "JobPosted" => "bi-briefcase",
+                                                "Application" => "bi-file-text",
+                                                "CompanyUpdate" => "bi-building",
+                                                "Report" => "bi-flag",
+                                                _ => "bi-info-circle"
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">
+                                            <i class="bi @iconClass me-1"></i>
+                                            @Html.Encode(activity.ActivityTypeDisplay ?? "Unknown")
+                                        </span>
+                                    </td>
+                                    <td>@Html.Encode(activity.UserOrCompany ?? "Unknown")</td>
+                                    <td>@Html.Encode(activity.Description ?? "No description")</td>
+                                    <td>@Html.Encode(activity.TimeAgo ?? "Unknown time")</td>
+                                    <td>
+                                        @{
+                                            var status = activity.Status ?? "";
+                                            var statusBadge = status switch
+                                            {
+                                                "Active" => "bg-success",
+                                                "Published" => "bg-info",
+                                                "Pending" => "bg-warning",
+                                                "Updated" => "bg-success",
+                                                "NeedsReview" => "bg-danger",
+                                                _ => "bg-secondary"
+                                            };
+                                        }
+                                        <span class="badge @statusBadge">@Html.Encode(activity.StatusDisplay ?? "Unknown")</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-clock fs-3 d-block mb-2"></i>
+                                    No recent activities found
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/admindash.js"></script>
+    <script>
+        // Standard initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                console.log('Initializing AdminDashboard...');
+
+                // Check if required data exists
+                const chartData = @Html.Raw(Json.Serialize(Model.ChartData));
+                const statsData = @Html.Raw(Json.Serialize(Model.Stats));
+
+                if (!chartData) {
+                    console.warn('Chart data is null or undefined');
+                }
+
+                if (!statsData) {
+                    console.warn('Stats data is null or undefined');
+                }
+
+                // Initialize dashboard
+                AdminDashboard.init(chartData, statsData);
+                console.log('AdminDashboard initialized successfully');
+
+            } catch (error) {
+                console.error('Failed to initialize AdminDashboard:', error);
+
+                // Show user-friendly error message
+                const errorDiv = document.getElementById('errorMessage');
+                const errorText = document.getElementById('errorText');
+                if (errorDiv && errorText) {
+                    errorText.textContent = 'Dashboard initialization failed. Please refresh the page.';
+                    errorDiv.classList.add('show');
+                }
+            }
+        });
+    </script>
+}

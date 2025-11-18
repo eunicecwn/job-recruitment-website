@@ -1,0 +1,630 @@
+﻿@model JobRecruitment.Models.JobSeekerViewModels.JobSearchVm
+@{
+    ViewBag.Title = "Find Jobs";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var m = Model ?? new JobRecruitment.Models.JobSeekerViewModels.JobSearchVm();
+    m.Categories ??= new List<(string Id, string Name)>();
+    m.JobTypes ??= new List<(int Id, string Name)>();
+    m.Results ??= new List<JobRecruitment.Models.JobSeekerViewModels.JobSearchResultItemVm>();
+
+    var isAuth = User?.Identity?.IsAuthenticated == true;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const openModalEl = document.querySelector(".modal.show");
+            if (openModalEl && window.bootstrap) {
+                const inst = bootstrap.Modal.getInstance(openModalEl) || new bootstrap.Modal(openModalEl);
+                inst.hide();
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/jobseeker.search.css" asp-append-version="true" />
+    <style>
+        /* Report modal */
+        .report-modal {
+            border: 0;
+            border-radius: 16px;
+            background: rgba(255,255,255,.82);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(20,16,60,.18)
+        }
+
+        .icon-pill {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg,#6d5efc,#4436f0);
+            color: #fff
+        }
+
+        .form-label {
+            font-weight: 600
+        }
+
+        .form-control {
+            border-radius: 12px
+        }
+
+            .form-control:focus {
+                border-color: #6d5efc;
+                box-shadow: 0 0 0 .2rem rgba(109,94,252,.15)
+            }
+
+        .callout {
+            background: #f7f7ff;
+            border: 1px solid #e7e7ff;
+            border-radius: 12px;
+            padding: .75rem 1rem;
+            color: #4a4a7a;
+            font-size: .95rem
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg,#6d5efc,#4f46e5);
+            border: 0;
+            border-radius: 10px
+        }
+
+        .btn-light {
+            border-radius: 10px
+        }
+
+        .sr-actions .btn {
+            min-width: 74px
+        }
+
+        .btn-report-done {
+            background: #198754;
+            border-color: #198754;
+            color: #fff
+        }
+
+            .btn-report-done:disabled {
+                opacity: .9
+            }
+    </style>
+}
+
+<div class="container-xxl">
+
+    <!-- Breadcrumb + Back -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-controller="JobSeeker" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    @* Optional server-side validation summary *@
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var kv in ViewData.ModelState)
+                {
+                    foreach (var err in kv.Value.Errors)
+                    {
+                        if (!string.IsNullOrWhiteSpace(err.ErrorMessage))
+                        {
+                            <li>@err.ErrorMessage</li>
+                        }
+                    }
+                }
+            </ul>
+        </div>
+    }
+
+    <div id="resultsHost">
+        @await Html.PartialAsync("~/Views/Shared/_SearchResults.cshtml", Model)
+    </div>
+</div>
+
+@section TopbarRight {
+    <div class="dropdown ms-2" id="filtersDropdown">
+        <button id="filtersBtn"
+                class="btn btn-outline-secondary"
+                type="button"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                data-bs-auto-close="false"
+                aria-expanded="false">
+            <i class="bi bi-sliders me-1"></i> Filters &amp; Sort
+        </button>
+
+        <div class="dropdown-menu dropdown-menu-end p-3" style="min-width:380px;" id="filtersMenu">
+            <form method="get" asp-controller="JobSearch" asp-action="Search" novalidate id="filtersForm">
+                <input type="hidden" name="open" value="1" />
+                <input type="hidden" name="Q" value="@m.Q" />
+
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Location</label>
+                    <input name="Location" value="@m.Location" class="form-control" placeholder="e.g. Kuala Lumpur" />
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="CategoryId" class="form-select">
+                        <option value="">All</option>
+                        @foreach (var c in m.Categories)
+                        {
+                            <option value="@c.Id" selected="@(m.CategoryId == c.Id)">@c.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Job type</label>
+                    <select name="JobType" class="form-select">
+                        <option value="">All</option>
+                        @foreach (var jt in m.JobTypes)
+                        {
+                            <option value="@jt.Id" selected="@(m.JobType == jt.Id)">@jt.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col">
+                        <label class="form-label fw-semibold">Min salary</label>
+                        <input name="MinSalary"
+                               value="@(m.MinSalary?.ToString() ?? "")"
+                               type="number" step="1" min="0"
+                               inputmode="numeric"
+                               class="form-control"
+                               autocomplete="off" />
+                    </div>
+                    <div class="col">
+                        <label class="form-label fw-semibold">Max salary</label>
+                        <input name="MaxSalary"
+                               value="@(m.MaxSalary?.ToString() ?? "")"
+                               type="number" step="1" min="0"
+                               inputmode="numeric"
+                               class="form-control"
+                               autocomplete="off" />
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center small mt-1 salary-inline-hints">
+                            <span class="text-muted d-flex align-items-center gap-1" data-helper-for="MinSalary">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Please enter digits only</span>
+                            </span>
+                            <span class="ms-auto d-flex gap-3">
+                                <span class="text-danger d-none" data-valmsg-for="MinSalary"></span>
+                                <span class="text-danger d-none" data-valmsg-for="MaxSalary"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Sort by</label>
+                    <select name="SortBy" class="form-select">
+                        <option value="recent" selected="@(string.IsNullOrEmpty(m.SortBy) || m.SortBy.Equals("recent", StringComparison.OrdinalIgnoreCase))">Most recent</option>
+                        <option value="salary_high" selected="@(string.Equals(m.SortBy, "salary_high", StringComparison.OrdinalIgnoreCase))">Salary: High to Low</option>
+                        <option value="salary_low" selected="@(string.Equals(m.SortBy, "salary_low", StringComparison.OrdinalIgnoreCase))">Salary: Low to High</option>
+                        <option value="title_az" selected="@(string.Equals(m.SortBy, "title_az", StringComparison.OrdinalIgnoreCase))">Title A–Z</option>
+                        <option value="title_za" selected="@(string.Equals(m.SortBy, "title_za", StringComparison.OrdinalIgnoreCase))">Title Z–A</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <a class="btn btn-link text-danger" href="@Url.Action("Search", "JobSearch", new { open = 1 })">Reset</a>
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@* Toasts container *@
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1080"></div>
+
+<!-- Report Job Modal -->
+<div class="modal fade" id="reportJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="reportJobForm" class="modal-content report-modal">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="icon-pill"><i class="bi bi-flag-fill"></i></div>
+                    <h5 class="modal-title fw-semibold mb-0">Report Job</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body pt-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="JobId" value="" />
+                <div class="mb-3">
+                    <label class="form-label">Reason <span class="text-danger">*</span></label>
+                    <input type="text" name="Reason" class="form-control form-control-lg" maxlength="100" required
+                           placeholder="e.g. Scam suspicion, duplicate post, misleading salary…" />
+                    <div class="form-text d-flex justify-content-between">
+                        <span>Please be concise and specific.</span>
+                        <span><span id="reasonCount">0</span>/100</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Additional details (optional)</label>
+                    <textarea name="Details" class="form-control" rows="4" maxlength="1500"
+                              placeholder="Share any helpful context, screenshots you noticed, links, etc."></textarea>
+                    <div class="form-text text-end"><span id="detailsCount">0</span>/1500</div>
+                </div>
+                <div class="callout">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Your report is sent privately to our admin team. Your contact info is attached automatically.
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-submit">
+                    <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                    Submit report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Apply modal host *@
+@await Html.PartialAsync("~/Views/JobSeekerActions/_ApplyHost.cshtml")
+
+@section Scripts {
+    <script>
+        // ---- Auth flag for client rendering
+        const JS_IS_AUTH = @isAuth.ToString().ToLowerInvariant();
+    </script>
+
+    <script>
+        // Keep search "Q" in sync with Filters & close dropdown on submit
+        (function () {
+            const filtersForm  = document.getElementById('filtersForm');
+            const filtersBtn   = document.getElementById('filtersBtn');
+            const filtersMenu  = document.getElementById('filtersMenu');
+
+            function getTopQ() {
+                const top = document.querySelector('#searchBarForm input[name="q"], #searchBarForm input[name="Q"], #searchBarForm input[type="search"], #searchBarForm input[type="text"]');
+                return (top?.value || "").trim();
+            }
+            function syncHiddenQ() {
+                if (!filtersForm) return;
+                let hidden = filtersForm.querySelector('input[name="Q"]');
+                const val = getTopQ();
+                if (val) {
+                    if (!hidden) {
+                        hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'Q';
+                        filtersForm.appendChild(hidden);
+                    }
+                    hidden.value = val;
+                } else if (hidden) {
+                    hidden.remove();
+                }
+            }
+            filtersBtn?.addEventListener('click', syncHiddenQ);
+            if (filtersForm) {
+                filtersForm.addEventListener('submit', function () {
+                    syncHiddenQ();
+                    filtersForm.querySelectorAll('input[name="open"]').forEach(n => n.remove());
+                    try {
+                        const dd = bootstrap.Dropdown.getOrCreateInstance(filtersBtn, { autoClose: true });
+                        dd.hide();
+                    } catch {}
+                    filtersMenu?.classList.remove('show');
+                    filtersBtn?.setAttribute('aria-expanded', 'false');
+                    document.querySelectorAll('.dropdown-backdrop').forEach(b => b.remove());
+                });
+            }
+        })();
+    </script>
+
+    <script>
+        // Report modal counters + AJAX submit
+        (function () {
+            const modalEl = document.getElementById('reportJobModal');
+            const form    = document.getElementById('reportJobForm');
+            if (!modalEl || !form) return;
+
+            const jobIdInput  = form.querySelector('input[name="JobId"]');
+            const reason      = form.querySelector('input[name="Reason"]');
+            const details     = form.querySelector('textarea[name="Details"]');
+            const reasonCount = document.getElementById('reasonCount');
+            const detailsCount= document.getElementById('detailsCount');
+            const submitBtn   = form.querySelector('.btn-submit');
+            const spinner     = submitBtn.querySelector('.spinner-border');
+
+            const updateCounter = (el, out) => out.textContent = (el.value || '').length;
+            ['input','change'].forEach(evt=>{
+                reason.addEventListener(evt, () => updateCounter(reason, reasonCount));
+                details.addEventListener(evt, () => updateCounter(details, detailsCount));
+            });
+            updateCounter(reason, reasonCount);
+            updateCounter(details, detailsCount);
+
+            modalEl.addEventListener('show.bs.modal', function (ev) {
+                const trigger = ev.relatedTarget;
+                const jid = trigger?.getAttribute('data-jobid') || trigger?.dataset?.jobid;
+                jobIdInput.value = jid || '';
+                form._lastTrigger = trigger || null;
+                reason.value = "";
+                details.value = "";
+                updateCounter(reason, reasonCount);
+                updateCounter(details, detailsCount);
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (!jobIdInput.value) { alert('Missing JobId.'); return; }
+                if (!reason.value.trim()) { reason.focus(); return; }
+
+                const fd = new URLSearchParams(new FormData(form));
+                spinner.classList.remove('d-none');
+                submitBtn.disabled = true;
+
+                fetch('@Url.Content("~/ReportJob")', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: fd
+                })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(res => {
+                    if (res?.success) {
+                        bootstrap.Modal.getInstance(modalEl)?.hide();
+                        const t = form._lastTrigger;
+                        if (t) {
+                            t.classList.remove('btn-outline-danger');
+                            t.classList.add('btn-report-done');
+                            t.disabled = true;
+                            t.textContent = 'Reported';
+                        }
+                        alert(res.message || 'Thanks for your report. We’ll review it shortly.');
+                    } else {
+                        alert(res?.message || 'Could not submit the report.');
+                    }
+                })
+                .catch(() => alert('Server error submitting the report.'))
+                .finally(() => {
+                    spinner.classList.add('d-none');
+                    submitBtn.disabled = false;
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('.report-btn[data-jobid]');
+                if (!btn) return;
+                if (!btn.getAttribute('data-bs-toggle')) {
+                    btn.setAttribute('data-bs-toggle', 'modal');
+                    btn.setAttribute('data-bs-target', '#reportJobModal');
+                }
+            });
+        })();
+    </script>
+
+    <script>
+        // Apply modal opener + initializer for the injected partial
+        (function () {
+            // called after we inject _ApplyPopup.cshtml HTML
+            window.initApplyModal = function () {
+                const host = document.getElementById('applyModalContent');
+                if (!host) return;
+
+                // keep checkbox groups' hidden Answer in sync
+                host.querySelectorAll('#applyForm .js-q-check').forEach(chk => {
+                    chk.addEventListener('change', () => {
+                        const hiddenName = chk.getAttribute('data-hidden-name');
+                        if (!hiddenName) return;
+                        const group = [...host.querySelectorAll('#applyForm .js-q-check[data-hidden-name="' + hiddenName + '"]')];
+                        const vals = group.filter(x => x.checked).map(x => x.value);
+                        const hidden = host.querySelector('input[type="hidden"][name="' + hiddenName + '"]');
+                        if (hidden) hidden.value = vals.join(',');
+                    });
+                });
+
+                const form = host.querySelector('#applyForm');
+                if (!form) return;
+
+                // prevent double-binding if we re-render the partial
+                form._bound && form.removeEventListener('submit', form._bound);
+                form._bound = async function (e) {
+                    e.preventDefault();
+
+                    const fd = new FormData(form);
+                    const r = await fetch(form.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const ct = (r.headers.get('content-type') || '').toLowerCase();
+
+                    if (ct.includes('application/json')) {
+                        const data = await r.json();
+
+                        if (data.success) {
+                            // close modal
+                            try {
+                                const modalEl = document.getElementById('applyModal');
+                                bootstrap.Modal.getInstance(modalEl)?.hide();
+                            } catch { }
+
+                            // success popup (toast if available, else alert)
+                            (window.showToast ?? alert)(data.message || 'Application submitted successfully.', true);
+
+                            // brief pause so the user sees the popup, then follow redirect
+                            setTimeout(() => {
+                                window.location = data.redirectUrl || window.location.href;
+                            }, 900);
+                            return;
+                        }
+
+                        // invalid -> server returned the partial HTML (inside data.html)
+                        if (data.html) {
+                            host.innerHTML = data.html;
+                            // IMPORTANT: re-bind events on the newly injected HTML
+                            window.initApplyModal();
+                            return;
+                        }
+                    }
+
+                    // fallback: server returned HTML directly
+                    const html = await r.text();
+                    host.innerHTML = html;
+                    // re-bind on the new DOM
+                    window.initApplyModal();
+                };
+                form.addEventListener('submit', form._bound);
+            };
+
+            async function openApply(jobId) {
+                const modalEl = document.getElementById('applyModal');
+                const content = document.getElementById('applyModalContent');
+                if (!modalEl || !content) return;
+
+                content.innerHTML = `
+                  <div class="modal-header">
+                    <h5 class="modal-title">Apply</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+                    <p class="mt-2 mb-0">Loading form…</p>
+                  </div>`;
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+
+                try {
+                    const url = `/JobSeekerActions/ApplyPopup?jobId=${encodeURIComponent(jobId)}`;
+                    const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!resp.ok) throw new Error('Failed to load.');
+                    const html = await resp.text();
+                    content.innerHTML = html;
+
+                    // bind submit/checkbox handlers for the injected partial
+                    window.initApplyModal();
+                } catch {
+                    content.innerHTML = `
+                      <div class="modal-header">
+                        <h5 class="modal-title">Apply</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="alert alert-danger mb-0">Could not load the apply form. Please try again.</div>
+                      </div>`;
+                }
+            }
+
+            // opener (unchanged)
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('[data-apply-jobid], .js-apply');
+                if (!btn) return;
+                const jobId = btn.getAttribute('data-apply-jobid') || new URL(btn.href, location.origin).pathname.split('/').pop();
+                if (!jobId) return;
+                e.preventDefault();
+                openApply(jobId);
+            }, { capture: true });
+        })();
+    </script>
+
+
+
+    <script>
+        // Salary validation: Min/Max non-negative and Min ≤ Max. No red "digits only" error.
+        (function(){
+          const form = document.getElementById('filtersForm');
+          if (!form) return;
+
+          const minEl = form.querySelector('input[name="MinSalary"]');
+          const maxEl = form.querySelector('input[name="MaxSalary"]');
+          const msgMin = form.querySelector('[data-valmsg-for="MinSalary"]');
+          const msgMax = form.querySelector('[data-valmsg-for="MaxSalary"]');
+
+          function setMsg(el, text){
+            if (!el) return;
+            el.textContent = text || '';
+            el.classList.toggle('d-none', !text);
+          }
+
+          function parseNum(v){
+            const s = (v ?? '').trim();
+            if (s === '') return null;
+            const n = Number(s);
+            return Number.isFinite(n) ? n : null; // ignore non-numeric without red popup
+          }
+
+          function validate(){
+            setMsg(msgMin, ''); setMsg(msgMax, '');
+
+            const min = parseNum(minEl?.value);
+            const max = parseNum(maxEl?.value);
+
+            let ok = true;
+
+            if (min != null && min < 0) { setMsg(msgMin, 'Min salary cannot be negative.'); ok = false; }
+            if (max != null && max < 0) { setMsg(msgMax, 'Max salary cannot be negative.'); ok = false; }
+
+            if (ok && min != null && max != null && min > max) {
+              setMsg(msgMin, 'Min salary cannot exceed Max salary.');
+              setMsg(msgMax, 'Max salary must be greater than or equal to Min salary.');
+              ok = false;
+            }
+
+            return ok;
+          }
+
+          ['input','change','blur'].forEach(evt=>{
+            minEl?.addEventListener(evt, validate);
+            maxEl?.addEventListener(evt, validate);
+          });
+
+          form.addEventListener('submit', function(e){
+            if (!validate()){
+              e.preventDefault();
+              (minEl?.value?.trim() ? maxEl : minEl)?.focus();
+            }
+          });
+        })();
+    </script>
+
+    <script>
+        // global toast helper for search pages
+        window.showToast = function (msg, ok = true) {
+          let c = document.querySelector('.toast-container');
+          if (!c) {
+            c = document.createElement('div');
+            c.className = 'toast-container position-fixed top-0 end-0 p-3';
+            c.style.zIndex = '1080';
+            document.body.appendChild(c);
+          }
+          const el = document.createElement('div');
+          el.className = `toast align-items-center text-white ${ok ? 'bg-success' : 'bg-danger'} border-0 show`;
+          el.role = 'alert';
+          el.style.minWidth = '280px';
+          el.innerHTML = `
+            <div class="d-flex">
+              <div class="toast-body">${msg}</div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>`;
+          c.appendChild(el);
+          setTimeout(()=> el.remove(), 3500);
+        };
+    </script>
+}

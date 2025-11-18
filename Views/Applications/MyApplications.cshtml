@@ -1,0 +1,188 @@
+﻿@using JobRecruitment.Models
+@using JobRecruitment.Models.JobSeekerViewModels
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@model ApplicationsVm
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "My Applications";
+
+    // normalize paging inputs
+    var currPage = Math.Max(1, Model.Page);
+    var pageSize = Math.Max(1, Model.PageSize);
+    var totalItems = Math.Max(0, Model.Total);
+
+    // drive X.PagedList (counts-only)
+    var paged = new StaticPagedList<int>(
+        Enumerable.Empty<int>(),
+        currPage,
+        pageSize,
+        totalItems
+    );
+    Func<int, string> urlBuilder = p => Url.Action("MyApplications", "Applications", new { page = p })!;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css" />
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] as string ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null || TempData["Error"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css" />
+    <div class="error-toast">
+        <div class="error-card">
+            <div class="icon">⚠️</div>
+            <h2>@(TempData["ErrorTitle"] as string ?? "Error")</h2>
+            <p>@(TempData["ErrorMessage"] ?? TempData["Error"])</p>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <!-- Reuse the Search look & feel -->
+    <link rel="stylesheet" href="~/css/jobseeker.search.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pager.css" />
+    <style>
+        /* --- small adjustments for Applications --- */
+
+        /* Use the same grid and card names the Search page uses */
+        .job-grid {
+            margin-top: .5rem;
+        }
+
+        .job-card {
+            min-height: 180px;
+        }
+
+        /* Status badge size */
+        .badge.status {
+            font-size: .825rem;
+        }
+
+        /* Left-aligned pager (no gray bar) */
+        .pager-rail {
+            display: flex;
+            justify-content: flex-start;
+            margin-top: 12px;
+        }
+
+            .pager-rail .pagination {
+                margin-bottom: 0;
+            }
+
+        /* Tighten “View Details” min width to match Search buttons */
+        .job-card .btn {
+            min-width: 110px;
+        }
+
+        /* Meta list color */
+        .job-meta {
+            color: #4b5563;
+        }
+    </style>
+}
+
+<div class="container-xxl py-3">
+    <div class="d-flex align-items-center mb-3">
+        <h4 class="mb-0">My Applications</h4>
+        <span class="ms-2 text-muted">(@totalItems)</span>
+
+        <div class="ms-auto">
+            <a asp-controller="JobSearch" asp-action="Search" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-search me-1"></i> Find More Jobs
+            </a>
+        </div>
+    </div>
+
+    @if (!(Model.Items?.Any() ?? false))
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            You haven’t applied to any jobs yet.
+            <div class="mt-2">
+                <a asp-controller="JobSearch" asp-action="Search" class="btn btn-primary btn-sm">Browse Jobs</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Same grid / card classes as Search -->
+        <div class="job-grid">
+            @foreach (var x in Model.Items)
+            {
+                <article class="job-card" data-application-id="@x.Id">
+                    <!-- header -->
+                    <div class="job-card__head">
+                        <a class="job-card__title h5 mb-0 text-decoration-none"
+                           asp-controller="JobSearch" asp-action="Details" asp-route-id="@x.JobId">
+                            @x.JobTitle
+                        </a>
+                        <span class="badge status-badge @x.BadgeClass">@x.StatusText</span>
+                    </div>
+
+                    <!-- meta -->
+                    <ul class="job-meta">
+                        <li><i class="bi bi-building"></i><span>@x.CompanyName</span></li>
+                        <li>
+                            <i class="bi bi-calendar-check"></i>
+                            <span>Applied @x.AppliedLocal.ToString("dd MMM yyyy")</span>
+                        </li>
+                    </ul>
+
+                    <!-- actions pinned to bottom -->
+                    <div class="job-card__actions">
+                        <a class="btn btn-outline-primary btn-sm"
+                           asp-controller="Applications" asp-action="DetailsRoute" asp-route-id="@x.Id">
+                            View Details
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+    <!-- Left-aligned pager (same component settings as Search) -->
+    <div class="pager-rail">
+        <nav aria-label="My applications pages">
+            @Html.PagedListPager(
+            paged,
+            urlBuilder,
+                        new PagedListRenderOptions
+                        {
+                            LiElementClasses = new[] { "page-item" },
+                            PageClasses = new[] { "page-link" },
+                            UlElementClasses = new[] { "pagination", "pagination-sm" },
+                            DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                            DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                            DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                            DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                            MaximumPageNumbersToDisplay = 7
+                        })
+        </nav>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Close any open modal if a toast shows (same safety you had)
+        document.addEventListener("DOMContentLoaded", function () {
+            if (document.querySelector(".success-toast") || document.querySelector(".error-toast")) {
+                const openModalEl = document.querySelector(".modal.show");
+                if (openModalEl && window.bootstrap) {
+                    const inst = bootstrap.Modal.getInstance(openModalEl) || new bootstrap.Modal(openModalEl);
+                    inst.hide();
+                }
+                document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+                document.body.classList.remove("modal-open");
+            }
+        });
+    </script>
+}

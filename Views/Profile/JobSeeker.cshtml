@@ -1,0 +1,2215 @@
+﻿@model JobRecruitment.Models.JobSeekerViewModels.JobSeekerEditVm
+
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var completeness = (int)(ViewBag.ProfileCompleteness ?? 0);
+}
+@if (TempData["Success"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+            <p>@TempData["Success"]</p>
+        </div>
+    </div>
+}
+
+<style>
+    /* ===== JOB SEEKER PROFILE STYLES ===== */
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* Profile strength meter */
+    .js-profile-meter {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--light-gray);
+    }
+
+        .js-profile-meter .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .js-profile-meter .progress-bar-custom {
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .js-profile-meter .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .js-profile-meter .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+            .js-profile-meter .badge.bg-danger {
+                background: #FEF2F2 !important;
+                color: #DC2626 !important;
+            }
+
+            .js-profile-meter .badge.bg-warning {
+                background: #FFFBEB !important;
+                color: #D97706 !important;
+            }
+
+            .js-profile-meter .badge.bg-success {
+                background: #F0FDF4 !important;
+                color: #16A34A !important;
+            }
+
+    /* Section cards */
+    .section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--light-gray);
+        transition: box-shadow 0.2s ease;
+    }
+
+        .section:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .section-sub {
+        color: var(--gray);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Profile header */
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-info {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .profile-name {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-tag {
+        background: var(--primary-light);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .profile-details {
+        color: var(--gray);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+        .profile-details i {
+            width: 16px;
+            margin-right: 0.25rem;
+        }
+
+    /* Action buttons */
+    .action-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .action-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            color: white;
+        }
+
+    .btn-outline-primary {
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        background: transparent;
+    }
+
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+    /* Item rows */
+    .item-row {
+        display: flex;
+        justify-content: between;
+        align-items: flex-start;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+    .item-content {
+        flex: 1;
+    }
+
+    .item-title {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .item-subtitle {
+        color: var(--gray);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    /* Skill tags */
+    .skill-tag {
+        background: var(--bg-light);
+        border: 1px solid var(--light-gray);
+        border-radius: 20px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        color: var(--dark);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.25rem;
+        transition: all 0.2s ease;
+    }
+
+        .skill-tag:hover {
+            background: var(--primary-light);
+            color: white;
+            border-color: var(--primary-light);
+        }
+
+    /* Empty states */
+    .empty-hint {
+        color: var(--gray);
+        font-style: italic;
+        padding: 1rem 0;
+    }
+
+    /* Modal styles */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--light-gray);
+        padding: 1.5rem;
+    }
+
+    .modal-title {
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--light-gray);
+        padding: 1rem 1.5rem;
+    }
+
+    /* Form styles */
+    .form-label {
+        font-weight: 500;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid var(--light-gray);
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+    /* Clamp box for long text */
+    .clamp-box {
+        max-height: 120px;
+        overflow: hidden;
+        position: relative;
+        line-height: 1.5;
+    }
+
+        .clamp-box::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, white);
+        }
+
+    .toggle-more {
+        background: none;
+        border: none;
+        color: var(--primary);
+        font-size: 0.9rem;
+        cursor: pointer;
+        padding: 0;
+        margin-top: 0.5rem;
+    }
+
+        .toggle-more:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+    
+    /* Loading states */
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+        .loading::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--primary-light);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+    /* Enhanced button styles */
+    .btn {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+    .btn-outline-secondary {
+        border: 1px solid var(--light-gray);
+        color: var(--gray);
+    }
+
+        .btn-outline-secondary:hover {
+            background: var(--bg-light);
+            border-color: var(--gray);
+        }
+
+    .btn-outline-danger {
+        border: 1px solid #DC2626;
+        color: #DC2626;
+    }
+
+        .btn-outline-danger:hover {
+            background: #DC2626;
+            color: white;
+        }
+
+    /* Dropdown styles */
+    .dropdown-menu {
+        border-radius: 8px;
+        border: 1px solid var(--light-gray);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        color: var(--dark);
+        transition: all 0.2s ease;
+    }
+
+        .dropdown-item:hover {
+            background: var(--bg-light);
+            color: var(--primary);
+        }
+
+    /* Cropper Modal Styles */
+    #photoModal .modal-dialog {
+        max-width: 90vw;
+        margin: 1rem auto;
+    }
+
+    #photoModal .modal-content {
+        height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #photoModal .modal-body {
+        flex: 1;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* Important for flexbox scrolling */
+    }
+
+    #photoModal .ratio {
+        flex: 1;
+        min-height: 400px;
+        max-height: 70vh;
+        border: none;
+    }
+
+    #cropperImage {
+        max-width: none !important; /* Remove max-width constraint */
+        max-height: none !important; /* Remove max-height constraint */
+        display: block !important;
+    }
+
+    /* Ensure cropper container takes full space */
+    .cropper-container {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .cropper-modal {
+        background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* Cropper handles visibility */
+    .cropper-point {
+        background-color: var(--primary);
+        width: 12px;
+        height: 12px;
+        opacity: 1;
+    }
+
+    .cropper-line {
+        background-color: rgba(79, 70, 229, 0.4);
+    }
+
+    /* Loading state */
+    #cropperPlaceholder {
+        font-size: 1.1rem;
+        color: var(--gray);
+    }
+</style>
+
+@if (TempData["Error"] != null)
+{
+    <div id="errorBox"
+         style="display: block; background: rgba(0,0,0,0.6);
+                     position: fixed; inset: 0; z-index: 9999;
+                     display: flex; justify-content: center; align-items: center;">
+
+        <div style="background: #f87171; color: white; border-radius: 12px;
+                         padding: 25px 30px; text-align: center; width: 320px;
+                         box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+                         animation: popIn 0.3s ease-out;">
+
+            <div style="font-size: 50px; margin-bottom: 15px;">😟</div>
+            <h2 style="margin: 0 0 10px; font-size: 1.5rem;">
+                @(TempData["ErrorTitle"] ?? "Oops!")
+            </h2>
+            <p style="font-size: 0.95rem; margin-bottom: 20px;">
+                @TempData["Error"]
+            </p>
+
+            <button onclick="document.getElementById('errorBox').style.display='none'"
+                    style="background: white; color: #b91c1c; border: none;
+                                padding: 10px 25px; border-radius: 50px;
+                                font-size: 1rem; cursor: pointer;">
+                OK
+            </button>
+        </div>
+    </div>
+}
+
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<style>
+    /* Avatar */
+    .profile-avatar {
+        width: 140px;
+        height: 140px;
+        object-fit: cover;
+    }
+
+    /* Card section */
+    .section {
+        padding: 1.25rem 1rem;
+        border-radius: .75rem;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 1px -1px rgba(16,24,40,.04);
+        margin-bottom: 1.25rem; /* ensure consistent spacing between sections */
+    }
+
+    .section-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin: 0 0 .25rem;
+        color: #111827;
+    }
+
+    .section-sub {
+        color: var(--primary);
+        margin-bottom: .75rem;
+    }
+
+    .empty-hint {
+        color: #667085;
+    }
+
+    .action-btn {
+        min-width: 160px;
+    }
+
+    /* Rows inside lists (experience, education, languages, etc.) */
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 0;
+        border-top: 1px solid #eee;
+    }
+
+        .item-row:first-child {
+            border-top: 0;
+        }
+
+    /* Nicer action buttons */
+    .item-actions .btn {
+        min-width: 92px;
+    }
+
+    .btn.rounded-pill {
+        border-radius: 999px;
+    }
+
+    /* Small pill for “Job Seeker” tag */
+    .pill {
+        padding: .15rem .5rem;
+        border-radius: 999px;
+        font-size: .75rem;
+    }
+
+    /* Clamp long text blocks with optional fade */
+    .clamp-box {
+        max-height: 180px;
+        overflow: hidden;
+        position: relative;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+        .clamp-box.has-fade::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 44px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), #fff);
+        }
+
+    /* “Show more/less” link styling */
+    .toggle-more {
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--primary);
+    }
+
+        .toggle-more:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+    /* Compact profile strength meter */
+    .js-profile-meter {
+        display: grid;
+        gap: 8px;
+        font-size: 0.92rem;
+    }
+
+        .js-profile-meter .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .js-profile-meter .progress-bar-custom {
+            height: 6px;
+            background: #eef2f7;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .js-profile-meter .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,#2563eb,#22c55e);
+            transition: width .5s ease;
+        }
+
+        .js-profile-meter .badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+            .js-profile-meter .badge.warn {
+                background: #fff7e6;
+                color: #8b5e00;
+            }
+
+            .js-profile-meter .badge.info {
+                background: #eaf3ff;
+                color: #0b4a8f;
+            }
+
+            .js-profile-meter .badge.success {
+                background: #e8f7ef;
+                color: #126e3a;
+            }
+
+    /* Language dropdown menu: scrollable, won’t hit viewport bottom */
+    .lang-menu {
+        max-height: 260px;
+        overflow: auto;
+    }
+
+    /* Larger cropper image while keeping modal compact */
+    #photoModal .modal-dialog {
+        max-width: 600px;
+    }
+
+    #photoModal .modal-body {
+        padding: 1rem;
+        max-height: 70vh;
+        overflow: auto;
+    }
+
+    #cropperImage {
+        max-height: 500px;
+        max-width: 100%;
+    }
+
+    /* Cropper container with larger view */
+    .cropper-container {
+        width: 500px !important;
+        height: 500px !important;
+    }
+
+    /* Adjust the ratio container for larger image */
+    .ratio.ratio-1x1 {
+        max-height: 500px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Make the cropper view area larger */
+    .cropper-view-box {
+        border-radius: 50%; /* Keep circular crop if needed */
+    }
+
+    /* Modal header and footer adjustments */
+    #photoModal .modal-header,
+    #photoModal .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Profile strength (compact, same as dashboard) -->
+    <div class="mb-3">
+        <!-- Update the progress display -->
+        <div class="js-profile-meter">
+            <div class="row">
+                <span class="text-muted small">Profile strength</span>
+                <span class="small fw-semibold">@completeness%</span>
+            </div>
+            <div class="progress-bar-custom">
+                <div class="progress-fill" style="width:@completeness%"></div>
+            </div>
+            <div class="mt-2">
+                @if (completeness < 50)
+                {
+                    <span class="badge bg-danger">Beginner</span>
+                    <small class="text-muted">Complete basic info to get started</small>
+                }
+                else if (completeness < 80)
+                {
+                    <span class="badge bg-warning">Intermediate</span>
+                    <small class="text-muted">Add more details to improve your profile</small>
+                }
+                else
+                {
+                    <span class="badge bg-success">Complete</span>
+                    <small class="text-muted">Your profile looks great to employers!</small>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="section">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <div class="position-relative">
+                @if (string.IsNullOrWhiteSpace(Model.ExistingPhoto))
+                {
+                    <div class="rounded-circle shadow-sm profile-avatar bg-light d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person fs-1 text-muted"></i>
+                    </div>
+                }
+                else
+                {
+                    <img id="avatarPreview"
+                         src="@Model.ExistingPhoto"
+                         class="rounded-circle shadow-sm profile-avatar"
+                         alt="Profile picture" />
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="removePhoto" name="RemovePhoto" value="true">
+                        <label class="form-check-label" for="removePhoto">Remove photo</label>
+                    </div>
+                }
+            </div>
+
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h2 class="mb-0">@Model.FullName</h2>
+                    <span class="pill bg-primary text-white">Job Seeker</span>
+                </div>
+                <div class="text-muted mt-1">
+                    <i class="bi bi-envelope me-1"></i>@Model.Email
+                    <span class="mx-2">•</span>
+                    <i class="bi bi-telephone me-1"></i>@(Model.Phone ?? "—")
+                    <span class="mx-2">•</span>
+                    <i class="bi bi-geo-alt me-1"></i>@(Model.Address ?? "—")
+                    <span class="mx-2">•</span>
+                    <i class="bi bi-bar-chart me-1"></i>@(Model.ExperienceLevel ?? "—")
+                </div>
+            </div>
+
+            <div style="min-width:260px">
+                <div class="mt-2 d-flex gap-2 justify-content-end">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#basicInfoModal">
+                        <i class="bi bi-pencil-square me-1"></i>Edit basic info
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- RESUME (SECTION + MODAL) ---------- *@
+    @{
+        // Build a safe URL for the stored resume file name.
+        string resumeUrl = null;
+        if (!string.IsNullOrWhiteSpace(Model.ExistingResume))
+        {
+            var val = Model.ExistingResume.Trim();
+            resumeUrl = (val.StartsWith("http", StringComparison.OrdinalIgnoreCase) || val.StartsWith("/") || val.StartsWith("~/"))
+            ? val
+            : Url.Content("~/uploads/resumes/" + val); // files live in /wwwroot/uploads/resumes
+        }
+    }
+
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Resume</h3>
+                <div class="section-sub">Upload your latest resume so employers can learn more about you.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#resumeModal">
+                @(string.IsNullOrWhiteSpace(Model.ExistingResume) ? "Add resume" : "Replace resume")
+            </button>
+        </div>
+
+        @if (string.IsNullOrWhiteSpace(Model.ExistingResume))
+        {
+            <div class="empty-hint">You don’t have a resume yet.</div>
+        }
+        else
+        {
+            <a class="link-primary" href="@resumeUrl" target="_blank" rel="noopener">View current resume</a>
+        }
+    </section>
+
+    <div class="modal fade" id="resumeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="SaveResume" asp-controller="Profile" enctype="multipart/form-data" id="resumeForm" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload resume</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="file" name="ResumeFile" id="resumeInput" class="form-control" accept=".pdf" required />
+                        <div class="invalid-feedback">Please select a PDF (≤ 5MB).</div>
+                        <small class="text-muted">Only PDF files up to 5MB are accepted.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- SUMMARY (SECTION + MODAL) ---------- *@
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Personal summary</h3>
+                <div class="section-sub">Add a personal summary to your profile as a way to introduce who you are.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#summaryModal">
+                @(string.IsNullOrWhiteSpace(Model.Summary) ? "Add summary" : "Edit summary")
+            </button>
+        </div>
+
+        @if (string.IsNullOrWhiteSpace(Model.Summary))
+        {
+            <div class="empty-hint">You don’t have a summary yet.</div>
+        }
+        else
+        {
+            <div class="mb-1">
+                <div id="summaryBox" class="clamp-box">@Model.Summary</div>
+                <button type="button" class="toggle-more small" data-target="summaryBox" style="display:none;">Show more</button>
+            </div>
+        }
+    </section>
+
+    <div class="modal fade" id="summaryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form method="post" asp-action="SaveSummary" asp-controller="Profile" id="summaryForm" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(string.IsNullOrWhiteSpace(Model.Summary) ? "Add" : "Edit") personal summary</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label fw-semibold">Summary</label>
+                        <div class="text-muted mb-2">Highlight your unique experiences, ambitions and strengths.</div>
+                        <textarea id="summaryTextarea" class="form-control" name="Summary" rows="8" maxlength="1500" placeholder="Write your summary (max 1500 characters)">@Model.Summary</textarea>
+                        <div class="d-flex justify-content-between mt-2">
+                            <div class="text-muted">Don’t include sensitive personal information.</div>
+                            <div class="text-muted"><span id="summaryCount">0</span>/1500</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="summarySaveBtn" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- CAREER HISTORY (SECTION + ADD/EDIT MODALS) ---------- *@
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Career history</h3>
+                <div class="section-sub">The more you let employers know about your experience, the more you can stand out.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#addExperienceModal">Add role</button>
+        </div>
+
+        @if (Model.Experiences is null || !Model.Experiences.Any())
+        {
+            <div class="empty-hint">You don’t have any roles yet.</div>
+        }
+        else
+        {
+            @foreach (var e in Model.Experiences)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="fw-semibold">
+                            @e.Role
+                            @if (!string.IsNullOrWhiteSpace(e.Company))
+                            {
+                                <span class="text-muted">· @e.Company</span>
+                            }
+                        </div>
+                        <div class="text-muted small">
+                            @{
+                                var start = e.StartDate.ToString("MMM yyyy");
+                                var end = e.EndDate.HasValue ? e.EndDate.Value.ToString("MMM yyyy") : "Present";
+                            }
+                            @start – @end
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(e.Description))
+                        {
+                            <div class="mt-1">
+                                <div id="expBox_@e.Id" class="clamp-box">@e.Description</div>
+                                <button type="button" class="toggle-more small" data-target="expBox_@e.Id" style="display:none;">Show more</button>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editExp_@e.Id">Edit</button>
+                        <button class="btn btn-outline-danger btn-sm"
+                                data-confirm
+                                data-action="@Url.Action("DeleteExperience", "Profile", new { id = e.Id })">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Edit experience modal -->
+                <div class="modal fade" id="editExp_@e.Id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post" asp-action="EditExperience" asp-controller="Profile" asp-route-id="@e.Id" novalidate>
+                                @Html.AntiForgeryToken()
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit role</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Role</label>
+                                        <input name="Role" class="form-control" value="@e.Role" required maxlength="120" />
+                                        <div class="invalid-feedback">Role is required.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Company</label>
+                                        <input name="Company" class="form-control" value="@e.Company" maxlength="120" />
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Start date</label>
+                                            <input type="month" name="StartDate" class="form-control" value="@e.StartDate.ToString("yyyy-MM")" required />
+                                            <div class="invalid-feedback">Start date is required.</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">End date (optional)</label>
+                                            <input type="month" name="EndDate" class="form-control" value="@(e.EndDate.HasValue? e.EndDate.Value.ToString("yyyy-MM") : "")" />
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                                        <textarea name="Description" class="form-control" rows="4" maxlength="1500">@e.Description</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>
+
+    <!-- Add role -->
+    <div class="modal fade" id="addExperienceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="AddExperience" asp-controller="Profile" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header"><h5 class="modal-title">Add role</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <input name="Role" class="form-control" required maxlength="120" />
+                            <div class="invalid-feedback">Role is required.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Company <span class="text-muted">(optional)</span></label>
+                            <input name="Company" class="form-control" maxlength="120" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start date</label>
+                                <input type="month" name="StartDate" class="form-control" required />
+                                <div class="invalid-feedback">Start date is required.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End date <span class="text-muted">(optional)</span></label>
+                                <input type="month" name="EndDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                            <textarea name="Description" class="form-control" rows="4" maxlength="1500"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-primary">Save</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- EDUCATION (SECTION + ADD/EDIT MODALS) ---------- *@
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Education</h3>
+                <div class="section-sub">Tell employers about your education.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#addEducationModal">Add education</button>
+        </div>
+
+        @if (Model.Educations is null || !Model.Educations.Any())
+        {
+            <div class="empty-hint">You don’t have any education yet.</div>
+        }
+        else
+        {
+            @foreach (var ed in Model.Educations)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="fw-semibold">
+                            @ed.School
+                            @if (!string.IsNullOrWhiteSpace(ed.Degree))
+                            {
+                                <span class="text-muted">· @ed.Degree</span>
+                            }
+                        </div>
+                        <div class="text-muted small">
+                            @{
+                                var s = ed.StartDate.ToString("MMM yyyy");
+                                var e2 = ed.EndDate.HasValue ? ed.EndDate.Value.ToString("MMM yyyy") : "Present";
+                            }
+                            @s – @e2
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(ed.Description))
+                        {
+                            <div class="mt-1">
+                                <div id="eduBox_@ed.Id" class="clamp-box">@ed.Description</div>
+                                <button type="button" class="toggle-more small" data-target="eduBox_@ed.Id" style="display:none;">Show more</button>
+                            </div>
+                        }
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editEdu_@ed.Id">Edit</button>
+                        <button class="btn btn-outline-danger btn-sm"
+                                data-confirm
+                                data-action="@Url.Action("DeleteEducation", "Profile", new { id = ed.Id })">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Edit education modal -->
+                <div class="modal fade" id="editEdu_@ed.Id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post" asp-action="EditEducation" asp-controller="Profile" asp-route-id="@ed.Id" novalidate>
+                                @Html.AntiForgeryToken()
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit education</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Institution</label>
+                                        <input name="School" class="form-control" value="@ed.School" required maxlength="120" />
+                                        <div class="invalid-feedback">Institution is required.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Course or qualification</label>
+                                        <input name="Degree" class="form-control" value="@ed.Degree" required maxlength="120" />
+                                        <div class="invalid-feedback">Course/qualification is required.</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Start date</label>
+                                            <input type="month" name="StartDate" class="form-control" value="@ed.StartDate.ToString("yyyy-MM")" required />
+                                            <div class="invalid-feedback">Start date is required.</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">End date (optional)</label>
+                                            <input type="month" name="EndDate" class="form-control" value="@(ed.EndDate.HasValue? ed.EndDate.Value.ToString("yyyy-MM") : "")" />
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                                        <textarea name="Description" class="form-control" rows="4" maxlength="1500">@ed.Description</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>
+
+    <!-- Add education -->
+    <div class="modal fade" id="addEducationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="AddEducation" asp-controller="Profile" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header"><h5 class="modal-title">Add education</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Institution</label>
+                            <input name="School" class="form-control" required maxlength="120" />
+                            <div class="invalid-feedback">Institution is required.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Course or qualification</label>
+                            <input name="Degree" class="form-control" required maxlength="120" />
+                            <div class="invalid-feedback">Course/qualification is required.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start date</label>
+                                <input type="month" name="StartDate" class="form-control" required />
+                                <div class="invalid-feedback">Start date is required.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End date <span class="text-muted">(optional)</span></label>
+                                <input type="month" name="EndDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                            <textarea name="Description" class="form-control" rows="4" maxlength="1500"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-primary">Save</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- SKILLS (SECTION + ADD/EDIT) ---------- *@
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Skills</h3>
+                <div class="section-sub">Showcase the technologies and strengths you bring.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#addSkillModal">Add skill</button>
+        </div>
+
+        @if (Model.Skills is null || !Model.Skills.Any())
+        {
+            <div class="empty-hint">You haven’t added any skills yet.</div>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var s in Model.Skills)
+                {
+                        <div class="d-inline-flex align-items-center border bg-light rounded-pill px-2 py-1">
+                            <span class="small me-2">@s.Name</span>
+
+                            <!-- Edit -->
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2 me-1"
+                                    title="Edit" data-bs-toggle="modal" data-bs-target="#editSkill_@s.Id">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+
+                            <!-- Delete (use the actual skill ID, not name) -->
+                            <button class="btn btn-outline-danger btn-sm rounded-pill py-0 px-2"
+                                    title="Delete"
+                                    data-confirm
+                                    data-action="@Url.Action("DeleteSkill", "Profile", new { id = s.Id })">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                    <!-- Edit skill modal -->
+                    <div class="modal fade" id="editSkill_@s.Id" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-action="EditSkill" asp-controller="Profile" novalidate>
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="oldName" value="@s.Name" />
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit skill</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Skill</label>
+                                            <input name="Name" class="form-control" value="@s.Name" required maxlength="120" />
+                                            <div class="invalid-feedback">Skill is required.</div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-primary">Save</button>
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <!-- Add skill -->
+    <div class="modal fade" id="addSkillModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="AddSkill" asp-controller="Profile" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add skill</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-0">
+                            <label class="form-label">Skill</label>
+                            <input name="Name" class="form-control" required maxlength="120" />
+                            <div class="invalid-feedback">Skill is required.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- LANGUAGES — dropdown fed by LanguageOptions ---------- *@
+    @using System.Linq
+    @{
+        var langOptions = ((IEnumerable<JobRecruitment.Models.LanguageOption>)
+        (ViewBag.LanguageOptions ?? Enumerable.Empty<JobRecruitment.Models.LanguageOption>()))
+        .Where(x => x != null && x.IsActive)
+        .OrderBy(x => x.Name)
+        .ToList();
+    }
+
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Languages</h3>
+                <div class="section-sub">Add languages to appeal to more companies and employers.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#addLanguageModal">Add language</button>
+        </div>
+
+        @if (Model.Languages is null || !Model.Languages.Any())
+        {
+            <div class="empty-hint">No languages added.</div>
+        }
+        else
+        {
+            @foreach (var l in Model.Languages)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="fw-semibold">@l.Language</div>
+                        @if (!string.IsNullOrWhiteSpace(l.Proficiency))
+                        {
+                            <div class="text-muted small">@l.Proficiency</div>
+                        }
+                    </div>
+                    <div class="item-actions d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#editLang_@l.Id">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill"
+                                data-confirm
+                                data-action="@Url.Action("DeleteLanguage", "Profile", new { id = l.Id })">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Edit language (dropdown) -->
+                <div class="modal fade" id="editLang_@l.Id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post" asp-action="EditLanguage" asp-controller="Profile" asp-route-id="@l.Id" novalidate>
+                                @Html.AntiForgeryToken()
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit language</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Hidden value actually posted -->
+                                    <input type="hidden" name="Language" id="langValue_edit_@l.Id" value="@l.Language" />
+                                    <div class="mb-3">
+                                        <label class="form-label">Language</label>
+                                        <div class="dropdown" data-bs-display="static">
+                                            <button class="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center dropdown-toggle"
+                                                    type="button" data-bs-toggle="dropdown" aria-expanded="false" id="langBtn_edit_@l.Id">
+                                                <span class="lang-btn-label">@l.Language ?? "-- Select --"</span>
+                                            </button>
+                                            <ul class="dropdown-menu lang-menu w-100" aria-labelledby="langBtn_edit_@l.Id">
+                                                <li><button type="button" class="dropdown-item lang-opt" data-target="edit_@l.Id" data-value="">-- Select --</button></li>
+                                                @foreach (var opt in langOptions)
+                                                {
+                                                    <li><button type="button" class="dropdown-item lang-opt" data-target="edit_@l.Id" data-value="@opt.Name">@opt.Name</button></li>
+                                                }
+                                            </ul>
+                                        </div>
+                                        <div class="invalid-feedback d-block" id="langError_edit_@l.Id" style="display:none;">Please select a language.</div>
+                                    </div>
+
+                                    <div class="mb-0">
+                                        <label class="form-label">Proficiency</label>
+                                        <select name="Proficiency" class="form-select" data-value="@l.Proficiency" required>
+                                            <option value="">-- Select --</option>
+                                            <option value="Basic">Basic</option>
+                                            <option value="Conversational">Conversational</option>
+                                            <option value="Fluent">Fluent</option>
+                                            <option value="Native">Native</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>
+
+    <!-- Add Language (dropdown) -->
+    <div class="modal fade" id="addLanguageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="AddLanguage" asp-controller="Profile" id="addLanguageForm" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header"><h5 class="modal-title">Add language</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <input type="hidden" name="Language" id="langValue_add" />
+                        <div class="mb-3">
+                            <label class="form-label">Language</label>
+                            <div class="dropdown" data-bs-display="static">
+                                <button class="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center dropdown-toggle"
+                                        type="button" data-bs-toggle="dropdown" aria-expanded="false" id="langBtn_add">
+                                    <span class="lang-btn-label">-- Select --</span>
+                                </button>
+                                <ul class="dropdown-menu lang-menu w-100" aria-labelledby="langBtn_add">
+                                    <li><button type="button" class="dropdown-item lang-opt" data-target="add" data-value="">-- Select --</button></li>
+                                    @foreach (var opt in langOptions)
+                                    {
+                                        <li><button type="button" class="dropdown-item lang-opt" data-target="add" data-value="@opt.Name">@opt.Name</button></li>
+                                    }
+                                </ul>
+                            </div>
+                            <div class="invalid-feedback d-block" id="langError_add" style="display:none;">Please select a language.</div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">Proficiency</label>
+                            <select name="Proficiency" class="form-select" required>
+                                <option value="">-- Select --</option>
+                                <option value="Basic">Basic</option>
+                                <option value="Conversational">Conversational</option>
+                                <option value="Fluent">Fluent</option>
+                                <option value="Native">Native</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-primary">Save</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* ---------- LICENCES & CERTIFICATIONS (SECTION + ADD/EDIT) ---------- *@
+    <section class="section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="section-title mb-1">Licences & certifications</h3>
+                <div class="section-sub">Add your relevant licences, certifications and accreditations.</div>
+            </div>
+            <button class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#addLicenseModal">Add licence or certification</button>
+        </div>
+
+        @if (Model.Licenses is null || !Model.Licenses.Any())
+        {
+            <div class="empty-hint">No licences or certifications added.</div>
+        }
+        else
+        {
+            @foreach (var c in Model.Licenses)
+            {
+                <div class="item-row">
+                    <div>
+                        <div class="fw-semibold">
+                            @c.Title
+                            @if (!string.IsNullOrWhiteSpace(c.Issuer))
+                            {
+                                <span class="text-muted">· @c.Issuer</span>
+                            }
+                        </div>
+                        <div class="text-muted small">
+                            @((c.IssuedDate.HasValue ? $"Issued {c.IssuedDate:MMM yyyy}" : "Issued —"))
+                            @if (c.ExpiresDate.HasValue)
+                            {
+                                <text> · Expires @c.ExpiresDate:MMM yyyy</text>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(c.CredentialUrl))
+                            {
+                                <text> · <a href="@c.CredentialUrl" target="_blank" rel="noopener">Credential</a></text>
+                            }
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editCert_@c.Id">Edit</button>
+                        <button class="btn btn-outline-danger btn-sm"
+                                data-confirm
+                                data-action="@Url.Action("DeleteLicense", "Profile", new { id = c.Id })">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="editCert_@c.Id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post" asp-action="EditLicense" asp-controller="Profile" asp-route-id="@c.Id" novalidate>
+                                @Html.AntiForgeryToken()
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit licence or certification</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Title</label>
+                                        <input name="Title" class="form-control" value="@c.Title" maxlength="160" required />
+                                        <div class="invalid-feedback">Title is required.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Issuer <span class="text-muted">(optional)</span></label>
+                                        <input name="Issuer" class="form-control" value="@c.Issuer" maxlength="160" />
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Issued date <span class="text-muted">(optional)</span></label>
+                                            <input type="month" name="IssuedDate" class="form-control" value="@(c.IssuedDate.HasValue? c.IssuedDate.Value.ToString("yyyy-MM") : "")" />
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Expires date <span class="text-muted">(optional)</span></label>
+                                            <input type="month" name="ExpiresDate" class="form-control" value="@(c.ExpiresDate.HasValue? c.ExpiresDate.Value.ToString("yyyy-MM") : "")" />
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label class="form-label">Credential URL <span class="text-muted">(optional)</span></label>
+                                        <input type="url" name="CredentialUrl" class="form-control" value="@c.CredentialUrl" maxlength="400" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>
+
+    <div class="modal fade" id="addLicenseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-action="AddLicense" asp-controller="Profile" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header"><h5 class="modal-title">Add licence or certification</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input name="Title" class="form-control" maxlength="160" required />
+                            <div class="invalid-feedback">Title is required.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Issuer <span class="text-muted">(optional)</span></label>
+                            <input name="Issuer" class="form-control" maxlength="160" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Issued date <span class="text-muted">(optional)</span></label>
+                                <input type="month" name="IssuedDate" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Expires date <span class="text-muted">(optional)</span></label>
+                                <input type="month" name="ExpiresDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Credential URL <span class="text-muted">(optional)</span></label>
+                            <input type="url" name="CredentialUrl" class="form-control" maxlength="400" />
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-primary">Save</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<!-- ===== Reusable Confirm Delete ===== -->
+    <div class="modal fade" id="confirmDelete" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="confirmDeleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm deletion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">Are you sure you want to delete this item?</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger">Delete</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@* ---------- BASIC INFO MODAL (photo + core fields) ---------- *@
+    <div class="modal fade" id="basicInfoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form id="basicInfoForm" method="post" asp-action="SaveBasic" asp-controller="Profile" enctype="multipart/form-data" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="hidden" name="Email" value="@Model.Email" />
+
+                    <!-- Cropped file input (this will be populated by the cropper) -->
+                    <input type="file" id="croppedFile" name="Photo" class="d-none" />
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit basic info</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Profile photo</label>
+                            <input type="file" class="form-control" id="basicPhotoInput" accept="image/*" />
+                            <small class="text-muted">PNG/JPG up to 2MB. A cropping popup will open after you select a picture.</small>
+                            @if (!string.IsNullOrWhiteSpace(Model.ExistingPhoto))
+                            {
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="removePhoto" name="RemovePhoto" value="true">
+                                    <label class="form-check-label" for="removePhoto">Remove current photo</label>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Full name</label>
+                            <input name="FullName" id="fullNameInput" class="form-control" value="@Model.FullName" required maxlength="50" />
+                            <div class="d-flex justify-content-between">
+                                <div class="invalid-feedback" id="fullNameError">Please enter your first and last name.</div>
+                                <small class="text-muted"><span id="fullNameCount">0</span>/50</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone</label>
+                                <input name="Phone" id="phoneInput" class="form-control" value="@Model.Phone" inputmode="numeric" pattern="^\d*$" maxlength="20" />
+                                <div class="form-text">Please enter digits only.</div>
+                                <div class="invalid-feedback" id="phoneError">Digits only (0-9).</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Experience level</label>
+                                <select name="ExperienceLevel" class="form-select" required>
+                                    <option value="">-- Select --</option>
+                                    <option value="Entry" selected="@(Model.ExperienceLevel == "Entry" ? "selected" : null)">Entry</option>
+                                    <option value="Mid" selected="@(Model.ExperienceLevel == "Mid" ? "selected" : null)">Mid</option>
+                                    <option value="Senior" selected="@(Model.ExperienceLevel == "Senior" ? "selected" : null)">Senior</option>
+                                </select>
+                                <div class="invalid-feedback">Please select an experience level.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">Address</label>
+                            <input name="Address" id="addressInput" class="form-control" value="@Model.Address" maxlength="150" />
+                            <div class="d-flex justify-content-between">
+                                <div class="invalid-feedback" id="addressError">Address must be 150 characters or fewer.</div>
+                                <small class="text-muted"><span id="addressCount">0</span>/150</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@* ---------- CROPPER MODAL (INTERNAL) ---------- *@
+@* ---------- CROPPER MODAL (INTERNAL) ---------- *@
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crop profile photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="d-flex flex-column" style="height: 70vh;">
+                        <div class="flex-grow-1 position-relative">
+                            <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center">
+                                <img id="cropperImage" alt="Crop source" style="display: none; max-width: 100%; max-height: 100%;" />
+                                <div id="cropperPlaceholder" class="text-muted">Select an image to begin cropping...</div>
+                            </div>
+                        </div>
+                        <div class="p-3 border-top">
+                            <div class="text-muted small">
+                                <i class="bi bi-info-circle"></i> Drag to reposition. Use the handles / mouse wheel / pinch to resize.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="applyCropBtn" type="button" class="btn btn-primary" disabled>
+                        <i class="bi bi-check-circle me-2"></i>Apply Crop
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@* ---------- CROPPER JAVASCRIPT ---------- *@
+    <!-- Enhanced Cropper functionality -->
+    <script>
+        (function () {
+            const MAX_PHOTO = 2 * 1024 * 1024;
+            let cropper = null, objectUrl = null, previewUrl = null;
+
+            const basicFileInput = document.getElementById('basicPhotoInput');
+            const hiddenOutput = document.getElementById('croppedFile');
+            const avatarPreview = document.getElementById('avatarPreview');
+            const cropModalEl = document.getElementById('photoModal');
+            const cropModal = cropModalEl ? new bootstrap.Modal(cropModalEl, {backdrop: 'static'}) : null;
+            const cropImg = document.getElementById('cropperImage');
+            const placeholder = document.getElementById('cropperPlaceholder');
+            const applyBtn = document.getElementById('applyCropBtn');
+
+            function cleanupUrls() {
+                if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+                if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+            }
+
+            function destroyCropper() {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+                if (cropImg) {
+                    cropImg.removeAttribute('src');
+                    cropImg.style.display = 'none';
+                }
+                if (placeholder) placeholder.style.display = 'block';
+                if (applyBtn) applyBtn.disabled = true;
+                cleanupUrls();
+            }
+
+            function isAllowedImage(name) {
+                return /\.(jpe?g|png|gif|webp|bmp)$/i.test(name || '');
+            }
+
+            if (basicFileInput && cropModal) {
+                basicFileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    if (!isAllowedImage(file.name) || file.size > MAX_PHOTO) {
+                        basicFileInput.classList.add('is-invalid');
+                        basicFileInput.value = '';
+                        alert('Please select a valid image file (JPG, PNG, GIF, WEBP) under 2MB.');
+                        return;
+                    }
+
+                    basicFileInput.classList.remove('is-invalid');
+                    destroyCropper();
+
+                    objectUrl = URL.createObjectURL(file);
+
+                    if (cropImg) {
+                        cropImg.onload = function() {
+                            cropImg.style.display = 'block';
+                            if (placeholder) placeholder.style.display = 'none';
+
+                            // Initialize cropper with better options
+                            cropper = new Cropper(cropImg, {
+                                aspectRatio: 1,
+                                viewMode: 1,
+                                autoCropArea: 0.8,
+                                movable: true,
+                                rotatable: true,
+                                scalable: true,
+                                zoomable: true,
+                                zoomOnTouch: true,
+                                zoomOnWheel: true,
+                                background: false,
+                                guides: true,
+                                center: true,
+                                highlight: false,
+                                cropBoxMovable: true,
+                                cropBoxResizable: true,
+                                toggleDragModeOnDblclick: true,
+                                minContainerWidth: 300,
+                                minContainerHeight: 300,
+                                ready: function() {
+                                    if (applyBtn) applyBtn.disabled = false;
+                                }
+                            });
+                        };
+
+                        cropImg.src = objectUrl;
+                        cropModal.show();
+                    }
+
+                    basicFileInput.value = ''; // reset input
+                });
+            }
+
+            if (applyBtn && hiddenOutput) {
+                applyBtn.addEventListener('click', () => {
+                    if (!cropper) return;
+
+                    // Get cropped canvas with high quality
+                    const canvas = cropper.getCroppedCanvas({
+                        width: 600,
+                        height: 600,
+                        imageSmoothingEnabled: true,
+                        imageSmoothingQuality: 'high'
+                    });
+
+                    if (!canvas) return;
+
+                    canvas.toBlob((blob) => {
+                        if (!blob) return;
+
+                        const file = new File([blob], 'profile-photo.png', {
+                            type: 'image/png',
+                            lastModified: new Date().getTime()
+                        });
+
+                        // Create DataTransfer and add file
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        hiddenOutput.files = dataTransfer.files;
+
+                        // Update preview
+                        if (avatarPreview) {
+                            if (previewUrl) URL.revokeObjectURL(previewUrl);
+                            previewUrl = URL.createObjectURL(blob);
+                            avatarPreview.src = previewUrl;
+                            avatarPreview.style.display = 'block';
+                        }
+
+                        cropModal.hide();
+                        destroyCropper();
+
+                    }, 'image/png', 0.95); // 95% quality
+                });
+            }
+
+            // Cleanup when modal is closed
+            if (cropModalEl) {
+                cropModalEl.addEventListener('hidden.bs.modal', () => {
+                    destroyCropper();
+                });
+
+                // Also cleanup on show to ensure fresh state
+                cropModalEl.addEventListener('show.bs.modal', () => {
+                    destroyCropper();
+                });
+            }
+
+            // Handle window resize for cropper
+            window.addEventListener('resize', () => {
+                if (cropper) {
+                    cropper.resize();
+                }
+            });
+
+        })();
+    </script>
+
+@* ---------- FORM VALIDATION & CHARACTER COUNTERS ---------- *@
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Full name counter
+            const fullNameInput = document.getElementById('fullNameInput');
+            const fullNameCount = document.getElementById('fullNameCount');
+
+            if (fullNameInput && fullNameCount) {
+                fullNameInput.addEventListener('input', function() {
+                    fullNameCount.textContent = this.value.length;
+                });
+                // Initialize on page load
+                fullNameCount.textContent = fullNameInput.value.length;
+            }
+
+            // Address counter
+            const addressInput = document.getElementById('addressInput');
+            const addressCount = document.getElementById('addressCount');
+
+            if (addressInput && addressCount) {
+                addressInput.addEventListener('input', function() {
+                    addressCount.textContent = this.value.length;
+                });
+                addressCount.textContent = addressInput.value.length;
+            }
+
+            // Phone validation
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^\d]/g, '');
+                });
+            }
+
+            // Form validation
+            const basicInfoForm = document.getElementById('basicInfoForm');
+            if (basicInfoForm) {
+                basicInfoForm.addEventListener('submit', function(e) {
+                    let isValid = true;
+
+                    // Validate full name
+                    if (!fullNameInput.value.trim()) {
+                        fullNameInput.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        fullNameInput.classList.remove('is-invalid');
+                    }
+
+                    // Validate phone format if provided
+                    if (phoneInput.value && !/^\d+$/.test(phoneInput.value)) {
+                        phoneInput.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        phoneInput.classList.remove('is-invalid');
+                    }
+
+                    // Validate experience level
+                    const experienceLevel = document.querySelector('select[name="ExperienceLevel"]');
+                    if (!experienceLevel.value) {
+                        experienceLevel.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        experienceLevel.classList.remove('is-invalid');
+                    }
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        // Scroll to first error
+                        const firstError = document.querySelector('.is-invalid');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
+
+            // Initialize select values
+            const experienceSelect = document.querySelector('select[name="ExperienceLevel"]');
+            if (experienceSelect && '@Model.ExperienceLevel') {
+                experienceSelect.value = '@Model.ExperienceLevel';
+            }
+        });
+    </script>
+
+@* ---------- JS HELPERS (validation, counters, show-more, dropdowns, confirm delete, cropper, resume guard) ---------- *@
+<script>
+    /* ---------- Show more/less ---------- */
+    (function(){
+      function wires(id){
+        const box=document.getElementById(id);
+        if(!box) return;
+        const btn=document.querySelector(`.toggle-more[data-target="${id}"]`);
+        if(!btn) return;
+        const tooTall = box.scrollHeight > 180;
+        btn.style.display = tooTall ? 'inline' : 'none';
+        btn.addEventListener('click', ()=>{
+          const isClamped = box.classList.toggle('clamp-box');
+          btn.textContent = isClamped ? 'Show more' : 'Show less';
+        });
+      }
+      document.querySelectorAll('.toggle-more').forEach(b=>wires(b.getAttribute('data-target')));
+    })();
+</script>
+
+<script>
+    /* ---------- Language dropdown -> hidden input + label ---------- */
+    document.addEventListener('click', function(e){
+      const btn = e.target.closest('.lang-opt');
+      if(!btn) return;
+      const target = btn.getAttribute('data-target'); // "add" or "edit_<id>"
+      const value  = btn.getAttribute('data-value') || '';
+      const hidden = document.getElementById('langValue_' + target);
+      const trigger= document.getElementById('langBtn_'  + target);
+      const err    = document.getElementById('langError_'+ target);
+      if (hidden) hidden.value = value;
+      if (trigger) trigger.querySelector('.lang-btn-label').textContent = value || '-- Select --';
+      if (err) err.style.display = value ? 'none' : 'block';
+    });
+
+    /* ---------- Simple required check for language add/edit before submit ---------- */
+    ['addLanguageForm'].forEach(id=>{
+      const f=document.getElementById(id); if(!f) return;
+      f.addEventListener('submit', (ev)=>{
+        const langVal=document.getElementById('langValue_add')?.value?.trim();
+        if(!langVal){
+          document.getElementById('langError_add').style.display='block';
+          ev.preventDefault();
+        }
+      });
+    });
+</script>
+@section Scripts {
+        <!-- Reusable confirm delete -->
+        <script>
+            (function(){
+                const modalEl = document.getElementById('confirmDelete');
+                if (!modalEl) return;
+
+                const modal = new bootstrap.Modal(modalEl);
+                const form = document.getElementById('confirmDeleteForm');
+
+                document.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-confirm]');
+                    if (!btn) return;
+
+                    const action = btn.getAttribute('data-action');
+                    if (!action) return;
+
+                    // Set the form action and method
+                    form.action = action;
+                    form.method = 'post';
+
+                    // Add anti-forgery token if not already present
+                    let tokenExists = false;
+                    form.querySelectorAll('input').forEach(input => {
+                        if (input.name === '__RequestVerificationToken') {
+                            tokenExists = true;
+                        }
+                    });
+
+                    if (!tokenExists) {
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                        if (token) {
+                            const newToken = token.cloneNode(true);
+                            form.appendChild(newToken);
+                        }
+                    }
+
+                    modal.show();
+                });
+            })();
+        </script>
+
+        <!-- Word counter functionality -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Full name counter
+                const fullNameInput = document.getElementById('fullNameInput');
+                const fullNameCount = document.getElementById('fullNameCount');
+
+                if (fullNameInput && fullNameCount) {
+                    fullNameInput.addEventListener('input', function() {
+                        fullNameCount.textContent = this.value.length;
+                    });
+                    // Initialize on page load
+                    fullNameCount.textContent = fullNameInput.value.length;
+                }
+
+                // Address counter
+                const addressInput = document.getElementById('addressInput');
+                const addressCount = document.getElementById('addressCount');
+
+                if (addressInput && addressCount) {
+                    addressInput.addEventListener('input', function() {
+                        addressCount.textContent = this.value.length;
+                    });
+                    addressCount.textContent = addressInput.value.length;
+                }
+
+                // Summary counter
+                const summaryTextarea = document.getElementById('summaryTextarea');
+                const summaryCount = document.getElementById('summaryCount');
+
+                if (summaryTextarea && summaryCount) {
+                    summaryTextarea.addEventListener('input', function() {
+                        summaryCount.textContent = this.value.length;
+                    });
+                    summaryCount.textContent = summaryTextarea.value.length;
+                }
+
+                // Phone validation
+                const phoneInput = document.getElementById('phoneInput');
+                if (phoneInput) {
+                    phoneInput.addEventListener('input', function(e) {
+                        this.value = this.value.replace(/[^\d]/g, '');
+                    });
+                }
+
+                // Form validation
+                const basicInfoForm = document.getElementById('basicInfoForm');
+                if (basicInfoForm) {
+                    basicInfoForm.addEventListener('submit', function(e) {
+                        const phone = document.getElementById('phoneInput').value;
+                        if (phone && !/^\d+$/.test(phone)) {
+                            e.preventDefault();
+                            document.getElementById('phoneError').style.display = 'block';
+                            document.getElementById('phoneInput').classList.add('is-invalid');
+                        }
+                    });
+                }
+            });
+        </script>
+
+        <!-- Cropper functionality -->
+        <script>
+                       /* ---------- Cropper functionality ---------- */
+            (function () {
+                const MAX_PHOTO = 2 * 1024 * 1024;
+                let cropper = null, objectUrl = null, previewUrl = null;
+
+                const basicFileInput = document.getElementById('basicPhotoInput');
+                const hiddenOutput = document.getElementById('croppedFile');
+                const avatarPreview = document.getElementById('avatarPreview');
+                const cropModalEl = document.getElementById('photoModal');
+                const cropModal = cropModalEl ? new bootstrap.Modal(cropModalEl, {backdrop: 'static'}) : null;
+                const cropImg = document.getElementById('cropperImage');
+                const placeholder = document.getElementById('cropperPlaceholder');
+                const applyBtn = document.getElementById('applyCropBtn');
+
+                function cleanupUrls() {
+                    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+                    if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+                }
+
+                function destroyCropper() {
+                    if (cropper) { cropper.destroy(); cropper = null; }
+                    cropImg.removeAttribute('src');
+                    cropImg.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'block';
+                    if (applyBtn) applyBtn.disabled = true;
+                    cleanupUrls();
+                }
+
+                function isAllowedImage(name) {
+                    return /\.(jpe?g|png|gif|webp)$/i.test(name || '');
+                }
+
+                if (basicFileInput && cropModal) {
+                    basicFileInput.addEventListener('change', () => {
+                        const f = basicFileInput.files && basicFileInput.files[0];
+                        if (!f) return;
+
+                        if (!isAllowedImage(f.name) || f.size > MAX_PHOTO) {
+                            basicFileInput.classList.add('is-invalid');
+                            basicFileInput.value = '';
+                            return;
+                        }
+
+                        basicFileInput.classList.remove('is-invalid');
+                        destroyCropper();
+
+                        objectUrl = URL.createObjectURL(f);
+                        cropImg.src = objectUrl;
+
+                        cropImg.onload = () => {
+                            cropImg.style.display = 'block';
+                            if (placeholder) placeholder.style.display = 'none';
+                            cropper = new Cropper(cropImg, {
+                                aspectRatio: 1,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                                background: false
+                            });
+                            applyBtn.disabled = false;
+                        };
+
+                        cropModal.show();
+                        basicFileInput.value = '';
+                    });
+                }
+
+                if (applyBtn && hiddenOutput) {
+                    applyBtn.addEventListener('click', () => {
+                        if (!cropper) return;
+
+                        cropper.getCroppedCanvas({ width: 600, height: 600 }).toBlob((blob) => {
+                            if (!blob) return;
+
+                            // Create a proper file with correct name
+                            const file = new File([blob], 'profile_photo.png', { type: 'image/png' });
+
+                            // Create a new DataTransfer and add the file
+                            const dt = new DataTransfer();
+                            dt.items.add(file);
+
+                            // Update the hidden file input
+                            hiddenOutput.files = dt.files;
+
+                            // Update preview
+                            if (avatarPreview) {
+                                if (previewUrl) URL.revokeObjectURL(previewUrl);
+                                previewUrl = URL.createObjectURL(blob);
+                                avatarPreview.src = previewUrl;
+                            }
+
+                            cropModal.hide();
+
+                            // Show success message
+                            Toastify({
+                                text: "Photo cropped successfully! Click Save to apply changes.",
+                                duration: 3000,
+                                gravity: "top",
+                                position: "right",
+                                backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                            }).showToast();
+
+                        }, 'image/png', 0.95);
+                    });
+                }
+
+                cropModalEl?.addEventListener('hidden.bs.modal', () => {
+                    destroyCropper();
+                });
+            })();
+        </script>
+
+        <!-- Language form validation -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const langForms = document.querySelectorAll('form[action*="Language"]');
+                langForms.forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        const languageInput = form.querySelector('input[name="Language"]');
+                        const proficiencySelect = form.querySelector('select[name="Proficiency"]');
+
+                        if (!languageInput || !languageInput.value.trim()) {
+                            e.preventDefault();
+                            const errorElement = document.getElementById('langError_' + form.id.split('_').pop());
+                            if (errorElement) errorElement.style.display = 'block';
+                        }
+
+                        if (proficiencySelect && !proficiencySelect.value) {
+                            e.preventDefault();
+                            proficiencySelect.classList.add('is-invalid');
+                        }
+                    });
+                });
+            });
+        </script>
+}

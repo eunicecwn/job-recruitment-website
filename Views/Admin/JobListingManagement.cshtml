@@ -1,0 +1,72 @@
+﻿@model List<JobRecruitment.Models.Job>
+@{
+    ViewData["Title"] = "Manage Job Listings";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<style>
+    .card {
+        border-radius: 1rem;
+    }
+
+    .card-header {
+        font-weight: 600;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card shadow rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Location</th>
+                            <th>Salary Range</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Posted</th>
+                            <th style="width: 180px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var job in Model)
+                        {
+                            <tr>
+                                <td>@job.Title</td>
+                                <td>@job.Location</td>
+                                <td>
+                                    @if (job.MinSalary != null && job.MaxSalary != null)
+                                    {
+                                        @($"{job.MinSalary:C} - {job.MaxSalary:C}")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>@job.JobType</td>
+                                <td>
+                                    <span class="badge @(job.Status == 0 ? "bg-success" : "bg-secondary")">@job.Status</span>
+                                </td>
+                                <td>@job.PostedDate.ToString("g")</td>
+                                <td>
+                                    <a asp-action="JobDetails" asp-route-id="@job.Id" class="btn btn-sm btn-outline-info mb-1 w-100">See Details</a>
+
+                                    <form asp-action="DeleteJob" method="post" onsubmit="return confirm('Are you sure you want to delete this job?');">
+                                        <input type="hidden" name="id" value="@job.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

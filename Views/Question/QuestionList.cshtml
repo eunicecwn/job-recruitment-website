@@ -1,0 +1,910 @@
+﻿﻿
+@model IPagedList<JobRecruitment.Models.QuestionSet>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+
+<link rel="stylesheet" href="~/css/questionForm.css">
+<link rel="stylesheet" href="~/css/MessageBoxes.css">
+
+@{
+    ViewData["Title"] = "Question Set Management";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+    var successMessage = ViewBag.SuccessMessage as string;
+    
+    // Handle null model
+    var totalItemCount = Model?.TotalItemCount ?? 0;
+    var firstItemOnPage = Model?.FirstItemOnPage ?? 0;
+    var lastItemOnPage = Model?.LastItemOnPage ?? 0;
+    var pageNumber = Model?.PageNumber ?? 1;
+    var pageSize = Model?.PageSize ?? 6;
+    var viewMode = ViewBag.ViewMode as string ?? "card";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>@(TempData["SuccessTitle"] ?? "Success!")</h2>
+            <p>@TempData["SuccessMessage"]</p>
+        </div>
+    </div>
+    
+    // Clear the TempData to prevent showing the message again on refresh
+    TempData.Remove("SuccessMessage");
+    TempData.Remove("SuccessTitle");
+}
+else if (!string.IsNullOrEmpty(successMessage))
+{
+    <link rel="stylesheet" href="~/css/MessageBoxes.css">
+    <div class="success-toast">
+        <div class="success-card">
+            <div class="icon">🥳</div>
+            <h2>Success!</h2>
+            <p>@successMessage</p>
+        </div>
+    </div>
+}
+
+<link rel="stylesheet" href="~/css/jobForm.css">
+<link rel="stylesheet" href="~/css/questionForm.css">
+
+<div class="container-fluid">
+    <!-- Search Filters -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Search Filter</h5>
+        </div>
+        <div class="card-body">
+            <form id="search-form">
+            @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="searchTerm" class="form-label">Search</label>
+                        <input type="text" id="searchTerm" name="searchTerm" class="form-control" 
+                               placeholder="Search by name, description..." value="@ViewBag.SearchTerm">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="true" selected="@(ViewBag.Status?.ToString() == "true" ? "selected" : null)">Active</option>
+                            <option value="false" selected="@(ViewBag.Status?.ToString() == "false" ? "selected" : null)">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="minQuestions" class="form-label">Min Questions</label>
+                        <input type="number" id="minQuestions" name="minQuestions" class="form-control" 
+                               placeholder="0" min="0" value="@ViewBag.MinQuestions">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="minJobsAssigned" class="form-label">Min Jobs Assigned</label>
+                        <input type="number" id="minJobsAssigned" name="minJobsAssigned" class="form-control" 
+                               placeholder="0" min="0" value="@ViewBag.MinJobsAssigned">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="sortBy" class="form-label">Sort By</label>
+                        <select id="sortBy" name="sortBy" class="form-select">
+                            <option value="CreatedDate" selected="@(ViewBag.SortBy == "CreatedDate" ? "selected" : null)">Created Date</option>
+                            <option value="Name" selected="@(ViewBag.SortBy == "Name" ? "selected" : null)">Name</option>
+                            <option value="QuestionCount" selected="@(ViewBag.SortBy == "QuestionCount" ? "selected" : null)">Question Count</option>
+                            <option value="JobCount" selected="@(ViewBag.SortBy == "JobCount" ? "selected" : null)">Job Count</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="sortOrder" class="form-label">Sort Order</label>
+                        <select id="sortOrder" name="sortOrder" class="form-select">
+                            <option value="desc" selected="@(ViewBag.SortOrder == "desc" ? "selected" : null)">Descending</option>
+                            <option value="asc" selected="@(ViewBag.SortOrder == "asc" ? "selected" : null)">Ascending</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">View Mode</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="viewMode" id="viewModeCard" value="card" 
+                                   autocomplete="off" @(viewMode == "card" ? "checked" : "")>
+                            <label class="btn btn-outline-primary" for="viewModeCard">
+                                <i class="fas fa-th"></i> Cards
+                            </label>
+                            <input type="radio" class="btn-check" name="viewMode" id="viewModeList" value="list" 
+                                   autocomplete="off" @(viewMode == "list" ? "checked" : "")>
+                            <label class="btn btn-outline-primary" for="viewModeList">
+                                <i class="fas fa-list"></i> List
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="pageSize" class="form-label">Items per page</label>
+                        <select id="pageSize" name="pageSize" class="form-select">
+                            <option value="6" selected="@(pageSize == 6 ? "selected" : null)">6</option>
+                            <option value="12" selected="@(pageSize == 12 ? "selected" : null)">12</option>
+                            <option value="24" selected="@(pageSize == 24 ? "selected" : null)">24</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" id="apply-filters" class="btn btn-primary me-2">
+                            <i class="fas fa-filter me-2"></i>Apply 
+                        </button>
+                        <button type="button" id="reset-filters" class="btn btn-reset">
+                            <i class="fas fa-undo me-2"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Question Sets</h5>
+                <span id="total-questionsets-info" class="text-muted">
+                    @totalItemCount question set@(totalItemCount != 1 ? "s" : "") found
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="search-results">
+                @if (Model != null && Model.Any())
+                {
+                    if (viewMode == "card")
+                    {
+                        <partial name="_QuestionListCardPV" model="Model" />
+                    }
+                    else
+                    {
+                        <partial name="_QuestionListTablePV" model="Model" />
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No question sets found</h4>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination Container -->
+            @if (Model != null && Model.Any())
+            {
+                <div id="pagination-container" class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted" id="showing-info">
+                        Showing @firstItemOnPage to @lastItemOnPage of @totalItemCount question sets
+                    </div>
+                    
+                    @Html.PagedListPager(Model, page => Url.Action("QuestionList", new { 
+                        page, 
+                        searchTerm = ViewBag.SearchTerm,
+                        status = ViewBag.Status,
+                        minQuestions = ViewBag.MinQuestions,
+                        minJobsAssigned = ViewBag.MinJobsAssigned,
+                        sortBy = ViewBag.SortBy,
+                        sortOrder = ViewBag.SortOrder,
+                        viewMode = viewMode,
+                        pageSize = pageSize
+                    }), 
+                    new PagedListRenderOptions {
+                        LiElementClasses = new string[] { "page-item" },
+                        PageClasses = new string[] { "page-link" },
+                        DisplayLinkToFirstPage = PagedListDisplayMode.IfNeeded,
+                        DisplayLinkToLastPage = PagedListDisplayMode.IfNeeded,
+                        DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                        DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                        MaximumPageNumbersToDisplay = 5
+                    })
+                </div>
+            }
+            else
+            {
+                <div id="pagination-container"></div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        } catch (e) {
+            return dateString;
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form');
+    const resultsContainer = document.getElementById('search-results');
+    const resetButton = document.getElementById('reset-filters');
+    const applyButton = document.getElementById('apply-filters');
+    const totalQuestionSetsInfo = document.getElementById('total-questionsets-info');
+    const showingInfo = document.getElementById('showing-info');
+    const paginationContainer = document.getElementById('pagination-container');
+    let currentPage = @pageNumber;
+
+    // Check if we have initial data
+    const hasInitialData = @((Model != null && Model.Any()) ? "true" : "false");
+
+    // Set up toggle button hover effects
+    function setupToggleButtonHover() {
+        const toggleButtons = document.querySelectorAll('.toggle-status-btn');
+        
+        toggleButtons.forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                const textSpan = this.querySelector('.toggle-text');
+                if (textSpan) {
+                    textSpan.style.opacity = '1';
+                }
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                const textSpan = this.querySelector('.toggle-text');
+                if (textSpan) {
+                    textSpan.style.opacity = '0';
+                }
+            });
+        });
+    }
+    
+    // Call it initially
+    setupToggleButtonHover();
+
+    // Use event delegation for toggle buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.toggle-status-btn')) {
+            const button = e.target.closest('.toggle-status-btn');
+            const questionSetId = button.getAttribute('data-id');
+            const currentStatus = button.getAttribute('data-status');
+            const newStatus = currentStatus === 'true' ? 'false' : 'true';
+            
+            toggleQuestionSetStatus(questionSetId, newStatus, button);
+        }
+    });
+
+    // View mode radio buttons
+    const viewModeRadios = document.querySelectorAll('input[name="viewMode"]');
+    viewModeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            currentPage = 1;
+            performSearch();
+        });
+    });
+
+    // Page size dropdown
+    const pageSizeSelect = document.getElementById('pageSize');
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function() {
+            currentPage = 1;
+            performSearch();
+        });
+    }
+
+    // Apply filters button click
+    if (applyButton) {
+        applyButton.addEventListener('click', function() {
+            currentPage = 1;
+            performSearch();
+        });
+    }
+
+    // Reset filters button click
+    if (resetButton) {
+        resetButton.addEventListener('click', function() {
+            // Reset form to default values
+            document.getElementById('searchTerm').value = '';
+            document.getElementById('status').selectedIndex = 0;
+            document.getElementById('minQuestions').value = '';
+            document.getElementById('minJobsAssigned').value = '';
+            document.getElementById('sortBy').value = 'CreatedDate';
+            document.getElementById('sortOrder').value = 'desc';
+            document.getElementById('viewModeCard').checked = true;
+            document.getElementById('pageSize').value = '6';
+            
+            currentPage = 1;
+            performSearch();
+        });
+    }
+
+    const performSearch = () => {
+    // Collect form data manually to handle empty numeric values properly
+    const formData = {
+        searchTerm: document.getElementById('searchTerm').value,
+        status: document.getElementById('status').value,
+        minQuestions: document.getElementById('minQuestions').value,
+        minJobsAssigned: document.getElementById('minJobsAssigned').value,
+        sortBy: document.getElementById('sortBy').value,
+        sortOrder: document.getElementById('sortOrder').value,
+        pageSize: document.getElementById('pageSize').value
+    };
+    
+    const params = new URLSearchParams();
+    
+    // Add all non-empty parameters
+    Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+            params.append(key, value);
+        }
+    });
+    
+    params.append('page', currentPage);
+    
+    const selectedViewMode = document.querySelector('input[name="viewMode"]:checked');
+    if (selectedViewMode) {
+        params.append('viewMode', selectedViewMode.value);
+    }
+
+    // Show loading only if we're doing AJAX search
+    if (currentPage !== 1 || !hasInitialData) {
+        resultsContainer.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Searching question sets...</p>
+            </div>
+        `;
+        paginationContainer.innerHTML = '';
+    }
+
+    fetch('/Question/Search?' + params.toString(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            updateResults(data);
+            updatePagination(data);
+            updateTotalQuestionSetsInfo(data.totalCount);
+            updateShowingInfo(data.currentPage, data.pageSize, data.totalCount);
+        } else {
+            resultsContainer.innerHTML = '<div class="alert alert-danger">Error: ' + (data.error || 'Unknown error') + '</div>';
+            paginationContainer.innerHTML = '';
+        }
+    })
+    .catch(error => {
+        console.error('Search error:', error);
+        resultsContainer.innerHTML = '<div class="alert alert-danger">Error loading question sets. Please try again.</div>';
+        paginationContainer.innerHTML = '';
+    });
+};
+
+    function updateResults(data) {
+        const viewMode = data.viewMode || 'card';
+        let html = '';
+
+        if (data.questionSets && data.questionSets.length > 0) {
+            if (viewMode === 'card') {
+                html = renderCardView(data.questionSets);
+            } else {
+                html = renderListView(data.questionSets);
+            }
+        } else {
+            html = `
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No question sets found</h4>
+                    <p>Try adjusting your search criteria</p>
+                </div>
+            `;
+        }
+
+        resultsContainer.innerHTML = html;
+        
+        // Set up toggle button hover effects after rendering
+        setupToggleButtonHover();
+    }
+
+    function showSuccessMessage(message) {
+        // Create or update success message
+        let messageContainer = document.querySelector('.success-toast');
+        if (!messageContainer) {
+            messageContainer = document.createElement('div');
+            messageContainer.className = 'success-toast';
+            document.body.appendChild(messageContainer);
+        }
+        
+        messageContainer.innerHTML = `
+            <div class="success-card">
+                <div class="icon">🥳</div>
+                <h2>Success!</h2>
+                <p>${message}</p>
+            </div>
+        `;
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+            messageContainer.innerHTML = '';
+        }, 3000);
+    }
+
+    function toggleQuestionSetStatus(questionSetId, newStatus, buttonElement) {
+        const isActive = newStatus === 'true';
+        console.log('🔍 Toggle status request:', { 
+            questionSetId, 
+            newStatus, 
+            isActive 
+        });
+
+        if (confirm(`Are you sure you want to ${isActive ? 'activate' : 'deactivate'} this question set?`)) {
+            // Show loading state on the button
+            const originalHtml = buttonElement.innerHTML;
+            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            buttonElement.disabled = true;
+    
+            fetch('/Question/ToggleStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({
+                    id: questionSetId,
+                    isActive: isActive
+                })
+            })
+            .then(response => {
+                console.log('📥 Response received:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('📊 Response data:', data);
+                if (data.success) {
+                    showSuccessMessage(data.message);
+        
+                    // Update the button appearance
+                    const newStatus = data.newStatus;
+                    const statusBadge = buttonElement.closest('.card')?.querySelector('.status-badge') || 
+                                      buttonElement.closest('tr')?.querySelector('.status-badge');
+        
+                    if (statusBadge) {
+                        if (newStatus) {
+                            statusBadge.className = 'badge bg-success status-badge';
+                            statusBadge.textContent = 'Active';
+                        } else {
+                            statusBadge.className = 'badge bg-secondary status-badge';
+                            statusBadge.textContent = 'Inactive';
+                        }
+                    }
+        
+                    // Update button
+                    if (newStatus) {
+                        buttonElement.className = 'btn btn-sm btn-outline-warning toggle-status-btn';
+                        buttonElement.innerHTML = '<i class="fas fa-toggle-on"></i> Deactivate';
+                        buttonElement.setAttribute('data-status', 'true');
+                    } else {
+                        buttonElement.className = 'btn btn-sm btn-outline-success toggle-status-btn';
+                        buttonElement.innerHTML = '<i class="fas fa-toggle-off"></i> Activate';
+                        buttonElement.setAttribute('data-status', 'false');
+                    }
+                } else {
+                    console.error('❌ Server error:', data.message);
+                    alert('Error: ' + data.message);
+                    // Restore original button state
+                    buttonElement.innerHTML = originalHtml;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Network error:', error);
+                alert('An error occurred. Please try again.');
+                buttonElement.innerHTML = originalHtml;
+            })
+            .finally(() => {
+                buttonElement.disabled = false;
+            });
+        }
+    }
+
+    function updatePagination(data) {
+        if (data.totalCount > 0) {
+            const paginationHtml = generatePaginationHtml(data);
+            paginationContainer.innerHTML = paginationHtml;
+            
+            // Add event listeners to pagination links
+            document.querySelectorAll('.pagination-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentPage = parseInt(this.getAttribute('data-page'));
+                    performSearch();
+                });
+            });
+        } else {
+            paginationContainer.innerHTML = '';
+        }
+    }
+
+    function generatePaginationHtml(data) {
+        const totalPages = data.totalPages;
+        const currentPage = data.currentPage;
+        const pageSize = data.pageSize;
+        const totalCount = data.totalCount;
+        
+        const startItem = ((currentPage - 1) * pageSize) + 1;
+        const endItem = Math.min(currentPage * pageSize, totalCount);
+
+        let paginationHtml = `
+            <div class="text-muted">
+                Showing ${startItem} to ${endItem} of ${totalCount} question sets
+            </div>
+            <nav>
+                <ul class="pagination">
+        `;
+
+        // First page
+        if (currentPage > 1) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="1" title="First Page"><<</a>
+                </li>
+            `;
+        } else {
+            paginationHtml += `
+                <li class="page-item disabled">
+                    <span class="page-link"><<</span>
+                </li>
+            `;
+        }
+
+        // Previous page
+        if (currentPage > 1) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="${currentPage - 1}" title="Previous Page"><</a>
+                </li>
+            `;
+        } else {
+            paginationHtml += `
+                <li class="page-item disabled">
+                    <span class="page-link"><</span>
+                </li>
+            `;
+        }
+
+        // Page numbers
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                paginationHtml += `
+                    <li class="page-item active">
+                        <span class="page-link">${i}</span>
+                    </li>
+                `;
+            } else {
+                paginationHtml += `
+                    <li class="page-item">
+                        <a class="page-link pagination-link" href="#" data-page="${i}">${i}</a>
+                    </li>
+                `;
+            }
+        }
+
+        // Next page
+        if (currentPage < totalPages) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="${currentPage + 1}" title="Next Page">></a>
+                </li>
+            `;
+        } else {
+            paginationHtml += `
+                <li class="page-item disabled">
+                    <span class="page-link">></span>
+                </li>
+            `;
+        }
+
+        // Last page
+        if (currentPage < totalPages) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="${totalPages}" title="Last Page">»</a>
+                </li>
+            `;
+        } else {
+            paginationHtml += `
+                <li class="page-item disabled">
+                    <span class="page-link">>></span>
+                </li>
+            `;
+        }
+
+        paginationHtml += `
+                </ul>
+            </nav>
+        `;
+
+        return paginationHtml;
+    }
+
+    function updateTotalQuestionSetsInfo(totalCount) {
+        if (totalQuestionSetsInfo) {
+            totalQuestionSetsInfo.textContent = `${totalCount} question set${totalCount !== 1 ? 's' : ''} found`;
+        }
+    }
+
+    function updateShowingInfo(currentPage, pageSize, totalCount) {
+        if (showingInfo) {
+            const startItem = ((currentPage - 1) * pageSize) + 1;
+            const endItem = Math.min(currentPage * pageSize, totalCount);
+            showingInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalCount} question sets`;
+        }
+    }
+
+ function renderCardView(questionSets) {
+    let html = '<div class="row">';
+    
+    questionSets.forEach(qs => {
+        // Use camelCase properties from AJAX response
+        const isActive = qs.isActive; // was: qs.IsActive
+        const name = qs.name; // was: qs.Name
+        const description = qs.description; // was: qs.Description
+        const createdDate = qs.createdDate; // was: qs.CreatedDate
+        const id = qs.id; // was: qs.Id
+        
+        // Get counts from the correct properties
+        const questionCount = qs.questionCount !== undefined ? qs.questionCount : (qs.questions ? qs.questions.length : 0);
+        const jobCount = qs.jobCount !== undefined ? qs.jobCount : (qs.jobs ? qs.jobs.length : 0);
+
+        const statusClass = isActive ? 'badge bg-success status-badge' : 'badge bg-secondary status-badge';
+        const toggleBtnClass = isActive ? 'btn btn-sm btn-outline-warning' : 'btn btn-sm btn-outline-success';
+        const toggleBtnIcon = isActive ? 'fa-toggle-on' : 'fa-toggle-off';
+        const toggleBtnText = isActive ? 'Deactivate' : 'Activate';
+
+        const desc = description ? 
+            (description.length > 100 ? description.substring(0, 100) + '...' : description) : 
+            '';
+
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 question-set-card">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title" title="${escapeHtml(name)}">${escapeHtml(name)}</h5>
+                            <span class="${statusClass}">
+                                ${isActive ? "Active" : "Inactive"}
+                            </span>
+                        </div>
+                        <div class="question-set-meta-item">
+                            <i class="fas fa-layer-group"></i>
+                            <span>${questionCount} Questions</span>
+                        </div>
+                        <div class="question-set-meta-item">
+                            <i class="fas fa-briefcase"></i>
+                            <span>${jobCount} Jobs Assigned</span>
+                        </div>
+                        ${desc ? `
+                        <div class="question-set-description mt-2">
+                            <small class="text-muted" title="${escapeHtml(description)}">
+                                ${escapeHtml(desc)}
+                            </small>
+                        </div>
+                        ` : ''}
+                        <div class="question-set-date mt-auto pt-3">
+                            <small class="text-muted">
+                                Created: ${formatDate(createdDate)}<br>
+                                ID: ${id}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2">
+                            <a href="/Question/Details/${id}" class="btn btn-outline-primary btn-sm flex-grow-1">View Details</a>
+                            <button class="${toggleBtnClass} toggle-status-btn"
+                                    data-id="${id}"
+                                    data-status="${isActive.toString().toLowerCase()}">
+                                <i class="fas ${toggleBtnIcon}"></i>${toggleBtnText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function renderListView(questionSets) {
+    let html = `
+        <div class="question-table-container">
+            <table class="question-table">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Name</th>
+                        <th>Questions</th>
+                        <th>Jobs Assigned</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                        <th class="text-center pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    questionSets.forEach(qs => {
+        // Use camelCase properties from AJAX response
+        const isActive = qs.isActive; // was: qs.IsActive
+        const name = qs.name; // was: qs.Name
+        const description = qs.description; // was: qs.Description
+        const createdDate = qs.createdDate; // was: qs.CreatedDate
+        const id = qs.id; // was: qs.Id
+        
+        // Get counts from the correct properties
+        const questionCount = qs.questionCount !== undefined ? qs.questionCount : (qs.questions ? qs.questions.length : 0);
+        const jobCount = qs.jobCount !== undefined ? qs.jobCount : (qs.jobs ? qs.jobs.length : 0);
+
+        const statusClass = isActive ? 'badge bg-success status-badge' : 'badge bg-secondary status-badge';
+        const toggleBtnClass = isActive ? 'btn btn-sm btn-outline-warning' : 'btn btn-sm btn-outline-success';
+        const toggleBtnIcon = isActive ? 'fa-toggle-on' : 'fa-toggle-off';
+        const toggleBtnText = isActive ? 'Deactivate' : 'Activate';
+
+        html += `
+            <tr>
+                <td class="question-name-cell">
+                    <strong class="question-name-text" title="${escapeHtml(name)}">
+                       ${escapeHtml(name)}
+                    </strong>
+                    ${description ? `
+                    <small class="question-description-text" title="${escapeHtml(description)}">
+                       ${escapeHtml(description.length > 50 ? description.substring(0, 50) + '...' : description)}
+                    </small>
+                    ` : ''}
+                </td>
+                <td class="text-center">${questionCount}</td>
+                <td class="text-center">${jobCount}</td>
+                <td class="text-center"><span class="${statusClass}">${isActive ? "Active" : "Inactive"}</span></td>
+                <td>${formatDate(createdDate)}</td>
+                <td class="text-center pe-3">
+                  <div class="action-buttons">
+                    <a href="/Question/Details/${id}" class="btn btn-outline-primary btn-sm" title="View Details">
+                      <i class="fas fa-eye"></i>&nbspView
+                    </a>
+                    <button class="${toggleBtnClass} toggle-status-btn" data-id="${id}" 
+                            data-status="${isActive.toString().toLowerCase()}" title="${toggleBtnText}">
+                      <i class="fas ${toggleBtnIcon}"></i>&nbsp${toggleBtnText}
+                    </button>
+                  </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    return html;
+}
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        
+        try {
+            const date = new Date(dateString);
+            // Use consistent date format: yyyy-MM-dd
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            return dateString;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // Initialize form values from URL parameters
+    function initializeFormValues() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Set search term
+        const searchTerm = urlParams.get('searchTerm');
+        if (searchTerm) {
+            document.getElementById('searchTerm').value = searchTerm;
+        }
+        
+        // Set status
+        const status = urlParams.get('status');
+        if (status) {
+            document.getElementById('status').value = status;
+        }
+        
+        // Set minQuestions
+        const minQuestions = urlParams.get('minQuestions');
+        if (minQuestions) {
+            document.getElementById('minQuestions').value = minQuestions;
+        }
+        
+        // Set minJobsAssigned
+        const minJobsAssigned = urlParams.get('minJobsAssigned');
+        if (minJobsAssigned) {
+            document.getElementById('minJobsAssigned').value = minJobsAssigned;
+        }
+        
+        // Set sortBy
+        const sortBy = urlParams.get('sortBy');
+        if (sortBy) {
+            document.getElementById('sortBy').value = sortBy;
+        }
+        
+        // Set sortOrder
+        const sortOrder = urlParams.get('sortOrder');
+        if (sortOrder) {
+            document.getElementById('sortOrder').value = sortOrder;
+        }
+        
+        // Set viewMode
+        const viewMode = urlParams.get('viewMode');
+        if (viewMode) {
+            const radio = document.querySelector(`input[name="viewMode"][value="${viewMode}"]`);
+            if (radio) {
+                radio.checked = true;
+            }
+        }
+        
+        // Set pageSize
+        const pageSize = urlParams.get('pageSize');
+        if (pageSize) {
+            document.getElementById('pageSize').value = pageSize;
+        }
+    }
+
+    // Initialize the form with URL parameters
+    initializeFormValues();
+});
+    </script>
+}

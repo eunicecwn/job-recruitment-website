@@ -1,0 +1,85 @@
+﻿@model IPagedList<JobRecruitment.Models.Job>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+
+<link rel="stylesheet" href="~/css/jobForm.css">
+
+@{
+    var currentDate = DateTime.UtcNow;
+}
+
+@if (Model == null)
+{
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No data available</h4>
+        <p>Unable to load job listings</p>
+    </div>
+}
+else if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No jobs found</h4>
+        <p>Try adjusting your search criteria</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Job Title</th>
+                    <th>Location</th>
+                    <th>Type</th>
+                    <th>Salary Range</th>
+                    <th>Posted Date</th>
+                    <th>Closing Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in Model)
+                {
+                    var isClosed = job.ClosingDate.HasValue && job.ClosingDate.Value < currentDate;
+                    var statusClass = job.Status == JobStatus.Open ? "badge bg-success" :
+                    job.Status == JobStatus.Closed ? "badge bg-danger" : "badge bg-secondary";
+
+                    <tr class="@(!job.IsActive ? "table-secondary" : "")">
+                        <td>
+                            <span class="text-ellipsis" title="@job.Title">@job.Title</span>
+                            @if (!job.IsActive)
+                            {
+                                <div class="text-warning small mt-1">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Please contact the Hired Right Pro admin
+                                </div>
+                            }
+                        </td>
+                        <td><span class="text-ellipsis" title="@job.Location">@job.Location</span></td>
+                        <td>@job.JobType</td>
+                        <td>RM @job.MinSalary.ToString("N0") - RM @job.MaxSalary.ToString("N0")</td>
+                        <td>@job.PostedDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(job.ClosingDate?.ToString("yyyy-MM-dd") ?? "Empty")</td>
+                        <td><span class="@statusClass">@job.Status</span></td>
+                        <td>
+                            @if (job.IsActive)
+                            {
+                                <a asp-controller="Job" asp-action="DisplayJob" asp-route-id="@job.Id"
+                                   class="btn btn-outline-primary btn-sm">View</a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary btn-sm" disabled title="Job is blocked. Please contact admin.">
+                                    <i class="fas fa-ban me-1"></i>Blocked
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

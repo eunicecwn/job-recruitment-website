@@ -1,0 +1,69 @@
+﻿@model JobRecruitment.Models.Job
+@{
+    ViewData["Title"] = "Job Details";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<style>
+    .card {
+        border-radius: 1rem;
+    }
+
+    .card-header {
+        font-weight: 600;
+    }
+
+    .detail-label {
+        font-weight: 600;
+    }
+
+    .detail-value {
+        color: #333;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card shadow rounded-4">
+        <div class="card-header bg-primary text-white rounded-top-4">
+            <h3 class="mb-0">@Model.Title</h3>
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><span class="detail-label">Company:</span> <span class="detail-value">@Model.Employer?.CompanyName</span></p>
+                    <p><span class="detail-label">Category:</span> <span class="detail-value">@Model.Category?.Name</span></p>
+                    <p><span class="detail-label">Location:</span> <span class="detail-value">@Model.Location</span></p>
+                    <p><span class="detail-label">Type:</span> <span class="detail-value">@Model.JobType</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p>
+                        <span class="detail-label">Salary:</span> <span class="detail-value">
+                            @if (Model.MinSalary != null && Model.MaxSalary != null)
+                            {
+                                @($"{Model.MinSalary:C} - {Model.MaxSalary:C}")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not specified</span>
+                            }
+                        </span>
+                    </p>
+                    <p>
+                        <span class="detail-label">Status:</span>
+                        <span class="badge @(Model.Status == 0 ? "bg-success" : "bg-secondary")">@Model.Status</span>
+                    </p>
+                    <p><span class="detail-label">Posted On:</span> <span class="detail-value">@Model.PostedDate.ToString("f")</span></p>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h5 class="detail-label">Job Description:</h5>
+                <p class="detail-value">@Model.Description</p>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <a asp-action="JobReports" class="btn btn-secondary">Back to Job List</a>
+            </div>
+        </div>
+    </div>
+</div>

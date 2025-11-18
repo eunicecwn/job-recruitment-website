@@ -1,0 +1,36 @@
+﻿@model JobRecruitment.Models.ViewModels.JobReportViewModel
+@{
+    ViewData["Title"] = "Export Job Report";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4>Job Report Details</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Report ID</dt>
+                <dd class="col-sm-9">@Model.Id</dd>
+
+
+
+                <dt class="col-sm-3">Reason</dt>
+                <dd class="col-sm-9">@Model.Reason</dd>
+
+                <dt class="col-sm-3">Date Reported</dt>
+                <dd class="col-sm-9">@Model.DateReported.ToString("yyyy-MM-dd HH:mm")</dd>
+            </dl>
+
+            <div class="mt-3">
+                <a href="@Url.Action("JobReports", "Admin")" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                <a href="@Url.Action("ExportJobReportPdf", "Admin", new { id = Model.Id })" class="btn btn-success">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,103 @@
+﻿@model JobRecruitment.Models.Payment
+@{
+    ViewData["Title"] = "Payment Detail";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container">
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Payment Details</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Payment ID:</strong> @Model.Id</p>
+            <p><strong>User:</strong> @Model.User?.FullName (@Model.User?.Email)</p>
+            <p><strong>Amount:</strong> @Model.Amount.ToString("C")</p>
+            <p><strong>Method:</strong> @Model.PaymentMethod</p>
+            <p>
+                <strong>Status:</strong>
+                <span class="badge @(Model.Status == "Completed" ? "bg-success" :
+                                                           Model.Status == "Pending" ? "bg-warning" :
+                                                           Model.Status == "Failed" ? "bg-danger" : "bg-secondary")">
+                    @Model.Status
+                </span>
+            </p>
+            <p><strong>Date:</strong> @Model.PaymentDate.ToString("yyyy-MM-dd HH:mm")</p>
+            <p><strong>Stripe Payment Intent:</strong> @Model.StripePaymentIntentId ?? "N/A"</p>
+            <p><strong>Notes:</strong> @Model.Notes ?? "N/A"</p>
+        </div>
+        <div class="card-footer">
+            <a href="@Url.Action("Payments", "Admin")" class="btn btn-secondary">Back</a>
+        </div>
+    </div>
+</div>
+<style>
+    :root {
+        --primary: #4F46E5;
+        --primary-light: #6366F1;
+        --primary-dark: #4338CA;
+        --secondary: #10B981;
+        --admin-primary: #DC2626;
+        --admin-secondary: #4F46E5;
+        --dark: #111827;
+        --light: #F9FAFB;
+        --gray: #6B7280;
+        --light-gray: #E5E7EB;
+        --bg-light: #F3F4F6;
+        --sidebar-width: 280px;
+        --sidebar-collapsed-width: 80px;
+    }
+
+    /* Cards */
+    .card {
+        border: 1px solid var(--light-gray);
+        border-radius: 12px;
+        background: var(--light);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .card-header {
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+    }
+
+    .card-footer {
+        background: var(--bg-light);
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary);
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+    .btn-secondary {
+        background: var(--gray);
+        border: none;
+    }
+
+        .btn-secondary:hover {
+            background: var(--dark);
+        }
+
+    /* Custom Badges */
+    .badge-completed {
+        background: var(--secondary);
+        color: white;
+    }
+
+    .badge-pending {
+        background: var(--primary-light);
+        color: white;
+    }
+
+    .badge-failed {
+        background: var(--admin-primary);
+        color: white;
+    }
+</style>

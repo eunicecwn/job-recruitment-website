@@ -1,0 +1,411 @@
+﻿@model Demo.Models.AccountViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Register";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<!-- Add Cropper.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<link rel="shortcut icon" href="/images/logo.png">
+<link rel="stylesheet" href="/css/Register.css" >
+
+<div class="registration-container">
+    <div class="form-header">
+        <h2><i class="fas fa-user-plus"></i> Create Your Account</h2>
+        <p class="text-muted">Join our job recruitment platform today</p>
+    </div>
+
+    <form asp-action="Register" method="post" enctype="multipart/form-data" id="registrationForm">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+        <!-- Account Type Selection -->
+        <div class="form-group">
+            <label class="form-label">Select Account Type <span class="required">*</span></label>
+            <div class="account-type-selector">
+                <div class="account-type-option @(Model?.AccountType == "JobSeeker" ? "selected" : "")" data-type="JobSeeker">
+                    <i class="fas fa-user-tie"></i>
+                    <h5>Job Seeker</h5>
+                    <p class="text-muted small">Looking for job opportunities</p>
+                </div>
+                <div class="account-type-option @(Model?.AccountType == "Employer" ? "selected" : "")" data-type="Employer">
+                    <i class="fas fa-building"></i>
+                    <h5>Employer</h5>
+                    <p class="text-muted small">Posting job vacancies</p>
+                </div>
+            </div>
+            <input type="hidden" asp-for="AccountType" id="AccountType" />
+            <span asp-validation-for="AccountType" class="text-danger"></span>
+        </div>
+
+        <!-- Advanced Profile Picture Upload - REQUIRED -->
+        <div class="form-group">
+            <label class="form-label">Profile Picture <span class="required">*</span></label>
+            <div class="profile-upload-container required" id="profileUploadContainer">
+                <div class="profile-preview" id="profilePreview">
+                    <img id="profilePreviewImg" src="" alt="Profile Picture" style="display:none;">
+                    <div class="default-profile-icon" id="defaultProfileIcon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-preview-overlay">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <div class="upload-controls">
+                    <label class="upload-btn" for="ProfilePictureInput">
+                        <i class="fas fa-upload"></i> Upload Photo
+                    </label>
+                    <button type="button" class="upload-btn secondary" id="editBtn" style="display:none;">
+                        <i class="fas fa-edit"></i> Edit Photo
+                    </button>
+                    <button type="button" class="upload-btn danger" id="removeBtn" style="display:none;">
+                        <i class="fas fa-trash"></i> Remove Photo
+                    </button>
+                    <input type="file" asp-for="ProfilePicture" accept="image/*" id="ProfilePictureInput" class="hidden-file-input" required>
+                    <div class="form-text">
+                        <span class="required">Required:</span> Max size: 5MB (jpg, jpeg, png, gif, webp)
+                    </div>
+                    <span asp-validation-for="ProfilePicture" class="text-danger"></span>
+                    <div id="profilePictureError" class="text-danger" style="display:none;"></div>
+                    <div class="current-image-info" id="imageInfo"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Username -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Username" class="form-label">
+                        Username <span class="required">*</span>
+                    </label>
+                    <input asp-for="Username" class="form-control" placeholder="Enter username" id="username"
+                           required
+                           minlength="4"
+                           maxlength="50"
+                           pattern="^[a-zA-Z0-9_]+$"
+                           title="Username must be 4-50 characters, letters, numbers and underscore only">
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                    <div id="usernameAvailability" class="availability-check"></div>
+                </div>
+            </div>
+
+            <!-- Full Name -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="FullName" class="form-label">
+                        Full Name <span class="required">*</span>
+                    </label>
+                    <input asp-for="FullName" class="form-control" placeholder="Enter your full name" required>
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Email -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label">
+                        Email Address <span class="required">*</span>
+                    </label>
+                    <input asp-for="Email" class="form-control" type="email" placeholder="email@example.com" id="email" required>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                    <div id="emailAvailability" class="availability-check"></div>
+                    <div id="emailVerifiedIndicator" class="email-verified-indicator">
+                        <i class="fas fa-check-circle"></i>
+                        Email verified successfully!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">
+                        Gender <span class="required">*</span>
+                    </label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" asp-for="Gender" value="Male" id="genderMale" class="radio-input" name="Gender" required>
+                            <label for="genderMale" class="radio-label">
+                                <span class="radio-custom"></span>
+                                Male
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" asp-for="Gender" value="Female" id="genderFemale" class="radio-input" name="Gender" required>
+                            <label for="genderFemale" class="radio-label">
+                                <span class="radio-custom"></span>
+                                Female
+                            </label>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Gender" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Verification Modal (Partial View) -->
+        @await Html.PartialAsync("_EmailOtpVerification", Model)
+
+        <!-- Employer-specific fields -->
+        <div class="employer-fields" id="employerFields" style="display: @(Model?.AccountType == "Employer" ? "block" : "none")">
+            <h5 class="mb-3">Company Information</h5>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label asp-for="CompanyName" class="form-label">
+                            Company Name <span class="required employer-required" style="display:@(Model?.AccountType == "Employer" ? "inline" : "none");">*</span>
+                        </label>
+                        <input asp-for="CompanyName" class="form-control" placeholder="Enter company name" id="companyName">
+                        <span asp-validation-for="CompanyName" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Password -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="Password" class="form-label">
+                        Password <span class="required">*</span>
+                    </label>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="Enter password" id="passwordInput" required minlength="6">
+                    <div class="password-strength-container">
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="password-strength-bar"></div>
+                        </div>
+                        <div class="password-strength-text" id="passwordStrengthText"></div>
+                    </div>
+                    <div class="form-text">Minimum 6 characters. Include uppercase, lowercase, numbers and symbols for stronger security.</div>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword" class="form-label">
+                        Confirm Password <span class="required">*</span>
+                    </label>
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Re-enter password" id="confirmPasswordInput" required>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    <div id="passwordMatch" class="form-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- reCAPTCHA Section -->
+        <div class="form-group">
+            <label class="form-label">Security Verification <span class="required">*</span></label>
+            <div class="recaptcha-container">
+                <div class="recaptcha-wrapper" id="recaptchaWrapper">
+                    <div class="g-recaptcha" data-sitekey="@ViewBag.SiteKey" data-callback="onRecaptchaSuccess" data-expired-callback="onRecaptchaExpired"></div>
+                </div>
+            </div>
+            <input type="hidden" asp-for="RecaptchaResponse" id="RecaptchaResponse" />
+            <span asp-validation-for="RecaptchaResponse" class="text-danger"></span>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="form-group">
+            <div class="form-check">
+                <input asp-for="AgreeTerms" class="form-check-input" type="checkbox" id="agreeTerms" required>
+                <label asp-for="AgreeTerms" class="form-check-label">
+                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+                </label>
+            </div>
+            <span asp-validation-for="AgreeTerms" class="text-danger"></span>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-group">
+            <button type="submit" class="btn-register" id="submitBtn">
+                <i class="fas fa-envelope-check"></i> Create Account & Verify Email
+            </button>
+        </div>
+
+        <div class="text-center mt-3">
+            <p>Already have an account? <a href="@Url.Action("Login", "Account")" id="loginLink">Login here</a></p>
+        </div>
+    </form>
+
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Creating your account...</p>
+    </div>
+</div>
+
+<!-- Image Editor Modal -->
+<div class="modal fade" id="imageEditorModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog image-editor-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-crop"></i> Edit Profile Picture
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="image-editor-container">
+                    <img id="cropperImage" style="max-width: 100%;">
+                </div>
+                <div class="editor-controls">
+                    <div class="control-group">
+                        <span><i class="fas fa-search-minus"></i></span>
+                        <input type="range" id="zoomSlider" class="zoom-slider" min="0" max="2" step="0.1" value="1">
+                        <span><i class="fas fa-search-plus"></i></span>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="control-btn" id="rotateLeft" title="Rotate Left">
+                            <i class="fas fa-undo"></i> Rotate Left
+                        </button>
+                        <button type="button" class="control-btn" id="rotateRight" title="Rotate Right">
+                            <i class="fas fa-redo"></i> Rotate Right
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="control-btn" id="flipHorizontal" title="Flip Horizontal">
+                            <i class="fas fa-arrows-alt-h"></i> Flip H
+                        </button>
+                        <button type="button" class="control-btn" id="flipVertical" title="Flip Vertical">
+                            <i class="fas fa-arrows-alt-v"></i> Flip V
+                        </button>
+                    </div>
+                    <div class="control-group">
+                        <span>Aspect:</span>
+                        <div class="aspect-ratio-btns">
+                            <button type="button" class="aspect-btn active" data-aspect="1">1:1</button>
+                            <button type="button" class="aspect-btn" data-aspect="1.33">4:3</button>
+                            <button type="button" class="aspect-btn" data-aspect="1.77">16:9</button>
+                            <button type="button" class="aspect-btn" data-aspect="free">Free</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="control-btn" id="resetCrop" title="Reset">
+                            <i class="fas fa-sync-alt"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveCrop">
+                    <i class="fas fa-check"></i> Apply Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Acceptance of Terms</h6>
+                <p>By registering for an account, you agree to be bound by these Terms and Conditions...</p>
+                <h6>2. User Accounts</h6>
+                <p>You are responsible for maintaining the confidentiality of your account...</p>
+                <h6>3. Privacy Policy</h6>
+                <p>Your use of our services is also governed by our Privacy Policy...</p>
+                <h6>4. Content Guidelines</h6>
+                <p>Users must not post false, misleading, or fraudulent content...</p>
+                <h6>5. Termination</h6>
+                <p>We reserve the right to terminate accounts that violate these terms...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyModalLabel">Privacy Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Watch out for these current scams</h6>
+                <p>Scammers are impersonating HireRightPro by calling individuals and claiming their resumes have been approved. They then instruct the individuals to contact them via WhatsApp. We would like to emphasise that this is part of a scam and is not a legitimate communication from HireRightPro. Stay alert and report and block numbers that contact you with such claims.</p>
+                <h6>2. Find out how to protect yourself online</h6>
+                <p>We look out for your safety at HireRightPro – and there are things you can do to protect yourself online, too.</p>
+                <h6>3. Your information, in your control</h6>
+                <p>Providing information is a key part of the job seeking process, and we think it's important to understand how it's used.</p>
+                <h6>4. Data Collection</h6>
+                <p>We collect information you provide directly to us, such as when you create an account...</p>
+                <h6>5. Data Security</h6>
+                <p>We implement appropriate technical and organizational measures to protect your personal data...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+<!-- reCAPTCHA Script -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+<script src="~/js/Register.js"></script>
+
+<!-- Configuration Script -->
+<script>
+    // reCAPTCHA callback functions
+    function onRecaptchaSuccess(token) {
+        document.getElementById('RecaptchaResponse').value = token;
+
+        // Remove error styling if present
+        const wrapper = document.getElementById('recaptchaWrapper');
+        if (wrapper) {
+            wrapper.classList.remove('recaptcha-error');
+        }
+
+        console.log('reCAPTCHA completed successfully');
+    }
+
+    function onRecaptchaExpired() {
+        document.getElementById('RecaptchaResponse').value = '';
+        console.log('reCAPTCHA expired');
+    }
+
+    // Pass server-side configuration to JavaScript
+    window.registrationConfig = {
+        preserveFormData: @Json.Serialize(ViewBag.PreserveFormData ?? false),
+        clearSessionStorage: @Json.Serialize(ViewBag.ClearSessionStorage ?? false),
+        showValidationErrors: @Json.Serialize(ViewData.ModelState.ErrorCount > 0),
+        modelJson: @Html.Raw(Json.Serialize(ViewBag.ModelJson ?? "{}")),
+
+        // NEW: Add preserved photo data from server
+        preservedPhoto: @Html.Raw(Json.Serialize(ViewBag.PreservedPhoto ?? "")),
+        preservedPhotoType: @Html.Raw(Json.Serialize(ViewBag.PreservedPhotoType ?? "")),
+        preservedPhotoName: @Html.Raw(Json.Serialize(ViewBag.PreservedPhotoName ?? "")),
+
+        urls: {
+            sendOtp: '@Url.Action("SendEmailOTP", "Account")',
+            verifyOtp: '@Url.Action("VerifyEmailOTP", "Account")',
+            checkUsername: '@Url.Action("IsUsernameAvailable", "Account")',
+            checkEmail: '@Url.Action("IsEmailAvailable", "Account")'
+        }
+    };
+</script>

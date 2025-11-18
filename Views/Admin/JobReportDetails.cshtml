@@ -1,0 +1,428 @@
+﻿@model JobRecruitment.Models.ViewModels.JobReportViewModel
+@{
+    ViewData["Title"] = "Job Report Details";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="report-page">
+    <div class="report-wrapper">
+        <div class="report-card">
+            <div class="card-header text-white">
+                <h3><i class="bi bi-flag"></i> Job Report Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="report-info">
+                    <p><strong>Report ID:</strong> @Model.Id</p>
+                    <p><strong>Date Reported:</strong> @Model.DateReported.ToString("yyyy-MM-dd HH:mm")</p>
+
+                </div>
+
+                <!-- Job Information Section -->
+                <div class="job-info-section mt-4">
+                    <h5><i class="bi bi-briefcase"></i> Reported Job Information</h5>
+                    <div class="job-details-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Job Title:</strong> @Model.JobTitle</p>
+                                <p><strong>Job ID:</strong> @Model.JobId</p>
+                                <p><strong>Employer:</strong> @Model.EmployerName</p>
+                            </div>
+
+                        </div>
+
+                        <!-- Action buttons for the job -->
+                        <div class="job-actions mt-3">
+                            <a href="#" onclick="viewJobDetails('@Model.JobId')" class="btn btn-info btn-sm">
+                                <i class="bi bi-eye"></i> View Job Details
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Reason Section -->
+                <div class="report-reason-box mt-4">
+                    <h5><i class="bi bi-chat-left-text"></i> Report Reason</h5>
+                    <p>@Model.Reason</p>
+                </div>
+
+                <!-- Admin Actions Section -->
+                <div class="admin-actions-section mt-4">
+                    <h5><i class="bi bi-gear"></i> Administrative Actions</h5>
+                    <div class="action-buttons">
+                        @if (Model.IsActive)
+                        {
+                            <button type="button" class="btn btn-warning" onclick="toggleJobStatus('@Model.JobId', '@Model.Id')">
+                                <i class="bi bi-slash-circle"></i> Block Job
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-success" onclick="toggleJobStatus('@Model.JobId', '@Model.Id')">
+                                <i class="bi bi-check-circle"></i> Unblock Job
+                            </button>
+                        }
+
+                        <button type="button" class="btn btn-danger" onclick="deleteReport('@Model.Id')">
+                            <i class="bi bi-trash"></i> Delete Report
+                        </button>
+
+                        <a href="@Url.Action("ExportJobReportPdf", "Admin", new { id = Model.Id })" class="btn btn-primary">
+                            <i class="bi bi-file-pdf"></i> Export PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-end">
+                <a href="@Url.Action("JobReports", "Admin")" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> Back to Job Reports
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary: #4F46E5;
+        --primary-light: #6366F1;
+        --primary-dark: #4338CA;
+        --dark: #111827;
+        --light: #F9FAFB;
+        --gray: #6B7280;
+        --light-gray: #E5E7EB;
+        --bg-light: #F3F4F6;
+        --purple-accent: #8B5CF6;
+        --success: #10B981;
+        --warning: #F59E0B;
+        --danger: #EF4444;
+        --info: #3B82F6;
+    }
+
+    /* Full page background */
+    .report-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, var(--bg-light), #ffffff);
+        padding: 3rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Wrapper */
+    .report-wrapper {
+        width: 100%;
+        max-width: 900px;
+    }
+
+    /* Card */
+    .report-card {
+        border: none;
+        background: var(--light);
+        border-radius: 16px;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+        overflow: hidden;
+        animation: fadeIn 0.4s ease;
+    }
+
+        /* Header */
+        .report-card .card-header {
+            background: var(--primary);
+            color: var(--light);
+            padding: 1.2rem 1.8rem;
+        }
+
+            .report-card .card-header h3 {
+                margin: 0;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        /* Body */
+        .report-card .card-body {
+            padding: 2rem;
+        }
+
+            .report-card .card-body p {
+                margin-bottom: 0.9rem;
+                font-size: 15px;
+                color: var(--dark);
+            }
+
+        .report-card strong {
+            color: var(--primary-dark);
+        }
+
+    /* Job Information Section */
+    .job-info-section h5 {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--primary-dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .job-details-card {
+        background: #fff;
+        border: 2px solid var(--light-gray);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .job-actions {
+        border-top: 1px solid var(--light-gray);
+        padding-top: 1rem;
+    }
+
+        .job-actions .btn {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+    /* Report reason box */
+    .report-reason-box {
+        background: var(--bg-light);
+        border-left: 5px solid var(--primary-light);
+        padding: 1rem 1.2rem;
+        border-radius: 10px;
+    }
+
+        .report-reason-box h5 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .report-reason-box p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--dark);
+            line-height: 1.5;
+        }
+
+    /* Admin Actions Section */
+    .admin-actions-section {
+        background: #f8f9ff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+        .admin-actions-section h5 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+        .action-buttons .btn {
+            margin-bottom: 0.5rem;
+        }
+
+    /* Badges */
+    .badge-active {
+        background: var(--success);
+        color: var(--light);
+        padding: 0.45em 0.9em;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+
+    .badge-blocked {
+        background: var(--danger);
+        color: var(--light);
+        padding: 0.45em 0.9em;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+
+    .badge-success {
+        background: var(--success);
+        color: var(--light);
+        padding: 0.45em 0.9em;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+
+    .badge-danger {
+        background: var(--danger);
+        color: var(--light);
+        padding: 0.45em 0.9em;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+
+    /* Button styles */
+    .btn {
+        border-radius: 8px;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-info {
+        background: var(--info);
+        color: var(--light);
+    }
+
+        .btn-info:hover {
+            background: #2563eb;
+            color: var(--light);
+        }
+
+    .btn-secondary {
+        background: var(--gray);
+        color: var(--light);
+    }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            color: var(--light);
+        }
+
+    .btn-warning {
+        background: var(--warning);
+        color: var(--light);
+    }
+
+        .btn-warning:hover {
+            background: #d97706;
+            color: var(--light);
+        }
+
+    .btn-success {
+        background: var(--success);
+        color: var(--light);
+    }
+
+        .btn-success:hover {
+            background: #059669;
+            color: var(--light);
+        }
+
+    .btn-danger {
+        background: var(--danger);
+        color: var(--light);
+    }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            color: var(--light);
+        }
+
+    .btn-primary {
+        background: var(--primary);
+        color: var(--light);
+    }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            color: var(--light);
+        }
+
+    /* Footer */
+    .report-card .card-footer {
+        background: var(--light-gray);
+        border-top: none;
+        padding: 1rem 1.8rem;
+    }
+
+    /* Back button */
+    .btn-back {
+        background: var(--primary-light);
+        color: var(--light);
+        padding: 0.5em 1.2em;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .btn-back:hover {
+            background: var(--primary-dark);
+            color: var(--light);
+        }
+
+</style>
+
+<script>
+    function viewJobDetails(jobId) {
+        window.open('@Url.Action("JobDetails", "Admin")/' + jobId, '_blank');
+    }
+
+    function viewEmployerProfile(employerId) {
+        // Adjust this URL based on your employer profile route
+        window.open('@Url.Action("EmployerDetails", "Admin")/' + employerId, '_blank');
+    }
+
+    function toggleJobStatus(jobId, reportId) {
+        if (confirm('Are you sure you want to change the status of this job?')) {
+            $.ajax({
+                url: '@Url.Action("ToggleJobStatus", "Admin")',
+                type: 'POST',
+                data: { jobId: jobId },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload(); // Reload to show updated status
+                    } else {
+                        alert(response.message || 'Failed to update job status');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while updating job status');
+                }
+            });
+        }
+    }
+
+    function deleteReport(reportId) {
+        if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("DeleteJobReport", "Admin")',
+                type: 'POST',
+                data: {
+                    id: reportId,
+                    __RequestVerificationToken: token
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert('Report deleted successfully');
+                        window.location.href = '@Url.Action("JobReports", "Admin")';
+                    } else {
+                        alert(response.message || 'Failed to delete report');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while deleting the report');
+                }
+            });
+        }
+    }
+</script>

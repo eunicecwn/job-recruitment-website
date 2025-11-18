@@ -1,0 +1,813 @@
+﻿@model JobRecruitment.Models.QuestionSetViewModel
+
+@{
+	ViewData["Title"] = "Create Question Set";
+	Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+
+@if (TempData["ErrorMessage"] != null)
+{
+	<div id="errorBox"
+		 style="display: block; background: rgba(0,0,0,0.6);
+	                position: fixed; inset: 0; z-index: 9999;
+	                display: flex; justify-content: center; align-items: center;">
+
+		<div style="background: #f87171; color: white; border-radius: 12px;
+	                    padding: 25px 30px; text-align: center; width: 320px;
+	                    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+	                    animation: popIn 0.3s ease-out;">
+
+			<div style="font-size: 50px; margin-bottom: 15px;">😟</div>
+			<h2 style="margin: 0 0 10px; font-size: 1.5rem;">
+				@(TempData["ErrorTitle"] ?? "Oops!")
+			</h2>
+			<p style="font-size: 0.95rem; margin-bottom: 20px;">
+				@TempData["ErrorMessage"]
+			</p>
+
+			<button onclick="document.getElementById('errorBox').style.display='none'"
+					style="background: white; color: #b91c1c; border: none;
+	                           padding: 10px 25px; border-radius: 50px;
+	                           font-size: 1rem; cursor: pointer;">
+				OK
+			</button>
+		</div>
+	</div>
+}
+
+	@section Head {
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<link rel="stylesheet" href="~/css/questionForm.css" asp-append-version="true" />
+	}
+
+	<div class="container-fluid my-4 px-0">
+		<div class="card question-card mx-0">
+			<div class="card-body px-3">
+				<form asp-action="CreateQuestion" method="post" id="questionSetForm">
+					@Html.AntiForgeryToken()
+
+					<!-- Validation Summary (centered) -->
+					<div class="validation-summary">
+						<div asp-validation-summary="ModelOnly" class="alert alert-danger validation-summary-errors"></div>
+					</div>
+
+					<!-- Question Set Title with character counter -->
+					<div class="form-group">
+						<label asp-for="Name" class="required"></label>
+						<input asp-for="Name" class="form-control" placeholder="Enter question set title"
+							   maxlength="100" required />
+						<small class="character-counter text-muted" id="title-counter">0/100 characters</small>
+						<span asp-validation-for="Name" class="invalid-feedback">Question set title is required.</span>
+					</div>
+
+					<!-- Description with character counter -->
+					<div class="form-group">
+						<label asp-for="Description"></label>
+						<textarea asp-for="Description" class="form-control" rows="3"
+								  placeholder="Enter description"
+								  maxlength="1000"></textarea>
+						<small class="character-counter text-muted" id="description-counter">0/1000 characters</small>
+					</div>
+
+					<!-- Questions Header -->
+					<h5>Questions</h5>
+
+					<!-- Questions Container -->
+					<div id="questions-container">
+						@if (Model.Questions != null && Model.Questions.Any())
+						{
+							@for (int i = 0; i < Model.Questions.Count; i++)
+							{
+								<div class="question-card card mb-3" data-index="@i">
+									<div class="card-body">
+										<div class="d-flex justify-content-between align-items-center mb-3">
+											<span class="material-icons drag-handle">drag_indicator</span>
+											<button type="button" class="btn btn-sm btn-outline-danger remove-question" data-question-index="@i">
+												<i class="fas fa-trash me-1"></i> Delete
+											</button>
+										</div>
+
+										<div class="row mb-3">
+											<div class="col-md-8">
+												<div class="form-group">
+													<label class="required">Question Text</label>
+													<input asp-for="Questions[i].Text" class="form-control question-title" placeholder="Enter question text"
+														   required />
+													<span asp-validation-for="Questions[i].Text" class="invalid-feedback">Question text is required.</span>
+												</div>
+											</div>
+											<div class="col-md-4">
+												<div class="form-group">
+													<label class="required">Question Type</label>
+													<select asp-for="Questions[i].Type" class="form-select question-type" required>
+														<option value="">-- Select Type --</option>
+														<option value="Text">Text</option>
+														<option value="TextArea">Text Area</option>
+														<option value="MultipleChoice">Multiple Choice</option>
+														<option value="Checkbox">Checkbox</option>
+														<option value="Dropdown">Dropdown</option>
+														<option value="FileUpload">File Upload</option>
+														<option value="Date">Date</option>
+													</select>
+													<span asp-validation-for="Questions[i].Type" class="invalid-feedback">Question type is required.</span>
+												</div>
+											</div>
+										</div>
+
+										<input type="hidden" asp-for="Questions[i].Id" />
+										<input type="hidden" asp-for="Questions[i].Order" class="question-order" value="@(i + 1)" />
+
+										<!-- Options Container -->
+										<div class="options-input mb-3">
+											<label class="form-label required">Options (one per line)</label>
+											<div class="option-inputs">
+												@if (!string.IsNullOrEmpty(Model.Questions[i].Options))
+												{
+													var options = Model.Questions[i].Options.Split(',');
+													foreach (var option in options)
+													{
+														<div class="option-input mb-2">
+															<input type="text" class="form-control option-text-input" placeholder="Option text"
+																   value="@option.Trim()" required />
+															<button type="button" class="option-remove-btn">
+																<i class="fas fa-times"></i>
+															</button>
+														</div>
+													}
+												}
+												else
+												{
+													<div class="option-input mb-2">
+														<input type="text" class="form-control option-text-input" placeholder="Option text" required />
+														<button type="button" class="option-remove-btn">
+															<i class="fas fa-times"></i>
+														</button>
+													</div>
+													<div class="option-input mb-2">
+														<input type="text" class="form-control option-text-input" placeholder="Option text" required />
+														<button type="button" class="option-remove-btn">
+															<i class="fas fa-times"></i>
+														</button>
+													</div>
+												}
+											</div>
+											<button type="button" class="btn btn-sm btn-primary add-option-btn">
+												<i class="fas fa-plus me-1"></i> Add Option
+											</button>
+											<input type="hidden" asp-for="Questions[i].Options" class="options-data" />
+											<span class="invalid-feedback">At least two options are required.</span>
+										</div>
+
+										<!-- Max Length Input -->
+										<div class="max-length-input mb-3">
+											<div class="form-group">
+												<label>Maximum Length</label>
+												<input asp-for="Questions[i].MaxLength" type="number" min="1" max="5000" class="form-control"
+													   placeholder="Enter maximum character length" />
+												<span asp-validation-for="Questions[i].MaxLength" class="invalid-feedback">Please enter a valid number between 1 and 5000.</span>
+											</div>
+										</div>
+
+										<!-- Required Toggle Switch -->
+										<div class="toggle-container">
+											<label class="toggle-switch">
+												<input type="checkbox" asp-for="Questions[i].IsRequired" class="toggle-checkbox" />
+												<span class="toggle-slider"></span>
+											</label>
+											<span class="toggle-label">Required Question</span>
+										</div>
+									</div>
+								</div>
+							}
+						}
+						else
+						{
+							<div class="no-questions-message">
+								<p>No questions added yet. Click the "Add Question" button below to get started.</p>
+							</div>
+						}
+					</div>
+
+					<!-- Add Question Button -->
+					<div class="add-question-container">
+						<button type="button" id="add-question" class="btn btn-primary">
+							<i class="fas fa-plus me-2"></i> Add Question
+						</button>
+					</div>
+
+					<!-- Form Actions -->
+					<div class="d-flex justify-content-end gap-2 mt-4">
+						<a asp-action="QuestionList" class="btn btn-outline-secondary">
+							<i class="fas fa-times me-2"></i> Cancel
+						</a>
+						<button type="submit" class="btn btn-primary">
+							<i class="fas fa-save me-2"></i> Save Question Set
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	@section Scripts {
+		<script src="~/js/questionFormValidation.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+		<script>
+			// Track event listeners to prevent duplication
+			const eventListeners = new Map();
+
+			// Initialize character counters
+			function updateCharacterCounter(input, counterId) {
+				const counter = document.getElementById(counterId);
+				if (counter) {
+					const maxLength = parseInt(input.getAttribute('maxlength')) || 100;
+					const currentLength = input.value.length;
+
+					counter.textContent = `${currentLength}/${maxLength} characters`;
+
+					// Remove all color classes first
+					counter.classList.remove('text-muted', 'text-warning');
+
+					// Add appropriate color class
+					if (currentLength > maxLength * 0.9) {
+						counter.classList.add('text-warning');
+					}else {
+						counter.classList.add('text-muted');
+					}
+				}
+			}
+
+			// Real-time validation functions
+			function validateField(input) {
+				const value = input.value.trim();
+				const feedback = input.nextElementSibling;
+
+				// Remove validation first
+				input.classList.remove('is-invalid');
+				if (feedback && feedback.classList.contains('invalid-feedback')) {
+					feedback.style.display = 'none';
+				}
+
+				// Skip validation if field is empty and not required
+				if (!value && !input.hasAttribute('required')) {
+					return true;
+				}
+
+				let isValid = true;
+				let errorMessage = '';
+
+				// Required field validation
+				if (input.hasAttribute('required') && !value) {
+					isValid = false;
+					errorMessage = feedback?.textContent || 'This field is required.';
+				}
+
+				// Number validation
+				else if (input.type === 'number' && value) {
+					const min = parseInt(input.getAttribute('min')) || 1;
+					const max = parseInt(input.getAttribute('max')) || 5000;
+					const numValue = parseInt(value);
+
+					if (isNaN(numValue) || numValue < min || numValue > max) {
+						isValid = false;
+						errorMessage = `Please enter a number between ${min} and ${max}.`;
+					}
+				}
+
+				if (!isValid) {
+					input.classList.add('is-invalid');
+					if (feedback && feedback.classList.contains('invalid-feedback')) {
+						feedback.textContent = errorMessage;
+						feedback.style.display = 'block';
+					}
+				}
+
+				return isValid;
+			}
+
+			function validateOptions(questionCard) {
+				const typeSelect = questionCard.querySelector('.question-type');
+				const optionsInput = questionCard.querySelector('.options-input');
+				const optionsFeedback = optionsInput?.querySelector('.invalid-feedback');
+
+				if (!['MultipleChoice', 'Checkbox', 'Dropdown'].includes(typeSelect?.value)) {
+					if (optionsInput) {
+						optionsInput.classList.remove('is-invalid');
+						if (optionsFeedback) optionsFeedback.style.display = 'none';
+					}
+					return true;
+				}
+
+				const optionInputs = questionCard.querySelectorAll('.option-text-input');
+				const options = Array.from(optionInputs).map(input => input.value.trim()).filter(val => val);
+
+				if (options.length < 2) {
+					optionsInput.classList.add('is-invalid');
+					if (optionsFeedback) {
+						optionsFeedback.style.display = 'block';
+					}
+					return false;
+				} else {
+					optionsInput.classList.remove('is-invalid');
+					if (optionsFeedback) {
+						optionsFeedback.style.display = 'none';
+					}
+					return true;
+				}
+			}
+
+			// Toggle options based on question type
+			function toggleQuestionOptions(select) {
+				const questionCard = select.closest('.question-card');
+				const optionsInput = questionCard.querySelector('.options-input');
+				const maxLengthInput = questionCard.querySelector('.max-length-input');
+				const type = select.value;
+
+				// Hide both initially
+				if (optionsInput) optionsInput.style.display = 'none';
+				if (maxLengthInput) maxLengthInput.style.display = 'none';
+
+				// Show options for multiple choice, checkbox, and dropdown
+				if (['MultipleChoice', 'Checkbox', 'Dropdown'].includes(type)) {
+					optionsInput.style.display = 'block';
+				}
+				// Show max length for text and textarea
+				else if (['Text', 'TextArea'].includes(type)) {
+					maxLengthInput.style.display = 'block';
+				}
+
+				// Validate options when type changes
+				validateOptions(questionCard);
+			}
+
+			// Remove validation styling
+			function removeValidation(input) {
+				input.classList.remove('is-invalid');
+				const feedback = input.nextElementSibling;
+				if (feedback && feedback.classList.contains('invalid-feedback')) {
+					feedback.style.display = 'none';
+				}
+			}
+
+			// Add new question
+			function addNewQuestion() {
+				const container = document.getElementById('questions-container');
+				const questionCount = container.querySelectorAll('.question-card').length;
+				const newIndex = questionCount;
+
+				// Remove the no questions message if it exists
+				const noQuestionsMessage = container.querySelector('.no-questions-message');
+				if (noQuestionsMessage) {
+					noQuestionsMessage.remove();
+				}
+
+				// Create new question card
+				const newQuestion = document.createElement('div');
+				newQuestion.className = 'question-card card mb-3';
+				newQuestion.dataset.index = newIndex;
+				newQuestion.innerHTML = `
+					<div class="card-body">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<span class="material-icons drag-handle">drag_indicator</span>
+							<button type="button" class="btn btn-sm btn-outline-danger remove-question" data-question-index="${newIndex}">
+								<i class="fas fa-trash me-1"></i> Delete
+							</button>
+						</div>
+
+						<div class="row mb-3">
+							<div class="col-md-8">
+								<div class="form-group">
+									<label class="required">Question Text</label>
+									<input name="Questions[${newIndex}].Text" class="form-control question-title" placeholder="Enter question text" required />
+									<span class="invalid-feedback">Question text is required.</span>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="form-group">
+									<label class="required">Question Type</label>
+									<select name="Questions[${newIndex}].Type" class="form-select question-type" required>
+										<option value="">-- Select Type --</option>
+										<option value="Text">Text</option>
+										<option value="MultipleChoice">Multiple Choice</option>
+										<option value="Checkbox">Checkbox</option>
+										<option value="Dropdown">Dropdown</option>
+										<option value="TextArea">Text Area</option>
+										<option value="FileUpload">File Upload</option>
+										<option value="Date">Date</option>
+									</select>
+									<span class="invalid-feedback">Question type is required.</span>
+								</div>
+							</div>
+						</div>
+
+						<input type="hidden" name="Questions[${newIndex}].Id" value="" />
+						<input type="hidden" name="Questions[${newIndex}].Order" class="question-order" value="${newIndex + 1}" />
+
+						<!-- Options Container -->
+						<div class="options-input mb-3">
+							<label class="form-label required">Options (one per line)</label>
+							<div class="option-inputs">
+								<div class="option-input mb-2">
+									<input type="text" class="form-control option-text-input" placeholder="Option text" required />
+									<button type="button" class="option-remove-btn">
+										<i class="fas fa-times"></i>
+									</button>
+								</div>
+								<div class="option-input mb-2">
+									<input type="text" class="form-control option-text-input" placeholder="Option text" required />
+									<button type="button" class="option-remove-btn">
+										<i class="fas fa-times"></i>
+									</button>
+								</div>
+							</div>
+							<button type="button" class="btn btn-sm btn-primary add-option-btn">
+								<i class="fas fa-plus me-1"></i> Add Option
+							</button>
+							<input type="hidden" name="Questions[${newIndex}].Options" class="options-data" />
+							<span class="invalid-feedback">At least two options are required.</span>
+						</div>
+
+						<!-- Max Length Input -->
+						<div class="max-length-input mb-3">
+							<div class="form-group">
+								<label>Maximum Length</label>
+								<input name="Questions[${newIndex}].MaxLength" type="number" min="1" max="5000" class="form-control" placeholder="Enter maximum character length" />
+								<span class="invalid-feedback">Please enter a valid number between 1 and 5000.</span>
+							</div>
+						</div>
+
+						<!-- Required Toggle Switch -->
+						<div class="toggle-container">
+							<label class="toggle-switch">
+								<input type="checkbox" name="Questions[${newIndex}].IsRequired" class="toggle-checkbox" value="true" />
+								<span class="toggle-slider"></span>
+							</label>
+							<span class="toggle-label">Required Question</span>
+						</div>
+					</div>
+				`;
+
+				container.appendChild(newQuestion);
+
+				// Initialize the new question's functionality
+				initQuestionCard(newQuestion);
+
+				// Initialize toggle for the new question
+				initToggleSwitchesForCard(newQuestion);
+
+				// Reinitialize Sortable
+				initSortable();
+			}
+
+			// Remove question with proper confirmation
+			function removeQuestion(button) {
+				const questionCard = button.closest('.question-card');
+				if (questionCard && confirm('Are you sure you want to remove this question?')) {
+					questionCard.remove();
+
+					// Show no questions message if no questions left
+					const container = document.getElementById('questions-container');
+					if (container.querySelectorAll('.question-card').length === 0) {
+						container.innerHTML = '<div class="no-questions-message"><p>No questions added yet. Click the "Add Question" button below to get started.</p></div>';
+					}
+
+					reindexQuestions();
+				}
+			}
+
+			// Add option
+			function addOption(button) {
+				const optionsContainer = button.previousElementSibling;
+				const optionInput = document.createElement('div');
+				optionInput.className = 'option-input mb-2';
+				optionInput.innerHTML = `
+					<input type="text" class="form-control option-text-input" placeholder="Option text" required />
+					<button type="button" class="option-remove-btn">
+						<i class="fas fa-times"></i>
+					</button>
+				`;
+				optionsContainer.appendChild(optionInput);
+
+				// Add event listeners to the new option
+				const removeBtn = optionInput.querySelector('.option-remove-btn');
+				const removeBtnKey = `option-remove-${Date.now()}-${Math.random()}`;
+				if (!eventListeners.has(removeBtnKey)) {
+					removeBtn.addEventListener('click', function() {
+						removeOption(this);
+					});
+					eventListeners.set(removeBtnKey, true);
+				}
+
+				const input = optionInput.querySelector('input');
+				const inputKey = `option-input-${Date.now()}-${Math.random()}`;
+				if (!eventListeners.has(inputKey)) {
+					input.addEventListener('input', function() {
+						updateOptionsData(this.closest('.question-card'));
+						validateField(this);
+						const questionCard = this.closest('.question-card');
+						validateOptions(questionCard);
+					});
+					eventListeners.set(inputKey, true);
+				}
+
+				updateOptionsData(button.closest('.question-card'));
+			}
+
+			// Remove option
+			function removeOption(button) {
+				const optionInput = button.closest('.option-input');
+				const questionCard = button.closest('.question-card');
+				if (optionInput && questionCard) {
+					optionInput.remove();
+					updateOptionsData(questionCard);
+					validateOptions(questionCard);
+				}
+			}
+
+			// Update options data
+			function updateOptionsData(questionCard) {
+				const optionInputs = questionCard.querySelectorAll('.option-text-input');
+				const optionsData = questionCard.querySelector('.options-data');
+				const options = Array.from(optionInputs).map(input => input.value.trim()).filter(val => val);
+
+				// Only set value if there are options, otherwise set empty string
+				optionsData.value = options.length > 0 ? options.join(',') : '';
+			}
+
+			// Initialize Sortable
+			function initSortable() {
+				const container = document.getElementById('questions-container');
+				if (container) {
+					// Destroy existing Sortable instance if any
+					if (container.sortable) {
+						container.sortable.destroy();
+					}
+
+					// Only initialize if there are questions
+					if (container.querySelectorAll('.question-card').length > 0) {
+						container.sortable = new Sortable(container, {
+							animation: 150,
+							handle: '.drag-handle',
+							ghostClass: 'sortable-ghost',
+							onEnd: function () {
+								reindexQuestions();
+							}
+						});
+					}
+				}
+			}
+
+			// Reindex questions after drag and drop
+			function reindexQuestions() {
+				const container = document.getElementById('questions-container');
+				const questionCards = container.querySelectorAll('.question-card');
+
+				questionCards.forEach((card, index) => {
+					const newIndex = index;
+					card.dataset.index = newIndex;
+
+					// Update all input names
+					card.querySelectorAll('[name]').forEach(input => {
+						const name = input.getAttribute('name');
+						if (name) {
+							const newName = name.replace(/Questions\[\d+\]/, `Questions[${newIndex}]`);
+							input.setAttribute('name', newName);
+						}
+					});
+
+					// Update order value
+					const orderInput = card.querySelector('.question-order');
+					if (orderInput) {
+						orderInput.value = newIndex + 1;
+					}
+				});
+			}
+
+			// Initialize toggle switches for a specific card
+			function initToggleSwitchesForCard(card) {
+				const toggle = card.querySelector('.toggle-switch');
+				if (!toggle) return;
+
+				const checkbox = toggle.querySelector('.toggle-checkbox');
+				const slider = toggle.querySelector('.toggle-slider');
+
+				// Remove any existing event listeners
+				const newSlider = slider.cloneNode(true);
+				slider.parentNode.replaceChild(newSlider, slider);
+
+				// Add new event listener
+				newSlider.addEventListener('click', function(e) {
+					e.preventDefault();
+					checkbox.checked = !checkbox.checked;
+					// Trigger change event
+					const event = new Event('change', { bubbles: true });
+					checkbox.dispatchEvent(event);
+				});
+			}
+
+			// Initialize all toggle switches
+			function initToggleSwitches() {
+				document.querySelectorAll('.toggle-switch').forEach(toggle => {
+					const checkbox = toggle.querySelector('.toggle-checkbox');
+					const slider = toggle.querySelector('.toggle-slider');
+
+					// Remove any existing event listeners
+					const newSlider = slider.cloneNode(true);
+					slider.parentNode.replaceChild(newSlider, slider);
+
+					// Add new event listener
+					newSlider.addEventListener('click', function(e) {
+						e.preventDefault();
+						checkbox.checked = !checkbox.checked;
+						// Trigger change event
+						const event = new Event('change', { bubbles: true });
+						checkbox.dispatchEvent(event);
+					});
+
+					// Prevent double-toggling when clicking directly on checkbox
+					checkbox.addEventListener('click', function(e) {
+						e.stopPropagation();
+					});
+				});
+			}
+
+			// Initialize a question card with all event handlers
+			function initQuestionCard(card) {
+				const cardId = card.dataset.index;
+
+				// Remove question button - check if already has listener
+				const removeBtn = card.querySelector('.remove-question');
+				const removeBtnKey = `remove-question-${cardId}`;
+				if (!eventListeners.has(removeBtnKey)) {
+					removeBtn.addEventListener('click', function() {
+						removeQuestion(this);
+					});
+					eventListeners.set(removeBtnKey, true);
+				}
+
+				// Question type change
+				const questionType = card.querySelector('.question-type');
+				const questionTypeKey = `question-type-${cardId}`;
+				if (!eventListeners.has(questionTypeKey)) {
+					questionType.addEventListener('change', function() {
+						toggleQuestionOptions(this);
+					});
+					eventListeners.set(questionTypeKey, true);
+
+					// Initialize the question type display
+					toggleQuestionOptions(questionType);
+				}
+
+				// Add option button
+				const addOptionBtn = card.querySelector('.add-option-btn');
+				const addOptionBtnKey = `add-option-${cardId}`;
+				if (!eventListeners.has(addOptionBtnKey)) {
+					addOptionBtn.addEventListener('click', function() {
+						addOption(this);
+					});
+					eventListeners.set(addOptionBtnKey, true);
+				}
+
+				// Remove option buttons
+				const removeOptionBtns = card.querySelectorAll('.option-remove-btn');
+				removeOptionBtns.forEach((btn, index) => {
+					const btnKey = `remove-option-${cardId}-${index}`;
+					if (!eventListeners.has(btnKey)) {
+						btn.addEventListener('click', function() {
+							removeOption(this);
+						});
+						eventListeners.set(btnKey, true);
+					}
+				});
+
+				// Real-time validation for inputs
+				card.querySelectorAll('input, select').forEach((input, index) => {
+					const inputKey = `input-${cardId}-${index}`;
+					if (!eventListeners.has(inputKey)) {
+						input.addEventListener('input', function() {
+							validateField(this);
+							if (this.classList.contains('option-text-input')) {
+								const questionCard = this.closest('.question-card');
+								validateOptions(questionCard);
+							}
+						});
+
+						input.addEventListener('change', function() {
+							validateField(this);
+							if (this.classList.contains('question-type')) {
+								const questionCard = this.closest('.question-card');
+								validateOptions(questionCard);
+							}
+						});
+						eventListeners.set(inputKey, true);
+					}
+				});
+			}
+
+			// Form validation
+			function validateForm() {
+				let isValid = true;
+
+				// Validate question set title
+				const titleInput = document.querySelector('input[name="Name"]');
+				if (!validateField(titleInput)) {
+					isValid = false;
+				}
+
+				// Validate questions
+				const questionCards = document.querySelectorAll('.question-card');
+				if (questionCards.length === 0) {
+					alert('Please add at least one question.');
+					isValid = false;
+				}
+
+				questionCards.forEach(card => {
+					// Validate question text
+					const textInput = card.querySelector('.question-title');
+					if (!validateField(textInput)) {
+						isValid = false;
+					}
+
+					// Validate question type
+					const typeSelect = card.querySelector('.question-type');
+					if (!validateField(typeSelect)) {
+						isValid = false;
+					}
+
+					// Validate options
+					if (!validateOptions(card)) {
+						isValid = false;
+					}
+				});
+
+				return isValid;
+			}
+
+			// Initialize everything on page load
+			document.addEventListener('DOMContentLoaded', function () {
+				// Initialize character counters
+				const titleInput = document.querySelector('input[name="Name"]');
+				const descriptionInput = document.querySelector('textarea[name="Description"]');
+
+				if (titleInput) {
+					updateCharacterCounter(titleInput, 'title-counter');
+					titleInput.addEventListener('input', function() {
+						updateCharacterCounter(this, 'title-counter');
+						validateField(this);
+					});
+				}
+
+				if (descriptionInput) {
+					updateCharacterCounter(descriptionInput, 'description-counter');
+					descriptionInput.addEventListener('input', function() {
+						updateCharacterCounter(this, 'description-counter');
+					});
+				}
+
+				// Initialize question type displays for existing questions
+				document.querySelectorAll('.question-type').forEach(select => {
+					toggleQuestionOptions(select);
+				});
+
+				// Initialize Sortable
+				initSortable();
+
+				// Initialize toggle switches
+				initToggleSwitches();
+
+				// Add validation on form submit
+				document.getElementById('questionSetForm').addEventListener('submit', function (e) {
+					// Update all options data before submission
+					document.querySelectorAll('.question-card').forEach(card => {
+						updateOptionsData(card);
+					});
+
+					if (!validateForm()) {
+						e.preventDefault();
+					}
+				});
+
+				// Add event listener for the add question button
+				document.getElementById('add-question').addEventListener('click', addNewQuestion);
+
+				// Initialize all existing question cards
+				document.querySelectorAll('.question-card').forEach(card => {
+					initQuestionCard(card);
+				});
+
+				// Validate existing values on page load
+				document.querySelectorAll('input, select, textarea').forEach(input => {
+					if (input.value) {
+
+						validateField(input);
+					}
+				});
+
+				// Validate existing options on page load
+				document.querySelectorAll('.question-card').forEach(card => {
+					validateOptions(card);
+				});
+			});
+		</script>
+	}

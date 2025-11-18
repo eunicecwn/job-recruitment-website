@@ -1,0 +1,488 @@
+﻿@{
+    ViewBag.Title = "Premium Status";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+
+<!-- Add anti-forgery token -->
+@Html.AntiForgeryToken()
+
+<style>
+    .premium-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .current-status {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+
+    .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .plan-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .plan-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .plan-card.current {
+            border: 3px solid #4CAF50;
+        }
+
+        .plan-card.recommended {
+            border: 3px solid #FF6B6B;
+        }
+
+    .plan-badge {
+        position: absolute;
+        top: -10px;
+        right: 20px;
+        background: #FF6B6B;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+        .plan-badge.current-badge {
+            background: #4CAF50;
+        }
+
+    .plan-name {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+
+    .plan-price {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #4F46E5;
+        margin-bottom: 0.5rem;
+    }
+
+        .plan-price .currency {
+            font-size: 1.5rem;
+            vertical-align: top;
+        }
+
+    .plan-duration {
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 2rem;
+    }
+
+        .plan-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+            .plan-features li:before {
+                content: "✓";
+                color: #4CAF50;
+                font-weight: bold;
+                margin-right: 0.5rem;
+                font-size: 1.2rem;
+            }
+
+    .upgrade-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #4F46E5, #7C3AED);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .upgrade-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 2rem;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4F46E5;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    .alert {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+    }
+
+    .loading-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+    }
+</style>
+
+<div class="premium-container">
+    <!-- Alert Messages -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (Context.Request.Query["cancelled"] == "true")
+    {
+        <div class="alert alert-info">
+            Payment was cancelled. You can try again anytime.
+        </div>
+    }
+
+    <!-- Current Status -->
+    <div class="current-status">
+        <h2>Your Current Plan</h2>
+        <div style="font-size: 1.5rem; margin-bottom: 1rem;">
+            <strong>@ViewBag.CurrentStatus.CurrentPlan Plan</strong>
+        </div>
+        <div>
+            Job Posts Used: <strong>@ViewBag.CurrentStatus.JobPostsUsed</strong> /
+            @if (ViewBag.CurrentStatus.JobPostsRemaining == int.MaxValue)
+            {
+                <strong>Unlimited</strong>
+            }
+            else
+            {
+                <strong>@ViewBag.CurrentStatus.PlanInfo.JobPostLimit</strong>
+            }
+        </div>
+        @if (ViewBag.CurrentStatus.ExpiryDate != null)
+        {
+            <div style="margin-top: 0.5rem;">
+                Expires: <strong>@ViewBag.CurrentStatus.ExpiryDate?.ToString("MMM dd, yyyy")</strong>
+            </div>
+        }
+    </div>
+
+    <!-- Plans Grid -->
+    <div class="plans-grid">
+        <!-- Normal Plan -->
+        <div class="plan-card @(ViewBag.CurrentStatus.CurrentPlan == "Normal" ? "current" : "")">
+            @if (ViewBag.CurrentStatus.CurrentPlan == "Normal")
+            {
+                <div class="plan-badge current-badge">Current Plan</div>
+            }
+            <div class="plan-name">Normal</div>
+            <div class="plan-price">
+                <span class="currency">RM</span>0
+            </div>
+            <div class="plan-duration">Free Forever</div>
+            <ul class="plan-features">
+                <li>3 job posts per month</li>
+                <li>Basic support</li>
+                <li>Standard job visibility</li>
+            </ul>
+            <button class="upgrade-btn" disabled>Current Plan</button>
+        </div>
+
+        <!-- Basic Plan -->
+        <div class="plan-card @(ViewBag.CurrentStatus.CurrentPlan == "Basic" ? "current" : "") @(ViewBag.CurrentStatus.CurrentPlan == "Normal" ? "recommended" : "")">
+            @if (ViewBag.CurrentStatus.CurrentPlan == "Basic")
+            {
+                <div class="plan-badge current-badge">Current Plan</div>
+            }
+            else if (ViewBag.CurrentStatus.CurrentPlan == "Normal")
+            {
+                <div class="plan-badge">Recommended</div>
+            }
+            <div class="plan-name">Basic</div>
+            <div class="plan-price">
+                <span class="currency">RM</span>500
+            </div>
+            <div class="plan-duration">per month</div>
+            <ul class="plan-features">
+                <li>10 job posts per month</li>
+                <li>Priority support</li>
+                <li>Enhanced job visibility</li>
+                <li>Application analytics</li>
+            </ul>
+            @if (ViewBag.CurrentStatus.CurrentPlan != "Basic")
+            {
+                <button class="upgrade-btn" onclick="selectPlan('Basic', 500)"
+                        @(ViewBag.CurrentStatus.CurrentPlan == "Premium" ? "disabled" : "")>
+                    @if (ViewBag.CurrentStatus.CurrentPlan == "Premium")
+                    {
+                        <text>Downgrade Available</text>
+                    }
+                    else
+                    {
+                        <text>Upgrade to Basic</text>
+                    }
+                </button>
+            }
+            else
+            {
+                <button class="upgrade-btn" disabled>Current Plan</button>
+            }
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="plan-card @(ViewBag.CurrentStatus.CurrentPlan == "Premium" ? "current" : "")">
+            @if (ViewBag.CurrentStatus.CurrentPlan == "Premium")
+            {
+                <div class="plan-badge current-badge">Current Plan</div>
+            }
+            else
+            {
+                <div class="plan-badge">Most Popular</div>
+            }
+            <div class="plan-name">Premium</div>
+            <div class="plan-price">
+                <span class="currency">RM</span>1500
+            </div>
+            <div class="plan-duration">per month</div>
+            <ul class="plan-features">
+                <li>Unlimited job posts</li>
+                <li>24/7 premium support</li>
+                <li>Featured job listings</li>
+                <li>Advanced analytics</li>
+                <li>Priority candidate matching</li>
+            </ul>
+            @if (ViewBag.CurrentStatus.CurrentPlan != "Premium")
+            {
+                <button class="upgrade-btn" onclick="selectPlan('Premium', 1500)">
+                    Upgrade to Premium
+                </button>
+            }
+            else
+            {
+                <button class="upgrade-btn" disabled>Current Plan</button>
+            }
+        </div>
+    </div>
+
+    <!-- Features Comparison -->
+    <div style="background: white; border-radius: 15px; padding: 2rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+        <h3 style="text-align: center; margin-bottom: 2rem;">Why Choose Premium?</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🚀</div>
+                <h4>Unlimited Posting</h4>
+                <p>Post as many jobs as you need without restrictions</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⭐</div>
+                <h4>Featured Listings</h4>
+                <p>Your jobs appear at the top of search results</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                <h4>Advanced Analytics</h4>
+                <p>Detailed insights on job performance and candidates</p>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+                <h4>Priority Matching</h4>
+                <p>Get matched with the best candidates first</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <h3>Redirecting to Stripe Checkout...</h3>
+        <p>Please wait while we prepare your secure payment page.</p>
+    </div>
+</div>
+
+<script>
+    let selectedPlan = null;
+    let selectedAmount = 0;
+
+    function selectPlan(planType, amount) {
+        selectedPlan = planType;
+        selectedAmount = amount;
+
+        console.log('Selecting plan:', planType, 'Amount:', amount);
+        showLoading();
+        createCheckoutSession(planType);
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function getAntiForgeryToken() {
+        let tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+
+        if (tokenInput) {
+            return tokenInput.value;
+        }
+
+        const forms = document.querySelectorAll('form');
+        for (let form of forms) {
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenInput) {
+                return tokenInput.value;
+            }
+        }
+
+        console.warn('Anti-forgery token not found');
+        return null;
+    }
+
+    async function createCheckoutSession(planType) {
+        try {
+            const antiForgeryToken = getAntiForgeryToken();
+            console.log('Making request with plan:', planType);
+            console.log('Anti-forgery token:', antiForgeryToken ? 'Found' : 'Not found');
+
+            // Try FormData approach first (better for anti-forgery tokens)
+            const formData = new FormData();
+            formData.append('planType', planType);
+            if (antiForgeryToken) {
+                formData.append('__RequestVerificationToken', antiForgeryToken);
+            }
+
+            const response = await fetch('/Premium/CreateCheckoutSession', {
+                method: 'POST',
+                body: formData
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('HTTP Error Response:', errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse JSON:', parseError);
+                console.error('Response text:', responseText);
+                throw new Error('Invalid response format');
+            }
+
+            console.log('Parsed response data:', data);
+
+            if (data.success && data.checkoutUrl) {
+                console.log('Redirecting to:', data.checkoutUrl);
+                window.location.href = data.checkoutUrl;
+            } else {
+                hideLoading();
+                const errorMsg = data.error || 'Failed to create checkout session';
+                console.error('Checkout failed:', errorMsg);
+                alert('Error: ' + errorMsg);
+            }
+        } catch (error) {
+            hideLoading();
+            console.error('Error creating checkout session:', error);
+            alert('Failed to initiate checkout. Please try again. Error: ' + error.message);
+        }
+    }
+
+    // Auto-dismiss alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease-out';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+    });
+</script>

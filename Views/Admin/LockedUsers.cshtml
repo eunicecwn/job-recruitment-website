@@ -1,0 +1,802 @@
+﻿@model IEnumerable<JobRecruitment.ViewModels.LockedUserViewModel>
+
+@{
+    ViewData["Title"] = "Locked Users Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+    .card {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+    }
+
+    .badge {
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .stats-card {
+        padding: 20px 0;
+        border-radius: 10px;
+        text-align: center;
+        color: white;
+    }
+
+        .stats-card i {
+            margin-bottom: 15px;
+        }
+
+        .stats-card h4 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stats-card p {
+            font-size: 16px;
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+
+    .locked-card {
+        background-color: #f20000;
+    }
+
+    .jobseekers-card {
+        background-color: #667eea;
+        color: #212529 !important;
+    }
+
+    .employers-card {
+        background-color: #71e3a0;
+        color: #212529 !important;
+    }
+
+    .inactive-card {
+        background-color: #6c757d;
+    }
+
+    .btn-action {
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-weight: 500;
+    }
+
+    .user-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .header-section {
+        padding: 20px 0;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 30px;
+    }
+
+    textarea {
+        resize: none;
+    }
+</style>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="text-muted mb-0">Manage users who have been locked due to multiple failed login attempts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-lock fa-2x mb-2"></i>
+                    <h4 class="card-title">@Model.Count()</h4>
+                    <p class="card-text">Locked Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h4 class="card-title">@Model.Count(u => u.Role == "JobSeeker")</h4>
+                    <p class="card-text">Job Seekers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-building fa-2x mb-2"></i>
+                    <h4 class="card-title">@Model.Count(u => u.Role == "Employer")</h4>
+                    <p class="card-text">Employers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h4 class="card-title">@Model.Count(u => !u.IsActive)</h4>
+                    <p class="card-text">Inactive</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <!-- No Locked Users -->
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-check-circle text-success fa-5x mb-3"></i>
+                        <h3 class="text-success">All Good!</h3>
+                        <p class="text-muted">There are currently no locked user accounts.</p>
+                        <a href="@Url.Action("AdminDashboard", "Admin")" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Return to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Bulk Actions -->
+        <div class="row mb-3">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Bulk Actions:</strong>
+                                <button type="button" class="btn btn-success btn-sm ms-2" onclick="selectAllUsers()">
+                                    <i class="fas fa-check-square"></i> Select All
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deselectAllUsers()">
+                                    <i class="fas fa-square"></i> Deselect All
+                                </button>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-warning" onclick="bulkUnlockUsers()" disabled id="bulkUnlockBtn">
+                                    <i class="fas fa-unlock"></i> Unlock Selected (<span id="selectedCount">0</span>)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Locked Users Table -->
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list"></i> Locked Users (@Model.Count())
+                            <button id="refreshPageButton"
+                                    style="background-color:#007bff; color:white; border:none;
+                                        padding:8px 14px; border-radius:6px;
+                                        font-size:14px; cursor:pointer;">
+                                <i class="fas fa-sync"></i> Refresh Page
+                            </button>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th width="50">
+                                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllUsers(this)">
+                                        </th>
+                                        <th>User Info</th>
+                                        <th>Account Type</th>
+                                        <th>Failed Attempts</th>
+                                        <th>Status</th>
+                                        <th>Created Date</th>
+                                        <th width="120">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in Model.OrderByDescending(u => u.FailedLoginAttempts).ThenBy(u => u.Username))
+                                    {
+                                        <tr class="user-row" data-user-id="@user.Id">
+                                            <td>
+                                                <input type="checkbox" class="user-checkbox" value="@user.Id" onchange="updateBulkActions()">
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>@user.Username</strong>
+                                                    <br>
+                                                    <small class="text-muted">@user.FullName</small>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-envelope"></i> @user.Email
+                                                    </small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-@(user.Role == "Employer" ? "info" : "primary")">
+                                                    @user.DisplayAccountType
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-danger">
+                                                    @user.FailedLoginAttempts attempts
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (user.IsActive)
+                                                {
+                                                    <span class="badge bg-warning">🔒 Locked</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">⚠️ Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @user.CreatedDate.ToString("MMM dd, yyyy")
+                                                    <br>
+                                                    @user.CreatedDate.ToString("HH:mm:ss")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-success btn-sm unlock-btn"
+                                                        onclick="unlockUser('@user.Id', '@user.Username')"
+                                                        title="Unlock User">
+                                                    <i class="">Unlock</i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Unlock Confirmation Modal -->
+<div class="modal fade" id="unlockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-unlock text-success"></i> Unlock User Account
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to unlock the account for <strong id="unlockUsername"></strong>?</p>
+                <p class="text-muted">This will reset their failed login attempts to 0 and allow them to login again.</p>
+
+                <div class="mb-3">
+                    <label for="unlockReason" class="form-label">Reason (Optional):</label>
+                    <textarea class="form-control" id="unlockReason" rows="3" placeholder="Enter reason for unlocking this account..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="confirmUnlock()">
+                    <i class="fas fa-unlock"></i> Unlock Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Unlock Modal -->
+<div class="modal fade" id="bulkUnlockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-unlock text-warning"></i> Bulk Unlock Users
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to unlock <strong id="bulkUnlockCount">0</strong> selected user accounts?</p>
+                <div id="bulkUnlockUsers" class="mb-3"></div>
+
+                <div class="mb-3">
+                    <label for="bulkUnlockReason" class="form-label">Reason (Optional):</label>
+                    <textarea class="form-control" id="bulkUnlockReason" rows="3" placeholder="Enter reason for bulk unlock operation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="confirmBulkUnlock()">
+                    <i class="fas fa-unlock"></i> Unlock Selected Users
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        let currentUserId = '';
+        let selectedUserIds = [];
+
+        // Individual unlock functions
+        function unlockUser(userId, username) {
+            currentUserId = userId;
+            document.getElementById('unlockUsername').textContent = username;
+            document.getElementById('unlockReason').value = '';
+            new bootstrap.Modal(document.getElementById('unlockModal')).show();
+        }
+
+        const refreshButton = document.getElementById("refreshPageButton");
+
+        function handleRefreshClick() {
+            window.location.reload();
+        }
+
+        refreshButton.addEventListener("click", handleRefreshClick);
+        function confirmUnlock() {
+            const reason = document.getElementById('unlockReason').value;
+            const modalElement = document.getElementById('unlockModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+
+            // Disable the unlock button to prevent multiple clicks
+            const unlockButton = document.querySelector('#unlockModal .btn-success');
+            const originalButtonText = unlockButton.innerHTML;
+            unlockButton.disabled = true;
+            unlockButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unlocking...';
+
+            // Optimized AJAX with shorter timeout
+            $.ajax({
+                url: '/Admin/UnlockUser',
+                type: 'POST',
+                timeout: 10000, // 10 second timeout instead of default 30
+                data: {
+                    userId: currentUserId,
+                    reason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }
+            })
+            .done(function(response) {
+                try {
+                    if (response && response.success) {
+                        // Close modal immediately for faster UI response
+                        if (modal) {
+                            modal.hide();
+                        } else {
+                            $(modalElement).modal('hide');
+                        }
+
+                        toastr.success(response.message || 'User unlocked successfully');
+
+                        // Remove the unlocked user and refresh data via AJAX
+                        $(`tr[data-user-id="${currentUserId}"]`).fadeOut(200, function() {
+                            $(this).remove();
+                            // Refresh data via AJAX instead of location.reload()
+                            refreshDataViaAjax();
+                        });
+                    } else {
+                        toastr.error(response ? response.message : 'Failed to unlock user');
+                    }
+                } catch (e) {
+                    console.error('Error processing response:', e);
+                    toastr.error('An error occurred while processing the response');
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error('AJAX Error:', status, error);
+                if (status === 'timeout') {
+                    toastr.error('Request timed out. Please try again.');
+                } else {
+                    toastr.error('Network error occurred while unlocking the user');
+                }
+            })
+            .always(function() {
+                // Always execute this code regardless of success or failure
+                try {
+                    // Reset button state
+                    unlockButton.disabled = false;
+                    unlockButton.innerHTML = originalButtonText;
+
+                    // Faster cleanup with shorter delay
+                    setTimeout(function() {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                        $('body').css('padding-right', '');
+                        $('body').css('overflow', '');
+                    }, 100); // Reduced from 300ms to 100ms
+
+                } catch (e) {
+                    console.error('Error closing modal:', e);
+                    // Force page refresh as last resort
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                }
+            });
+        }
+
+        // Bulk operation functions
+        function selectAllUsers() {
+            $('.user-checkbox').prop('checked', true);
+            $('#selectAllCheckbox').prop('checked', true);
+            updateBulkActions();
+        }
+
+        function deselectAllUsers() {
+            $('.user-checkbox').prop('checked', false);
+            $('#selectAllCheckbox').prop('checked', false);
+            updateBulkActions();
+        }
+
+        function toggleAllUsers(checkbox) {
+            $('.user-checkbox').prop('checked', checkbox.checked);
+            updateBulkActions();
+        }
+
+        function updateBulkActions() {
+            selectedUserIds = [];
+            $('.user-checkbox:checked').each(function() {
+                selectedUserIds.push($(this).val());
+            });
+
+            const count = selectedUserIds.length;
+            $('#selectedCount').text(count);
+            $('#bulkUnlockBtn').prop('disabled', count === 0);
+
+            // Update select all checkbox state
+            const totalCheckboxes = $('.user-checkbox').length;
+            if (count === 0) {
+                $('#selectAllCheckbox').prop('indeterminate', false).prop('checked', false);
+            } else if (count === totalCheckboxes) {
+                $('#selectAllCheckbox').prop('indeterminate', false).prop('checked', true);
+            } else {
+                $('#selectAllCheckbox').prop('indeterminate', true);
+            }
+        }
+
+        function bulkUnlockUsers() {
+            if (selectedUserIds.length === 0) {
+                toastr.warning('Please select users to unlock.');
+                return;
+            }
+
+            $('#bulkUnlockCount').text(selectedUserIds.length);
+
+            // Show selected usernames
+            let usersList = '';
+            selectedUserIds.forEach(function(userId) {
+                const row = $(`tr[data-user-id="${userId}"]`);
+                const username = row.find('strong').first().text();
+                usersList += `<span class="badge bg-info me-1">${username}</span>`;
+            });
+            $('#bulkUnlockUsers').html('<p class="mb-2">Selected users:</p>' + usersList);
+
+            document.getElementById('bulkUnlockReason').value = '';
+            new bootstrap.Modal(document.getElementById('bulkUnlockModal')).show();
+        }
+
+        function confirmBulkUnlock() {
+            const reason = document.getElementById('bulkUnlockReason').value;
+            const modalElement = document.getElementById('bulkUnlockModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+
+            // Disable the unlock button to prevent multiple clicks
+            const unlockButton = document.querySelector('#bulkUnlockModal .btn-warning');
+            const originalButtonText = unlockButton.innerHTML;
+            unlockButton.disabled = true;
+            unlockButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unlocking...';
+
+            // Optimized AJAX with shorter timeout
+            $.ajax({
+                url: '/Admin/BulkUnlockUsers',
+                type: 'POST',
+                timeout: 15000, // 15 second timeout for bulk operations
+                data: {
+                    userIds: selectedUserIds,
+                    reason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                }
+            })
+            .done(function(response) {
+                try {
+                    if (response && response.success) {
+                        // Close modal immediately for faster UI response
+                        if (modal) {
+                            modal.hide();
+                        } else {
+                            $(modalElement).modal('hide');
+                        }
+
+                        toastr.success(response.message || 'Users unlocked successfully');
+
+                        // Remove unlocked users and refresh data via AJAX
+                        selectedUserIds.forEach(function(userId) {
+                            $(`tr[data-user-id="${userId}"]`).fadeOut(200, function() {
+                                $(this).remove();
+                            });
+                        });
+
+                        selectedUserIds = [];
+                        updateBulkActions();
+
+                        // Refresh data via AJAX after removing visual elements
+                        setTimeout(function() {
+                            refreshDataViaAjax();
+                        }, 300);
+                    } else {
+                        toastr.error(response ? response.message : 'Failed to unlock users');
+                    }
+                } catch (e) {
+                    console.error('Error processing response:', e);
+                    toastr.error('An error occurred while processing the response');
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error('AJAX Error:', status, error);
+                if (status === 'timeout') {
+                    toastr.error('Request timed out. Please try again.');
+                } else {
+                    toastr.error('Network error occurred during bulk unlock operation');
+                }
+            })
+            .always(function() {
+                // Always execute this code regardless of success or failure
+                try {
+                    // Reset button state
+                    unlockButton.disabled = false;
+                    unlockButton.innerHTML = originalButtonText;
+
+                    // Faster cleanup with shorter delay
+                    setTimeout(function() {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                        $('body').css('padding-right', '');
+                        $('body').css('overflow', '');
+                    }, 100); // Reduced from 300ms to 100ms
+
+                } catch (e) {
+                    console.error('Error closing modal:', e);
+                    // Force page refresh as last resort
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                }
+            });
+        }
+
+        function updateStatistics() {
+            // Update statistics cards dynamically
+            const remainingRows = $('.user-row').length;
+
+            // Update the locked users count
+            $('.card.bg-danger .card-title').text(remainingRows);
+
+            // Update job seekers count
+            let jobSeekerCount = 0;
+            let employerCount = 0;
+            let inactiveCount = 0;
+
+            $('.user-row').each(function() {
+                const badge = $(this).find('.badge.bg-info, .badge.bg-primary');
+                if (badge.text().includes('Job Seeker')) {
+                    jobSeekerCount++;
+                } else if (badge.text().includes('Employer')) {
+                    employerCount++;
+                }
+
+                const statusBadge = $(this).find('.badge.bg-secondary');
+                if (statusBadge.length > 0) {
+                    inactiveCount++;
+                }
+            });
+
+            $('.card.bg-warning .card-title').text(jobSeekerCount);
+            $('.card.bg-info .card-title').text(employerCount);
+            $('.card.bg-secondary .card-title').text(inactiveCount);
+
+            // Update table header count
+            $('.card-header h5').html(`<i class="fas fa-list"></i> Locked Users (${remainingRows})`);
+
+            if (remainingRows === 0) {
+                // Show success message and refresh after delay
+                setTimeout(function() {
+                    location.reload();
+                }, 1500); // 1.5 second delay to show success message
+            }
+        }
+
+        // Auto-refresh functionality
+        let autoRefreshInterval;
+        let autoRefreshEnabled = false;
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+
+            autoRefreshInterval = setInterval(function() {
+                // Only refresh if no modals are open
+                if (!$('.modal.show').length) {
+                    console.log('Auto-refreshing page...');
+                    location.reload();
+                }
+            }, 10000); // Refresh every 10 seconds
+
+            autoRefreshEnabled = true;
+            $('#autoRefreshBtn').removeClass('btn-outline-info').addClass('btn-info');
+            $('#autoRefreshBtn').html('<i class="fas fa-sync-alt fa-spin"></i> Auto-Refresh ON (10s)');
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+
+            autoRefreshEnabled = false;
+            $('#autoRefreshBtn').removeClass('btn-info').addClass('btn-outline-info');
+            $('#autoRefreshBtn').html('<i class="fas fa-sync-alt"></i> Auto-Refresh OFF');
+        }
+
+        function toggleAutoRefresh() {
+            if (autoRefreshEnabled) {
+                stopAutoRefresh();
+                toastr.info('Auto-refresh disabled');
+            } else {
+                startAutoRefresh();
+                toastr.success('Auto-refresh enabled (10s interval)');
+            }
+        }
+
+        // Initialize on document ready
+        $(document).ready(function() {
+            // Add CSRF token to all AJAX requests
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", $('input[name="__RequestVerificationToken"]').val());
+                    }
+                }
+            });
+
+            // Initialize tooltips
+            $('[title]').tooltip();
+
+            // Initialize toastr options
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "300",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+            };
+
+            // Add smooth animations
+            $('.unlock-btn').hover(
+                function() { $(this).addClass('animate__animated animate__pulse'); },
+                function() { $(this).removeClass('animate__animated animate__pulse'); }
+            );
+
+            // Add event listeners for modal events
+            $('#unlockModal').on('hidden.bs.modal', function () {
+                // Reset form when modal is closed
+                document.getElementById('unlockReason').value = '';
+                const unlockButton = document.querySelector('#unlockModal .btn-success');
+                unlockButton.disabled = false;
+                unlockButton.innerHTML = '<i class="fas fa-unlock"></i> Unlock Account';
+            });
+
+            $('#bulkUnlockModal').on('hidden.bs.modal', function () {
+                // Reset form when modal is closed
+                document.getElementById('bulkUnlockReason').value = '';
+                const unlockButton = document.querySelector('#bulkUnlockModal .btn-warning');
+                unlockButton.disabled = false;
+                unlockButton.innerHTML = '<i class="fas fa-unlock"></i> Unlock Selected Users';
+            });
+
+            // Check if there's a CSRF token available
+            if (!$('input[name="__RequestVerificationToken"]').val()) {
+                console.warn('CSRF token not found. Please ensure the page includes the anti-forgery token.');
+            }
+
+            // Add auto-refresh button to header section - FIX THE HEADER STRUCTURE
+            const headerDiv = $('.row.mb-4 .col .d-flex.justify-content-between.align-items-center div:last-child');
+            if (headerDiv.length === 0) {
+                // If the header structure doesn't exist, add it manually
+                $('.row.mb-4 .col .d-flex').append(`
+                    <div>
+                        <button type="button" class="btn btn-outline-info btn-sm me-2" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+                            <i class="fas fa-sync-alt"></i> Auto-Refresh OFF
+                        </button>
+                        <a href="/Admin/AdminDashboard" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                `);
+            } else {
+                const autoRefreshBtn = `
+                    <button type="button" class="btn btn-outline-info btn-sm me-2" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+                        <i class="fas fa-sync-alt"></i> Auto-Refresh OFF
+                    </button>
+                `;
+                headerDiv.prepend(autoRefreshBtn);
+            }
+
+            // Auto-start refresh if there are locked users
+            if ($('.user-row').length > 0) {
+                // Show notification about auto-refresh
+                setTimeout(function() {
+                    toastr.info('Tip: Enable auto-refresh to see real-time updates', 'Auto-Refresh Available');
+                }, 3000);
+            }
+
+            // Auto-refresh on successful unlock (immediate update)
+            $(document).on('userUnlocked', function() {
+                // Custom event fired after successful unlock
+                setTimeout(function() {
+                    if ($('.user-row').length === 0) {
+                        location.reload(); // Refresh to show "All Good" message
+                    }
+                }, 1000);
+            });
+
+            // Detect if user leaves and returns to tab (Page Visibility API)
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden && autoRefreshEnabled) {
+                    // User returned to tab, refresh if auto-refresh is on
+                    setTimeout(function() {
+                        if (!$('.modal.show').length) {
+                            location.reload();
+                        }
+                    }, 1000);
+                }
+            });
+
+            // Optional: Refresh when browser regains focus
+            window.addEventListener('focus', function() {
+                if (autoRefreshEnabled && !$('.modal.show').length) {
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+}
