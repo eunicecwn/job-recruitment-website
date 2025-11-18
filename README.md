@@ -1,4 +1,4 @@
-# HireRightPro - Comprehensive Job Recruitment Platform
+# HireRightPro - Job Recruitment Website
 
 ## 📑 Table of Contents
 
